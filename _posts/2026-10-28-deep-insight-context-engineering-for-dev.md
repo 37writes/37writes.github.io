@@ -33,6 +33,11 @@ LLM의 **컨텍스트(context window)** 는 모델이 한 번에 볼 수 있는 
 
 [Part 2](https://aws.amazon.com/ko/blogs/tech/context-engineering-from-deep-insight/)는 컨텍스트를 아끼는 방법을 네 계층으로 정리합니다. 앞 계층이 놓친 부분을 다음 계층이 막는 구조입니다.
 
+<figure class="diagram">
+{% include figures/deep-insight-context-engineering-for-dev/four-layers.svg %}
+<figcaption>Part 2의 네 계층은 모두 책상(컨텍스트)에 꼭 필요한 것만 남기려는 장치입니다.</figcaption>
+</figure>
+
 ### 1계층: 구조로 나누기 (컨텍스트 격리)
 
 에이전트마다 자기 책상을 따로 줍니다. 에이전트끼리 공유하는 상태는 네 가지뿐입니다.

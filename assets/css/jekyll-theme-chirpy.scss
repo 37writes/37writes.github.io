@@ -437,6 +437,11 @@ figure.diagram {
     max-width: 360px;
   }
 
+  /* 흐름처럼 세로로 긴 그림은 한 장(360)으로 데스크톱·모바일을 같이 쓴다 */
+  .diagram-tall {
+    max-width: 360px;
+  }
+
   @media (max-width: 576px) {
     .diagram-wide {
       display: none;
@@ -478,6 +483,10 @@ figure.diagram {
     fill: none;
     stroke: var(--rule-strong);
     stroke-width: 1.5;
+  }
+
+  .d-dot {
+    fill: var(--ink-muted);
   }
 
   figcaption {

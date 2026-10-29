@@ -58,27 +58,10 @@ Deep Insight의 에이전트 이름은 영어 직함이라 처음에는 잘 와�
 
 흐름으로 그리면 이렇습니다.
 
-```text
-사용자 요청
-  │
-  ▼
-Coordinator ── 간단한 요청이면 여기서 바로 답함
-  │ 분석 요청이면
-  ▼
-Planner ── 체크리스트 계획 작성
-  │
-  ▼
-Plan Reviewer(사람) ── 수정 요청이면 Planner로 되돌아감
-  │ 승인되면
-  ▼
-Supervisor
-  ├─ Coder     → Tracker(체크)
-  ├─ Validator → Tracker(체크)
-  └─ Reporter  → Tracker(체크)
-  │
-  ▼
-결과물(보고서, 차트)
-```
+<figure class="diagram">
+{% include figures/deep-insight-multi-agent-roles/role-flow.svg %}
+<figcaption>분석 요청은 사람이 계획을 승인한 뒤에 실행되고, 현재 단계가 모두 체크되어야 다음 단계로 넘어갑니다.</figcaption>
+</figure>
 
 Supervisor는 현재 단계의 체크리스트 항목이 모두 `[x]`가 되기 전에는 다음으로 넘어가지 않습니다. 진행 상황을 기억에 의존하지 않고 **체크리스트 한 장**으로 판단하는 구조입니다.
 

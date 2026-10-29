@@ -1,0 +1,55 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 404" role="img" aria-labelledby="ca-fig-title ca-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ca-fig-title">같은 인증서를 브라우저는 믿고 AWS CLI는 거부하는 이유</title>
+  <desc id="ca-fig-desc">사내 프록시는 사내 Root CA로 서명한 AWS 인증서를 내민다. 브라우저가 쓰는 Windows 인증서 저장소에는 Amazon, DigiCert 같은 공개 Root CA와 사내 Root CA가 모두 있어 통과한다. AWS CLI가 쓰는 자체 번들(certifi)에는 공개 Root CA만 있고 사내 Root CA가 없어 CERTIFICATE_VERIFY_FAILED로 실패한다. 해결은 CLI의 ca_bundle 설정에 사내 Root CA 파일을 지정하는 것이다. 지정한 파일은 기본 번들에 더해지지 않고 기본 번들을 대체한다.</desc>
+  <text class="d-strong" x="240" y="26" text-anchor="middle">사내 프록시가 내민 같은 인증서</text>
+  <text class="d-muted" x="240" y="50" text-anchor="middle">사내 Root CA가 서명한 ‘AWS 인증서’</text>
+  <path class="d-line" d="M240 62 V76 H120 V92 M240 76 H360 V92"/>
+  <text class="d-strong" x="120" y="116" text-anchor="middle">브라우저</text>
+  <text class="d-muted" x="120" y="138" text-anchor="middle">Windows 인증서 저장소</text>
+  <text class="d-strong" x="360" y="116" text-anchor="middle">AWS CLI</text>
+  <text class="d-muted" x="360" y="138" text-anchor="middle">자체 번들 (certifi)</text>
+  <rect class="d-box" x="15" y="154" width="210" height="118"/>
+  <text class="d-muted d-small" x="31" y="178">믿는 Root CA 일부</text>
+  <text x="31" y="203">✓ Amazon</text>
+  <text x="31" y="227">✓ DigiCert</text>
+  <text x="31" y="251">✓ 사내 Root CA</text>
+  <rect class="d-box" x="255" y="154" width="210" height="118"/>
+  <text class="d-muted d-small" x="271" y="178">믿는 Root CA 일부</text>
+  <text x="271" y="203">✓ Amazon</text>
+  <text x="271" y="227">✓ DigiCert</text>
+  <text class="d-accent" x="271" y="251">✗ 사내 Root CA 없음</text>
+  <text class="d-strong" x="120" y="306" text-anchor="middle">✓ 통과</text>
+  <text class="d-muted" x="120" y="330" text-anchor="middle">콘솔이 잘 열림</text>
+  <text class="d-strong d-accent" x="360" y="306" text-anchor="middle">✗ 검증 실패</text>
+  <text class="d-mono d-muted" x="360" y="330" text-anchor="middle">CERTIFICATE_VERIFY_FAILED</text>
+  <path class="d-line" d="M15 352 H465"/>
+  <text x="240" y="384" text-anchor="middle">해결: CLI의 <tspan class="d-mono">ca_bundle</tspan>에 사내 Root CA 파일 지정</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 624" role="img" aria-labelledby="ca-fig-title-n ca-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="ca-fig-title-n">같은 인증서를 브라우저는 믿고 AWS CLI는 거부하는 이유</title>
+  <desc id="ca-fig-desc-n">사내 프록시는 사내 Root CA로 서명한 AWS 인증서를 내민다. 브라우저가 쓰는 Windows 인증서 저장소에는 Amazon, DigiCert 같은 공개 Root CA와 사내 Root CA가 모두 있어 통과한다. AWS CLI가 쓰는 자체 번들(certifi)에는 공개 Root CA만 있고 사내 Root CA가 없어 CERTIFICATE_VERIFY_FAILED로 실패한다. 해결은 CLI의 ca_bundle 설정에 사내 Root CA 파일을 지정하는 것이다. 지정한 파일은 기본 번들에 더해지지 않고 기본 번들을 대체한다.</desc>
+  <text class="d-strong" x="160" y="26" text-anchor="middle">사내 프록시가 내민 같은 인증서</text>
+  <text class="d-muted" x="160" y="50" text-anchor="middle">사내 Root CA가 서명한 ‘AWS 인증서’</text>
+  <path class="d-line" d="M12 68 H308"/>
+  <text class="d-strong" x="12" y="98">브라우저</text>
+  <text class="d-muted" x="12" y="120">Windows 인증서 저장소</text>
+  <rect class="d-box" x="12" y="132" width="296" height="118"/>
+  <text class="d-muted d-small" x="28" y="156">믿는 Root CA 일부</text>
+  <text x="28" y="181">✓ Amazon</text>
+  <text x="28" y="205">✓ DigiCert</text>
+  <text x="28" y="229">✓ 사내 Root CA</text>
+  <text class="d-strong" x="12" y="280">✓ 통과</text>
+  <text class="d-muted" x="308" y="280" text-anchor="end">콘솔이 잘 열림</text>
+  <text class="d-strong" x="12" y="324">AWS CLI</text>
+  <text class="d-muted" x="12" y="346">자체 번들 (certifi)</text>
+  <rect class="d-box" x="12" y="358" width="296" height="118"/>
+  <text class="d-muted d-small" x="28" y="382">믿는 Root CA 일부</text>
+  <text x="28" y="407">✓ Amazon</text>
+  <text x="28" y="431">✓ DigiCert</text>
+  <text class="d-accent" x="28" y="455">✗ 사내 Root CA 없음</text>
+  <text class="d-strong d-accent" x="12" y="506">✗ 검증 실패</text>
+  <text class="d-mono d-muted" x="12" y="530">CERTIFICATE_VERIFY_FAILED</text>
+  <path class="d-line" d="M12 552 H308"/>
+  <text x="12" y="582">해결: CLI의 <tspan class="d-mono">ca_bundle</tspan>에</text>
+  <text x="12" y="606">사내 Root CA 파일 지정</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 520" role="img" aria-labelledby="gcm-fig-title gcm-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="gcm-fig-title">만료된 서명이 저장되어 403이 반복되는 순서</title>
+  <desc id="gcm-fig-desc">첫 push에서 GCM 로그인 창을 취소하면 aws 도우미가 약 15분만 유효한 서명을 새로 만들어 push가 성공한다. 성공하면 Git이 모든 도우미에게 값을 저장하라고 알리고, GCM이 그 서명을 보관한다. 서명이 만료된 뒤의 push에서는 GCM이 먼저 불려 보관한 서명을 내밀고, 이미 만료되어 403이 난다. Git은 401일 때만 저장된 값을 지우므로 서명이 남아 403이 반복된다. 해결은 credential.helper 목록을 빈 값으로 초기화하고 그 뒤에 aws 도우미를 등록하는 것이다. 그러면 GCM은 호출되지도, 저장 요청을 받지도 않는다.</desc>
+  <text class="d-strong" x="12" y="26">첫 push</text>
+  <path class="d-line" d="M24 44 V168"/>
+  <circle class="d-dot" cx="24" cy="54" r="4"/>
+  <text x="44" y="60">GCM 로그인 창이 뜸 → 취소</text>
+  <circle class="d-dot" cx="24" cy="84" r="4"/>
+  <text x="44" y="90">aws 도우미가 새 서명 생성</text>
+  <text class="d-muted" x="44" y="112">약 15분 유효한 시간 제한 서명</text>
+  <circle class="d-dot" cx="24" cy="136" r="4"/>
+  <text x="44" y="142">✓ push 성공</text>
+  <circle class="d-dot" cx="24" cy="166" r="4"/>
+  <text x="44" y="172">Git이 모든 도우미에게 저장 요청</text>
+  <text class="d-accent" x="44" y="196">→ GCM이 그 서명을 보관</text>
+  <text class="d-strong" x="12" y="246">서명이 만료된 뒤 다음 push</text>
+  <path class="d-line" d="M24 264 V340"/>
+  <circle class="d-dot" cx="24" cy="274" r="4"/>
+  <text x="44" y="280">GCM이 먼저 불려 보관한 서명 제시</text>
+  <circle class="d-dot" cx="24" cy="304" r="4"/>
+  <text class="d-accent" x="44" y="310">✗ 이미 만료된 서명 → 403</text>
+  <circle class="d-dot" cx="24" cy="338" r="4"/>
+  <text x="44" y="344">Git은 401일 때만 저장값을 지움</text>
+  <text class="d-muted" x="44" y="366">403이면 그대로 남아 같은 오류 반복</text>
+  <path class="d-line" d="M12 396 H348"/>
+  <text class="d-strong" x="12" y="428">해결</text>
+  <text x="12" y="458"><tspan class="d-mono">credential.helper</tspan>를 빈 값으로 초기화</text>
+  <text x="12" y="482">→ 그 뒤에 aws 도우미 등록</text>
+  <text class="d-muted" x="12" y="506">GCM은 호출도 저장 요청도 받지 않음</text>
+</svg>

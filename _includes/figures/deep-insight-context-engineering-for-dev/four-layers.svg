@@ -1,0 +1,25 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 476" role="img" aria-labelledby="ctx-fig-title ctx-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ctx-fig-title">책상(컨텍스트)을 지키는 4계층</title>
+  <desc id="ctx-fig-desc">Deep Insight는 컨텍스트를 네 계층으로 아낀다. 1계층 격리는 에이전트마다 책상을 따로 주고 요약만 넘긴다. 2계층 출력 제한은 역할별 분량 예산과 고정 보고 양식을 둔다. 3계층 외부화는 긴 결과를 파일(서랍)에 두고 책상에는 경로만 남긴다. 4계층 검증은 다시 계산해 비교하고, 그래도 넘치면 오래된 메시지를 요약한다. 앞 계층이 놓친 것을 다음 계층이 막는다. 책상에 남기는 것은 예를 들어 마지막 메시지, 요약, 계획 체크리스트, 파일 위치다.</desc>
+  <text class="d-strong" x="180" y="26" text-anchor="middle">책상(컨텍스트)을 지키는 4계층</text>
+  <text class="d-muted" x="180" y="50" text-anchor="middle">앞 계층이 놓친 것을 다음 계층이 막는다</text>
+  <rect class="d-box" x="12" y="68" width="336" height="66"/>
+  <text class="d-strong d-accent" x="28" y="94">1</text>
+  <text class="d-strong" x="52" y="94">격리 · 구조로 나누기</text>
+  <text class="d-muted" x="52" y="120">에이전트마다 책상 따로, 요약만 넘김</text>
+  <rect class="d-box" x="12" y="142" width="336" height="66"/>
+  <text class="d-strong d-accent" x="28" y="168">2</text>
+  <text class="d-strong" x="52" y="168">출력 제한 · 말의 양 정하기</text>
+  <text class="d-muted" x="52" y="194">역할별 분량 예산, 고정 보고 양식</text>
+  <rect class="d-box" x="12" y="216" width="336" height="66"/>
+  <text class="d-strong d-accent" x="28" y="242">3</text>
+  <text class="d-strong" x="52" y="242">외부화 · 서랍에 두기</text>
+  <text class="d-muted" x="52" y="268">긴 결과는 파일에, 책상엔 경로만</text>
+  <rect class="d-box" x="12" y="290" width="336" height="66"/>
+  <text class="d-strong d-accent" x="28" y="316">4</text>
+  <text class="d-strong" x="52" y="316">검증 · 마지막 안전망</text>
+  <text class="d-muted" x="52" y="342">다시 계산해 비교, 넘치면 오래된 것 요약</text>
+  <path class="d-line" d="M12 384 H348"/>
+  <text class="d-strong" x="180" y="416" text-anchor="middle">책상에 남기는 것 (예)</text>
+  <text x="180" y="444" text-anchor="middle">마지막 메시지 · 요약 · 계획 · 파일 위치</text>
+</svg>

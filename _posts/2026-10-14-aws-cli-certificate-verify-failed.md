@@ -17,6 +17,11 @@ SSL validation failed for https://s3.ap-northeast-2.amazonaws.com/
 
 처음에는 키가 잘못된 줄 알았지만, 이 오류는 **자격증명(키) 문제가 아니라 인증서 신뢰 문제**입니다. 원인을 이해하려면 TLS 인증서가 어떻게 신뢰를 얻는지부터 알아야 했고, 그 김에 AWS 자격증명 관리 방식도 함께 정리했습니다.
 
+<figure class="diagram">
+{% include figures/aws-cli-certificate-verify-failed/trust-store.svg %}
+<figcaption>브라우저와 AWS CLI는 서로 다른 신뢰 목록을 씁니다. 이 사례에서는 사내 Root CA가 CLI 쪽에만 없었습니다. <code>ca_bundle</code>로 지정한 파일은 기본 번들을 대체합니다.</figcaption>
+</figure>
+
 이 글의 순서는 다음과 같습니다.
 
 1. TLS 인증서의 신뢰 구조 (CA, 신뢰 사슬, 신뢰 저장소)

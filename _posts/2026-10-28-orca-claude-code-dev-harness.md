@@ -21,6 +21,11 @@ description: "AWS Deep Insight의 역할 구조를 Orca IDE의 오케스트레�
 - **Claude Code**: 터미널에서 동작하는 코딩 에이전트입니다. 이 구조에서 사용자와 대화하는 세션이 됩니다.
 - **Orca**: 여러 코딩 에이전트(Claude Code, Codex 등)를 작업 폴더별로 띄우고 관리하는 데스크톱 앱입니다. 에이전트끼리 일을 맡기고 결과를 받는 **오케스트레이션** 명령을 제공합니다.
 
+<figure class="diagram">
+{% include figures/orca-claude-code-dev-harness/who-does-what.svg %}
+<figcaption>대화 세션 하나가 지휘를 맡고, 구현과 검증은 각자 worktree를 가진 워커가 합니다.</figcaption>
+</figure>
+
 ## Orca를 이해하는 데 필요한 개념
 
 ### git worktree: 같은 저장소, 다른 작업 폴더

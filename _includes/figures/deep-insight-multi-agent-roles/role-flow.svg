@@ -1,0 +1,46 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 572" role="img" aria-labelledby="roles-fig-title roles-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="roles-fig-title">Deep Insight의 역할 흐름과 주방 비유</title>
+  <desc id="roles-fig-desc">사용자 요청은 Coordinator(홀 매니저)가 받아 분류하고, 간단한 요청은 바로 답한다. 분석 요청은 Planner(주방장)가 체크리스트 계획으로 만들고, Plan Reviewer인 사람(손님 확인)이 승인하거나 수정을 요청한다. 수정 요청이면 Planner로 되돌아간다. 승인되면 Supervisor(부주방장)가 Coder(요리사), Validator(맛 검수), Reporter(담아 내기)를 부른다. 각 작업이 끝나면 Tracker(완료 도장)가 체크리스트를 [x]로 바꾸고, 현재 단계의 항목이 모두 [x]가 되면 다음 단계로 넘어간다. 최종 결과물은 보고서와 차트다.</desc>
+  <text class="d-strong" x="110" y="24" text-anchor="middle">사용자 요청</text>
+  <path class="d-line" d="M110 34 V48"/>
+  <rect class="d-box" x="12" y="48" width="196" height="52"/>
+  <text class="d-strong" x="28" y="72">Coordinator</text>
+  <text class="d-muted d-small" x="28" y="91">홀 매니저 · 요청 분류</text>
+  <path class="d-line" d="M208 74 H224"/>
+  <text class="d-muted" x="230" y="70">간단한 요청은</text>
+  <text class="d-muted" x="230" y="89">여기서 바로 답</text>
+  <path class="d-line" d="M110 100 V118"/>
+  <text class="d-muted" x="118" y="114">분석 요청이면</text>
+  <rect class="d-box" x="12" y="118" width="196" height="52"/>
+  <text class="d-strong" x="28" y="142">Planner</text>
+  <text class="d-muted d-small" x="28" y="161">주방장 · 체크리스트 계획</text>
+  <path class="d-line" d="M110 170 V188"/>
+  <rect class="d-box" x="12" y="188" width="196" height="52"/>
+  <text class="d-strong" x="28" y="212">Plan Reviewer</text>
+  <text class="d-muted d-small" x="28" y="231">사람 · 손님에게 확인</text>
+  <path class="d-line" d="M208 214 H232 V144 H208 M215 139 L208 144 L215 149"/>
+  <text class="d-muted" x="242" y="174">수정 요청이면</text>
+  <text class="d-muted" x="242" y="194">Planner로</text>
+  <path class="d-line" d="M110 240 V258"/>
+  <text class="d-muted" x="118" y="255">승인되면</text>
+  <rect class="d-box" x="12" y="262" width="196" height="52"/>
+  <text class="d-strong" x="28" y="286">Supervisor</text>
+  <text class="d-muted d-small" x="28" y="305">부주방장 · 순서대로 지휘</text>
+  <path class="d-line" d="M110 314 V330 M64 330 H296 M64 330 V346 M180 330 V346 M296 330 V346"/>
+  <rect class="d-box" x="12" y="346" width="104" height="56"/>
+  <text class="d-strong" x="64" y="370" text-anchor="middle">Coder</text>
+  <text class="d-muted d-small" x="64" y="390" text-anchor="middle">요리사</text>
+  <rect class="d-box" x="128" y="346" width="104" height="56"/>
+  <text class="d-strong" x="180" y="370" text-anchor="middle">Validator</text>
+  <text class="d-muted d-small" x="180" y="390" text-anchor="middle">맛 검수</text>
+  <rect class="d-box" x="244" y="346" width="104" height="56"/>
+  <text class="d-strong" x="296" y="370" text-anchor="middle">Reporter</text>
+  <text class="d-muted d-small" x="296" y="390" text-anchor="middle">담아 내기</text>
+  <path class="d-line" d="M64 402 V420 M180 402 V420 M296 402 V420"/>
+  <rect class="d-box" x="12" y="420" width="336" height="56"/>
+  <text class="d-strong" x="28" y="444">Tracker</text>
+  <text class="d-muted d-small" x="28" y="464">완료 도장 · 끝날 때마다 <tspan class="d-mono">[ ] → [x]</tspan></text>
+  <text class="d-muted" x="180" y="502" text-anchor="middle">현재 단계가 모두 [x]면 다음 단계로</text>
+  <path class="d-line" d="M180 510 V528"/>
+  <text class="d-strong" x="180" y="552" text-anchor="middle">결과물: 보고서 · 차트</text>
+</svg>

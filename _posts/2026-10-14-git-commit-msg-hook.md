@@ -17,6 +17,11 @@ $ git commit -m "버그 고침"
 
 어디서 막는 건지 찾아보니 범인은 `.git/hooks/commit-msg`라는 짧은 셸 스크립트 하나였습니다. 이 글에서는 git이 이 훅을 언제, 어떻게 실행하는지, 그리고 직접 만들 때 빠지기 쉬운 함정을 정리합니다.
 
+<figure class="diagram">
+{% include figures/git-commit-msg-hook/hook-flow.svg %}
+<figcaption>훅은 메시지 파일 경로를 받아 종료 코드 하나로 커밋을 통과시키거나 멈춥니다.</figcaption>
+</figure>
+
 ## 훅은 "정해진 이름의 실행 파일"입니다
 
 git 훅에는 특별한 등록 절차가 없습니다. git은 특정 시점마다 `.git/hooks/<훅 이름>` 파일을 찾아보고, 파일이 있고 **실행 권한**이 있으면 실행합니다.

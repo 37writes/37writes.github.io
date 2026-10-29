@@ -15,6 +15,11 @@ Windows에서 로컬 폴더를 AWS CodeCommit 저장소에 올리는 중이었�
 
 결론부터 말하면, **Git Credential Manager(GCM)가 15분짜리 일회용 서명을 저장해 두었다가 다시 내밀어서** 생긴 문제였습니다. 원인을 이해하려면 Git이 CodeCommit에 로그인하는 방식을 먼저 알아야 합니다.
 
+<figure class="diagram">
+{% include figures/codecommit-git-push-403/gcm-cache.svg %}
+<figcaption>첫 push가 성공한 순간 GCM이 서명을 저장하고, 서명이 만료된 뒤의 push에서 그 값을 내밉니다.</figcaption>
+</figure>
+
 ## 배경: Git과 CodeCommit
 
 ### Git은 도구, CodeCommit은 서비스
