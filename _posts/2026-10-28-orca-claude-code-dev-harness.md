@@ -23,14 +23,14 @@ description: "AWS Deep Insight의 역할 구조를 Orca IDE의 오케스트레�
 
 <figure class="diagram">
 {% include figures/orca-claude-code-dev-harness/who-does-what.svg %}
-<figcaption>대화 세션 하나가 지휘를 맡고, 구현과 검증은 각자 worktree를 가진 워커가 합니다.</figcaption>
+<figcaption>대화 세션 하나가 지휘를 맡고, 구현과 검증은 작업 worktree 안의 워커 탭이 차례로 합니다.</figcaption>
 </figure>
 
 ## Orca를 이해하는 데 필요한 개념
 
 ### git worktree: 같은 저장소, 다른 작업 폴더
 
-에이전트 여러 개가 **같은 폴더**에서 동시에 파일을 고치면 서로 덮어씁니다. 그래서 Orca는 에이전트마다 **git worktree**를 만들어 줍니다.
+에이전트 여러 개가 **같은 폴더**에서 동시에 파일을 고치면 서로 덮어씁니다. 그래서 Orca는 작업을 **git worktree** 단위로 나눠 관리합니다.
 
 worktree는 하나의 git 저장소에서 여러 개의 작업 폴더를 꺼내 쓰는 기능입니다. 폴더마다 다른 브랜치를 체크아웃할 수 있고, 커밋 기록은 공유합니다. 저장소를 여러 번 clone하는 것과 비슷하지만 훨씬 가볍습니다.
 
@@ -42,6 +42,16 @@ git worktree remove ../fix-login              # 다 쓰면 삭제
 
 Orca는 이 과정을 대신 해 주고, 폴더마다 무작위 이름(예: `eelgrass`, `sheepshead`)을 붙입니다.
 
+### 워커는 탭, 작업은 worktree
+
+에이전트마다 worktree가 생기는 것은 아닙니다. 워커는 기본으로 **지금 worktree 안의 새 터미널 탭**으로 뜹니다. 하위 worktree는 같은 시간에 파일을 고치는 워커가 둘 이상일 때만 따로 만듭니다. 차례로 일하는 Coder와 Validator는 오히려 같은 폴더에 있어야 Validator가 Coder의 커밋을 바로 검사할 수 있습니다. 같은 브랜치는 두 폴더에서 동시에 체크아웃할 수 없기 때문입니다.
+
+Orca의 워크스페이스 보드(Todo, In progress, In review, Done)도 카드 하나가 worktree 하나입니다. 한 worktree에 작업 여러 개를 섞으면 보드에서는 카드 한 장으로만 보입니다. 그래서 저는 이렇게 정했습니다.
+
+- **작업 하나 = worktree 하나 = 보드 카드 하나**
+- 그 안에서 **역할 하나 = 탭 하나** (Coder, Validator를 차례로)
+- 카드 상태는 지휘 세션이 단계마다 `orca worktree set --workspace-status`로 바꿉니다
+
 ### Run, Task, Worker
 
 Orca 오케스트레이션의 기본 단위는 세 가지입니다.
@@ -50,7 +60,7 @@ Orca 오케스트레이션의 기본 단위는 세 가지입니다.
 |---|---|---|
 | **Run** | 이번 작업 묶음의 목표와 메시지함 | `orca orchestration run-create --objective "..."` |
 | **Task** | Run 안의 작업 하나. 다른 Task에 의존하게 할 수 있습니다 | `task-create`, `task-list`, `task-update` |
-| **Worker** | Task를 맡아 자기 worktree에서 일하는 에이전트 | `worker-start`, `worker-release` |
+| **Worker** | Task를 맡아 일하는 에이전트. 기본은 작업 worktree 안의 새 탭 | `worker-start`, `worker-release` |
 
 워커는 일이 끝나면 `worker_done`, 막히면 `escalation`, 궁금하면 `question` 메시지를 보냅니다. 지휘하는 세션은 `orca orchestration check --wait`로 이 메시지를 기다립니다. 실패한 단계만 다시 돌릴 때는 `worker-start --retry-of`를 씁니다.
 
@@ -64,7 +74,7 @@ Deep Insight의 역할을 제 환경에 대응시키면 이렇습니다.
 | **Planner** | 같은 세션(큰 계획은 깊게 생각하는 모델로) | `docs/plans/NNNN-<주제>.md` 체크리스트 | Opus |
 | **Plan Reviewer** | **나(사람)** | 승인 또는 수정 요청 | – |
 | **Supervisor** | 같은 세션 | Orca Run/Task 생성, 워커 배정, 병합 | Sonnet |
-| **Coder** | Orca 워커(자기 worktree) | 코드 변경 + 커밋 | Claude, Codex 등에 분산 |
+| **Coder** | Orca 워커(작업 worktree의 탭) | 코드 변경 + 커밋 | Claude, Codex 등에 분산 |
 | **Validator** | Orca 워커(**Coder와 다른 에이전트**) | 테스트·타입 검사 재실행, 변경 범위·시크릿 점검 | Coder와 다른 모델 |
 | **Reporter** | Orca 워커 또는 세션 | 상태 문서, 결정 기록(ADR) 갱신 | – |
 | **Tracker** | 세션 | 계획 파일 `[ ]` → `[x]`, `STATE.md` 반영 | Haiku |
@@ -83,7 +93,7 @@ Deep Insight의 역할을 제 환경에 대응시키면 이렇습니다.
 [Plan Reviewer] 나: 승인 / 수정
  │
 [Supervisor] orca orchestration run-create → worker-start → check --wait
- ├─▶ [Coder 워커]     자기 worktree에서 구현 → worker_done 보고
+ ├─▶ [Coder 워커]     작업 worktree의 탭에서 구현 → worker_done 보고
  ├─▶ [Validator 워커] 다른 에이전트가 재검증 → worker_done 보고
  └─▶ [Reporter]       문서 갱신
  │
@@ -92,7 +102,7 @@ Deep Insight의 역할을 제 환경에 대응시키면 이렇습니다.
 
 | Deep Insight 요소 | Orca에서 |
 |---|---|
-| 에이전트별 독립 컨텍스트 | `worker-start`가 워커마다 새 worktree와 새 세션을 만듭니다 |
+| 에이전트별 독립 컨텍스트 | `worker-start`가 워커마다 새 탭과 새 세션을 띄웁니다 (동시에 고칠 때만 하위 worktree) |
 | `full_plan` 체크리스트 | `docs/plans/*.md`와 Orca Task |
 | 완료 신호와 짧은 요약 | `worker_done` 메시지(정해진 양식) |
 | 사람에게 묻기 | 워커의 `question`을 세션이 받아 저에게 묻고 `reply`로 전달 |
@@ -200,11 +210,11 @@ docs/STATE.md                      현재 상태, 다음 할 일
 - **Orca에 Coordinator, Planner 같은 고정 역할은 없습니다.** 역할은 제가 절차서와 프롬프트로 정의한 것이고, Coordinator·Planner·Supervisor는 사실상 대화 세션 하나가 번갈아 맡습니다. 절차를 지키는지는 결국 규칙과 습관에 달려 있습니다.
 - **Validator를 따로 띄우면 토큰이 더 듭니다.** 그래서 등급을 나눴습니다. 문서 작업은 생략하고, 코드는 필수, 배포는 미리보기와 승인까지 이중으로 합니다.
 - **기다리는 동안에는 질문이 늦게 읽힙니다.** 세션이 `check --wait`로 워커 신호를 기다리는 동안 제가 보낸 메시지는 대기가 끝나야 처리됩니다. 대기 시간을 2~3분 단위로 짧게 끊는 것으로 조정했습니다.
-- **작업 폴더 정리가 필요합니다.** 병합이 끝난 worktree와 브랜치, 실패로 남은 Task 상태가 쌓이면 무엇이 진행 중인지 헷갈립니다. 처음에는 정리를 따로 요청해야 했습니다. 병합된 worktree와 브랜치를 지우고 Task 상태를 실제와 맞추는 일은 작업 마무리 단계에 넣어 두는 것이 좋습니다.
+- **작업 폴더 정리가 필요합니다.** 병합이 끝난 worktree와 브랜치, 실패로 남은 Task 상태가 쌓이면 무엇이 진행 중인지 헷갈립니다. 처음에는 정리를 따로 요청해야 했습니다. 병합된 worktree와 브랜치를 지우고 Task 상태를 실제와 맞추는 일은 작업 마무리 단계에 넣어 두는 것이 좋습니다. 워커 탭은 정산하면 Orca가 닫아 주지만, 제가 직접 손댄 탭은 사용자 소유로 바뀌어 남습니다. 이런 탭은 직접 닫아야 합니다.
 
 ## 정리
 
-- Orca의 **Run, Task, Worker**와 git worktree로 에이전트마다 독립된 작업 공간과 컨텍스트를 줍니다.
+- Orca의 **Run, Task, Worker**로 역할마다 독립된 컨텍스트(탭)를 주고, git worktree로 작업마다 작업 공간과 보드 카드를 나눕니다.
 - Deep Insight의 역할을 **대화 세션(Coordinator·Planner·Supervisor·Tracker) + 나(Plan Reviewer) + Orca 워커(Coder·Validator·Reporter)** 로 매핑했습니다.
 - **T0~T2 위험도 등급**으로 작업마다 절차의 무게를 다르게 합니다.
 - 계획은 파일로, 워커 지시는 작업 카드로, 보고는 고정 양식으로 남깁니다.
