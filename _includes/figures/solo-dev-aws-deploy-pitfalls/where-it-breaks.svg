@@ -1,0 +1,80 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 500" role="img" aria-labelledby="pit-fig-title pit-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="pit-fig-title">배포 함정 12가지가 터진 위치</title>
+  <desc id="pit-fig-desc">API는 내 Mac에서 배포 스크립트로 올린다. 로컬 경로와 자산 준비에서 1 경로 공백과 2 ENAMETOOLONG, CDK 스택 배포에서 3 기본 VPC 없음이 났다. Fargate 태스크 시작에서 4 exec format error가 났고, 태스크 실패가 반복되자 5 스택이 몇 시간 고착됐다. 웹은 git push로 Amplify가 빌드한다. 배포 브랜치 연결과 변경에서 11 첫 push에 빌드가 안 도는 문제, Amplify 빌드에서 7 backend 단계 실패, 8 설정 파일 미커밋, 9 빌드 메모리 부족, 10 불필요한 패키지 설치가 났다. 두 경로가 만나는 브라우저에서 6 https 사이트의 http API 호출이 mixed content로 차단됐다. 12 IAM 변경 반영 지연은 특정 단계가 아닌 공통 주의 사항이다.</desc>
+  <text class="d-strong" x="120" y="26" text-anchor="middle">API: 내 Mac에서</text>
+  <text class="d-muted" x="120" y="48" text-anchor="middle">배포 스크립트 실행</text>
+  <text class="d-strong" x="360" y="26" text-anchor="middle">웹: git push로</text>
+  <text class="d-muted" x="360" y="48" text-anchor="middle">Amplify가 빌드</text>
+
+  <rect class="d-box" x="15" y="62" width="210" height="92"/>
+  <text class="d-strong" x="31" y="88">로컬 경로·자산 준비</text>
+  <text x="31" y="114"><tspan class="d-accent" font-weight="700">1</tspan> 경로에 공백</text>
+  <text x="31" y="138"><tspan class="d-accent" font-weight="700">2</tspan> <tspan class="d-mono">ENAMETOOLONG</tspan></text>
+  <path class="d-line" d="M120 154 V170"/>
+  <rect class="d-box" x="15" y="170" width="210" height="68"/>
+  <text class="d-strong" x="31" y="196">CDK 스택 배포</text>
+  <text x="31" y="222"><tspan class="d-accent" font-weight="700">3</tspan> 기본 VPC 없음</text>
+  <path class="d-line" d="M120 238 V254"/>
+  <rect class="d-box" x="15" y="254" width="210" height="92"/>
+  <text class="d-strong" x="31" y="280">Fargate 태스크 시작</text>
+  <text x="31" y="306"><tspan class="d-accent" font-weight="700">4</tspan> <tspan class="d-mono">exec format error</tspan></text>
+  <text x="31" y="330"><tspan class="d-accent" font-weight="700">5</tspan> 실패 반복, 스택 고착</text>
+
+  <rect class="d-box" x="255" y="62" width="210" height="68"/>
+  <text class="d-strong" x="271" y="88">배포 브랜치 연결·변경</text>
+  <text x="271" y="114"><tspan class="d-accent" font-weight="700">11</tspan> 첫 push에 빌드 안 돎</text>
+  <path class="d-line" d="M360 130 V146"/>
+  <rect class="d-box" x="255" y="146" width="210" height="140"/>
+  <text class="d-strong" x="271" y="172">Amplify 빌드</text>
+  <text x="271" y="198"><tspan class="d-accent" font-weight="700">7</tspan> backend 단계 실패</text>
+  <text x="271" y="222"><tspan class="d-accent" font-weight="700">8</tspan> 설정 파일 미커밋</text>
+  <text x="271" y="246"><tspan class="d-accent" font-weight="700">9</tspan> 빌드 메모리 부족</text>
+  <text x="271" y="270"><tspan class="d-accent" font-weight="700">10</tspan> 불필요한 설치</text>
+
+  <path class="d-line" d="M120 346 V364 H240 M360 286 V364 H240 V380"/>
+  <rect class="d-box" x="15" y="380" width="450" height="68"/>
+  <text class="d-strong" x="31" y="406">브라우저 · 두 경로가 만나는 곳</text>
+  <text x="31" y="432"><tspan class="d-accent" font-weight="700">6</tspan> https 사이트에서 http API 호출 차단</text>
+
+  <text class="d-muted" x="240" y="484" text-anchor="middle">공통 주의 <tspan class="d-accent" font-weight="700">12</tspan> IAM 변경 반영 지연</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 790" role="img" aria-labelledby="pit-fig-title-n pit-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="pit-fig-title-n">배포 함정 12가지가 터진 위치</title>
+  <desc id="pit-fig-desc-n">API는 내 Mac에서 배포 스크립트로 올린다. 로컬 경로와 자산 준비에서 1 경로 공백과 2 ENAMETOOLONG, CDK 스택 배포에서 3 기본 VPC 없음이 났다. Fargate 태스크 시작에서 4 exec format error가 났고, 태스크 실패가 반복되자 5 스택이 몇 시간 고착됐다. 웹은 git push로 Amplify가 빌드한다. 배포 브랜치 연결과 변경에서 11 첫 push에 빌드가 안 도는 문제, Amplify 빌드에서 7 backend 단계 실패, 8 설정 파일 미커밋, 9 빌드 메모리 부족, 10 불필요한 패키지 설치가 났다. 두 경로가 만나는 브라우저에서 6 https 사이트의 http API 호출이 mixed content로 차단됐다. 12 IAM 변경 반영 지연은 특정 단계가 아닌 공통 주의 사항이다.</desc>
+  <text class="d-strong" x="12" y="26">API: 내 Mac에서</text>
+  <text class="d-muted" x="308" y="26" text-anchor="end">배포 스크립트 실행</text>
+  <rect class="d-box" x="12" y="40" width="296" height="92"/>
+  <text class="d-strong" x="28" y="66">로컬 경로·자산 준비</text>
+  <text x="28" y="92"><tspan class="d-accent" font-weight="700">1</tspan> 경로에 공백</text>
+  <text x="28" y="116"><tspan class="d-accent" font-weight="700">2</tspan> <tspan class="d-mono">ENAMETOOLONG</tspan></text>
+  <path class="d-line" d="M160 132 V146"/>
+  <rect class="d-box" x="12" y="146" width="296" height="68"/>
+  <text class="d-strong" x="28" y="172">CDK 스택 배포</text>
+  <text x="28" y="198"><tspan class="d-accent" font-weight="700">3</tspan> 기본 VPC 없음</text>
+  <path class="d-line" d="M160 214 V228"/>
+  <rect class="d-box" x="12" y="228" width="296" height="92"/>
+  <text class="d-strong" x="28" y="254">Fargate 태스크 시작</text>
+  <text x="28" y="280"><tspan class="d-accent" font-weight="700">4</tspan> <tspan class="d-mono">exec format error</tspan></text>
+  <text x="28" y="304"><tspan class="d-accent" font-weight="700">5</tspan> 실패 반복, 스택 고착</text>
+
+  <text class="d-strong" x="12" y="366">웹: git push로</text>
+  <text class="d-muted" x="308" y="366" text-anchor="end">Amplify가 빌드</text>
+  <rect class="d-box" x="12" y="380" width="296" height="68"/>
+  <text class="d-strong" x="28" y="406">배포 브랜치 연결·변경</text>
+  <text x="28" y="432"><tspan class="d-accent" font-weight="700">11</tspan> 첫 push에 빌드 안 돎</text>
+  <path class="d-line" d="M160 448 V462"/>
+  <rect class="d-box" x="12" y="462" width="296" height="140"/>
+  <text class="d-strong" x="28" y="488">Amplify 빌드</text>
+  <text x="28" y="514"><tspan class="d-accent" font-weight="700">7</tspan> backend 단계 실패</text>
+  <text x="28" y="538"><tspan class="d-accent" font-weight="700">8</tspan> 설정 파일 미커밋</text>
+  <text x="28" y="562"><tspan class="d-accent" font-weight="700">9</tspan> 빌드 메모리 부족</text>
+  <text x="28" y="586"><tspan class="d-accent" font-weight="700">10</tspan> 불필요한 설치</text>
+
+  <text class="d-muted" x="160" y="640" text-anchor="middle">두 경로가 만나는 곳</text>
+  <rect class="d-box" x="12" y="654" width="296" height="92"/>
+  <text class="d-strong" x="28" y="680">브라우저</text>
+  <text x="28" y="706"><tspan class="d-accent" font-weight="700">6</tspan> https 사이트에서</text>
+  <text x="44" y="730">http API 호출 차단</text>
+
+  <text class="d-muted" x="160" y="778" text-anchor="middle">공통 주의 <tspan class="d-accent" font-weight="700">12</tspan> IAM 변경 반영 지연</text>
+</svg>
