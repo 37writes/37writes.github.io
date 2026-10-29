@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-wide" viewBox="0 0 480 456" role="img" aria-labelledby="topo-fig-title topo-fig-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="topo-fig-title">웹과 API를 나눈 AWS 배포 구성</title>
-  <desc id="topo-fig-desc">브라우저는 Cognito에 로그인해 토큰을 받는다. 웹(정적 파일)은 Amplify Hosting에서 받고, Amplify Hosting은 main에 push하면 자동으로 배포한다. API 요청은 CloudFront(https를 얻기 위한 것, 캐시 끔)를 거쳐 http ALB(유휴 시간 10분)로 가고, ARM64 ECS Fargate 태스크 1개가 받아 Cognito 토큰을 검증한다. Fargate 태스크는 태스크 IAM 역할로 DynamoDB, S3, Bedrock을 호출한다. 웹과 API는 주소도 배포도 따로다.</desc>
+  <desc id="topo-fig-desc">브라우저는 Cognito에 로그인해 토큰을 받는다. 웹(정적 파일)은 Amplify Hosting에서 받고, Amplify Hosting은 main에 push하면 자동으로 배포한다. API 요청은 CloudFront(https를 얻기 위한 것, 캐시 끔)를 거쳐 http ALB(유휴 시간 10분)로 가고, ARM64 ECS Fargate 태스크(평소 1개)가 받아 Cognito 토큰을 검증한다. Fargate 태스크는 태스크 IAM 역할로 DynamoDB, S3, Bedrock을 호출한다. 웹과 API는 주소도 배포도 따로다.</desc>
   <rect class="d-box" x="12" y="12" width="124" height="48"/>
   <text class="d-strong" x="74" y="42" text-anchor="middle">Cognito</text>
   <path class="d-line" d="M136 36 H196"/>
@@ -24,7 +24,7 @@
   <path class="d-line" d="M362 236 V252"/>
   <rect class="d-box" x="256" y="252" width="212" height="76"/>
   <text class="d-strong" x="272" y="276">ECS Fargate</text>
-  <text class="d-muted d-small" x="272" y="296">ARM64 · 태스크 1개</text>
+  <text class="d-muted d-small" x="272" y="296">ARM64 · 평소 태스크 1개</text>
   <text class="d-muted d-small" x="272" y="314">Cognito 토큰 검증</text>
   <path class="d-line" d="M362 328 V346 M84 346 H396 M84 346 V364 M240 346 V364 M396 346 V364"/>
   <rect class="d-box" x="12" y="364" width="144" height="48"/>
@@ -37,7 +37,7 @@
 </svg>
 <svg class="diagram-svg diagram-narrow" viewBox="0 0 320 500" role="img" aria-labelledby="topo-fig-title-n topo-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="topo-fig-title-n">웹과 API를 나눈 AWS 배포 구성</title>
-  <desc id="topo-fig-desc-n">브라우저는 Cognito에 로그인해 토큰을 받는다. 웹(정적 파일)은 Amplify Hosting에서 받고, Amplify Hosting은 main에 push하면 자동으로 배포한다. API 요청은 CloudFront(https를 얻기 위한 것, 캐시 끔)를 거쳐 http ALB(유휴 시간 10분)로 가고, ARM64 ECS Fargate 태스크 1개가 받아 Cognito 토큰을 검증한다. Fargate 태스크는 태스크 IAM 역할로 DynamoDB, S3, Bedrock을 호출한다. 웹과 API는 주소도 배포도 따로다.</desc>
+  <desc id="topo-fig-desc-n">브라우저는 Cognito에 로그인해 토큰을 받는다. 웹(정적 파일)은 Amplify Hosting에서 받고, Amplify Hosting은 main에 push하면 자동으로 배포한다. API 요청은 CloudFront(https를 얻기 위한 것, 캐시 끔)를 거쳐 http ALB(유휴 시간 10분)로 가고, ARM64 ECS Fargate 태스크(평소 1개)가 받아 Cognito 토큰을 검증한다. Fargate 태스크는 태스크 IAM 역할로 DynamoDB, S3, Bedrock을 호출한다. 웹과 API는 주소도 배포도 따로다.</desc>
   <rect class="d-box" x="12" y="12" width="120" height="48"/>
   <text class="d-strong" x="72" y="42" text-anchor="middle">브라우저</text>
   <path class="d-line" d="M132 36 H196"/>
@@ -59,7 +59,7 @@
   <path class="d-line" d="M182 316 V336"/>
   <rect class="d-box" x="56" y="336" width="252" height="76"/>
   <text class="d-strong" x="72" y="360">ECS Fargate</text>
-  <text class="d-muted d-small" x="72" y="380">ARM64 · 태스크 1개</text>
+  <text class="d-muted d-small" x="72" y="380">ARM64 · 평소 태스크 1개</text>
   <text class="d-muted d-small" x="72" y="398">Cognito 토큰 검증</text>
   <path class="d-line" d="M182 412 V432"/>
   <rect class="d-box" x="56" y="432" width="252" height="56"/>

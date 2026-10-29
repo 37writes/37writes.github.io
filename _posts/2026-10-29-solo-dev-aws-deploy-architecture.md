@@ -56,9 +56,9 @@ app.post("/api/tool-result", async (c) => {
 
 - **가장 큰 이유는 메모리 상태입니다.** Lambda는 요청마다 실행 환경이 따로 잡힐 수 있고, 별도 요청이 같은 메모리에 도착한다는 보장이 없습니다. SSE 연결을 잡고 있는 실행 환경과 도구 결과 `POST`를 받는 실행 환경이 다르면, 걸어 둔 Promise를 찾을 수 없습니다.
 - **`202`로 답한 뒤 같은 프로세스에서 작업을 이어 가는 구조**도 그대로 옮기기 어렵습니다. 비동기 호출이나 응답 뒤에 코드를 더 돌리는 방법이 있긴 하지만, 지금 코드의 모양(한 프로세스가 작업을 들고 있고 폴링이 그 상태를 읽는 방식)과는 다릅니다.
-- **SSE 장기 연결**도 응답 스트리밍 기능으로 흉내는 낼 수 있지만, 실행 하나는 최대 15분이고 위의 메모리 문제는 그대로 남습니다.
+- **SSE 장기 연결**은 Lambda 응답 스트리밍으로 구현할 수 있습니다. 하지만 일반적인 호출은 실행 하나가 최대 15분이고, 도구 결과 `POST`가 같은 메모리에 도착해야 한다는 위의 문제는 그대로 남습니다.
 
-Lambda에 맞추려면 작업을 큐(SQS)와 별도 워커로 빼고, 대기 상태를 DynamoDB 같은 외부 저장소로 옮겨야 합니다. 가능은 하지만 지금 잘 돌아가는 코드를 크게 다시 써야 합니다.
+Lambda에 맞추려면 예를 들어 작업을 큐(SQS)와 별도 워커로 빼고, 대기 상태를 DynamoDB 같은 외부 저장소로 옮겨야 합니다. 가능은 하지만 지금 잘 돌아가는 코드를 크게 다시 써야 합니다.
 
 그래서 **API는 상시 실행되는 컨테이너(ECS Fargate)**로 정했습니다. 로컬에서 돌던 Node.js 프로세스를 거의 그대로 컨테이너에 넣으면 됩니다.
 
@@ -68,7 +68,7 @@ Lambda에 맞추려면 작업을 큐(SQS)와 별도 워커로 빼고, 대기 상
 
 <figure class="diagram">
 {% include figures/solo-dev-aws-deploy-architecture/topology.svg %}
-<figcaption>브라우저는 웹을 Amplify Hosting에서 받고, API 요청은 별도의 CloudFront → ALB → Fargate 태스크 1개로 보냅니다.</figcaption>
+<figcaption>브라우저는 웹을 Amplify Hosting에서 받고, API 요청은 별도의 CloudFront → ALB → Fargate 태스크(평소 1개)로 보냅니다.</figcaption>
 </figure>
 
 브라우저가 가는 길은 두 개입니다.
@@ -103,6 +103,7 @@ new cloudfront.Distribution(this, "ApiCdn", {
   defaultBehavior: {
     origin: new origins.LoadBalancerV2Origin(alb, {
       protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY, // CloudFront → ALB는 http
+      readTimeout: Duration.seconds(60),                         // 응답 대기 시간 (아래 SSE 설명)
     }),
     viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,          // POST·PUT·DELETE도 통과
@@ -118,6 +119,8 @@ new cloudfront.Distribution(this, "ApiCdn", {
 
 https가 되는 구간은 **브라우저 → CloudFront**까지입니다. CloudFront → ALB 구간은 AWS 안이긴 해도 평문 http입니다. 이 구간까지 암호화하려면 결국 도메인과 인증서가 필요합니다.
 
+또 ALB는 공개 주소를 가지므로, CloudFront를 거치지 않고 ALB 주소로 직접 요청할 수도 있습니다. 지금은 막지 않았습니다. 막으려면 ALB 보안 그룹의 인바운드를 CloudFront 오리진용 관리형 prefix list로 좁히고, CloudFront가 붙이는 사용자 지정 헤더를 ALB 리스너 규칙에서 검사하는 방법이 있습니다.
+
 SSE는 타임아웃도 챙겨야 합니다. 연결이 오래 열려 있고, 서버가 도구 결과를 기다리는 동안(최대 30초)은 아무것도 보내지 않을 수 있기 때문입니다.
 
 - **ALB 유휴 시간 제한**(idle timeout): 기본 60초 → 10분으로 늘렸습니다.
@@ -129,9 +132,9 @@ Fargate 서비스의 태스크 수(`desiredCount`)는 **1**입니다. 앞에서 
 
 태스크가 2개면 ALB가 요청을 나눠 보냅니다. SSE 연결은 태스크 A에 있는데 도구 결과 `POST`가 태스크 B로 가면, B의 맵에는 그 `callId`가 없으니 404가 납니다.
 
-늘리려면 대기 상태를 Redis나 DynamoDB 같은 외부 저장소로 빼고, 결과를 연결이 있는 태스크에 전달하는 방법이 있어야 합니다. 지금 규모에서는 1개로 충분하므로 확장은 보류했습니다. 그 대신 태스크가 뜨지 못할 때 빨리 실패하고 되돌리도록 배포 circuit breaker를 켜 두었습니다.
+늘리려면 대기 상태를 Redis나 DynamoDB 같은 외부 저장소로 빼고, 결과를 연결이 있는 태스크에 전달하는 방법이 있어야 합니다. 지금 규모에서는 1개로 충분하므로 확장은 보류했습니다. 그 대신 배포 circuit breaker와 자동 롤백을 켜 두었습니다. 새 태스크가 뜨지 못하면 배포를 빨리 실패로 끝내고, 이전에 성공한 배포로 되돌립니다.
 
-다만 "항상 1개"는 아닙니다. `desiredCount`는 평소 유지할 목표 수이고, 기본 롤링 배포 설정에서는 보통 **새 태스크가 뜬 뒤 옛 태스크가 내려가므로 잠깐 2개가 겹칩니다.** 옛 태스크가 내려가면 그 안에서 돌던 작업과 SSE 연결, 대기 중인 도구 호출도 같이 사라집니다. 태스크가 재시작될 때도 마찬가지입니다.
+다만 "항상 1개"는 아닙니다. `desiredCount`는 평소 유지할 목표 수이고, 기본 롤링 배포 설정에서는 보통 **새 태스크가 뜬 뒤 옛 태스크가 내려가므로 잠깐 2개가 겹칩니다.** 이 사이에는 ALB가 두 태스크에 요청을 나눠 보내므로, 위의 404가 배포 중에 실제로 날 수 있습니다. circuit breaker는 태스크가 뜨는지만 보므로 이 문제를 막아 주지 않습니다. 옛 태스크가 내려가면 그 안에서 돌던 작업과 SSE 연결, 대기 중인 도구 호출도 같이 사라집니다. 태스크가 재시작될 때도 마찬가지입니다.
 
 그래서 작업 상태는 메모리에만 두지 않고 DynamoDB에 기록합니다. 작업이 도는 동안 주기적으로 갱신 시각을 남기고, 일정 시간 갱신이 없는 작업은 실패로 보여 줍니다. 작업이 사라져도 브라우저가 "진행 중"을 영원히 기다리지는 않게 하는 정도입니다. 배포하는 순간 쓰던 사용자는 작업을 다시 요청해야 합니다. 이 구조의 한계입니다.
 
@@ -198,7 +201,15 @@ backend.addOutput({ custom: { tableName: table.tableName } });
 
 토큰 검증은 "로그인한 사람인가"까지만 답합니다. "이 데이터가 이 사람 것인가"는 API가 따로 지킵니다. DynamoDB에는 키 앞에 사용자 ID(`sub`)를 붙여 저장하고, 요청한 사용자의 키만 읽고 씁니다.
 
-사용자에게는 AWS 권한을 거의 주지 않습니다. 예외는 **파일 업로드**입니다. 브라우저는 API가 서명해 준 URL(presigned URL)로 S3에 직접 파일을 올리고, 그 경로는 사용자별(`user/<사용자 ID>/…`)입니다. API는 요청한 사용자의 경로에 있는 파일만 다시 읽습니다. Amplify Storage 규칙도 로그인한 사용자에게 자기 경로만 허용합니다. 이 규칙의 "사용자 ID"는 User Pool의 `sub`가 아니라 Cognito Identity Pool이 주는 identity ID라는 점은 헷갈리기 쉽습니다. Bedrock·DynamoDB는 사용자가 직접 부를 수 없고, 반드시 API 서버를 거칩니다.
+사용자에게는 AWS 권한을 거의 주지 않습니다. 예외에 가까운 것이 **파일 업로드**입니다. 브라우저는 API가 서명해 준 URL(presigned URL)로 S3에 직접 파일을 올립니다.
+
+- 업로드 경로는 API가 정합니다. 키를 `user/<sub>/<임의 ID>/<파일 이름>`으로 만들어 서명하므로, 사용자가 다른 사람의 경로를 고를 수 없습니다.
+- 이 URL로 S3에 쓸 수 있는 권한은 **서명한 쪽(API의 태스크 역할)**의 권한입니다. 브라우저 사용자에게 S3 권한이 따로 있는 것이 아닙니다.
+- API는 파일을 다시 읽을 때도 키가 요청한 사용자의 `sub` 경로인지 확인합니다.
+
+헷갈리기 쉬운 점이 하나 있습니다. Amplify Storage에도 "로그인한 사용자는 자기 경로만"이라는 규칙(`user/{entity_id}/*`)을 걸어 두었는데, 이것은 브라우저가 Cognito Identity Pool의 임시 자격 증명으로 S3에 **직접** 갈 때 적용되는 규칙입니다. 여기서 `entity_id`는 User Pool의 `sub`가 아니라 Identity Pool의 identity ID입니다. presigned URL 경로와는 별개이고, 지금 웹은 이 직접 경로를 쓰지 않습니다.
+
+Bedrock·DynamoDB는 사용자가 직접 부를 수 없고, 반드시 API 서버를 거칩니다.
 
 API 키 같은 **비밀은 Secrets Manager**에 두고, ECS가 태스크를 시작할 때 환경변수로 넣어 줍니다. 코드나 CDK 소스에는 들어가지 않습니다. 여기서 역할이 하나 더 나옵니다.
 
@@ -232,6 +243,8 @@ fetch(`${API_BASE}/api/reports`, { headers: { Authorization: `Bearer ${idToken}`
 
 운영에서는 웹(`*.amplifyapp.com`)과 API(`*.cloudfront.net`)의 출처가 다르므로 CORS가 필요합니다. 지금은 허용 출처를 `*`로 열어 두었습니다. 데이터를 바꾸는 라우트는 모두 Cognito 토큰을 요구하므로, 다른 사이트가 토큰 없이 사용자의 데이터를 건드릴 수는 없다고 판단했습니다. 그래도 정확한 웹 주소로 좁히는 것이 맞으므로, 허용 출처를 환경변수로 받게 해 두고 나중에 좁힐 예정입니다.
 
+`Authorization` 헤더를 붙이면 브라우저가 먼저 `OPTIONS` 요청(preflight)을 보냅니다. 그래서 허용 헤더에 `Authorization`을 넣고, CORS 처리를 인증 검사보다 앞에 두어 preflight에는 토큰 없이 답하게 했습니다. presigned URL로 S3에 직접 올리는 요청은 API가 아니라 S3 버킷의 CORS 설정을 따른다는 점도 기억해 둘 만합니다.
+
 ## 배포는 지금 어떻게 하나
 
 | 대상 | 방법 |
@@ -259,7 +272,7 @@ API 배포 스크립트는 이런 순서로 돕니다.
 | 페이스 | 하루 $10 | 이대로 가면 한 달 $300 |
 | 급증 | 하루 $30 | 뭔가 잘못 돌고 있다 |
 
-1인 개발에서는 이상 징후를 볼 사람이 나 하나입니다. 대시보드를 매일 열 거라고 기대하기보다 메일이 오게 해 두는 편이 확실합니다.
+이 알람은 메일을 보낼 뿐, 호출을 멈추는 지출 상한이 아닙니다. 1인 개발에서는 이상 징후를 볼 사람이 나 하나입니다. 대시보드를 매일 열 거라고 기대하기보다 메일이 오게 해 두는 편이 확실합니다.
 
 ## 이 구조를 추천하는 조건, 추천하지 않는 조건
 
