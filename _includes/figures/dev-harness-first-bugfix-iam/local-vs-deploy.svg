@@ -1,0 +1,67 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 392" role="img" aria-labelledby="iam-fig-title iam-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="iam-fig-title">보고서 생성: 로컬은 통과하고 배포는 실패한 이유</title>
+  <desc id="iam-fig-desc">같은 보고서 생성 코드에 UpdateItem과 ConditionCheckItem 권한이 필요하다. 관리자 키로 돌린 로컬 테스트는 모든 권한이 있어 통과했고, 허용 목록만 가진 배포 환경의 태스크 역할에는 두 권한이 없어 AccessDenied로 거부되어 보고서 생성이 실패했다. 로그에는 store:auth로 기록됐다.</desc>
+  <text class="d-strong" x="240" y="26" text-anchor="middle">같은 보고서 생성 코드</text>
+  <text class="d-muted" x="240" y="50" text-anchor="middle">필요 권한 <tspan class="d-mono">UpdateItem · ConditionCheckItem</tspan></text>
+  <path class="d-line" d="M240 62 V76 H120 V92 M240 76 H360 V92"/>
+  <text class="d-strong" x="120" y="116" text-anchor="middle">로컬 e2e 테스트</text>
+  <text class="d-muted" x="120" y="138" text-anchor="middle">관리자 키 · 모든 권한</text>
+  <text class="d-strong" x="360" y="116" text-anchor="middle">배포 사이트 (ECS)</text>
+  <text class="d-muted" x="360" y="138" text-anchor="middle">태스크 역할 · 허용 목록만</text>
+  <rect class="d-box" x="15" y="154" width="210" height="160"/>
+  <text class="d-muted d-small" x="31" y="178">관련 권한 일부</text>
+  <g class="d-mono">
+    <text x="31" y="202">✓ GetItem</text>
+    <text x="31" y="225">✓ PutItem</text>
+    <text x="31" y="248">✓ Query</text>
+    <text x="31" y="271">✓ UpdateItem</text>
+    <text x="31" y="294">✓ ConditionCheckItem</text>
+  </g>
+  <rect class="d-box" x="255" y="154" width="210" height="160"/>
+  <text class="d-muted d-small" x="271" y="178">관련 권한 일부</text>
+  <g class="d-mono">
+    <text x="271" y="202">✓ GetItem</text>
+    <text x="271" y="225">✓ PutItem</text>
+    <text x="271" y="248">✓ Query</text>
+    <text class="d-accent" x="271" y="271">✗ UpdateItem</text>
+    <text class="d-accent" x="271" y="294">✗ ConditionCheckItem</text>
+  </g>
+  <text class="d-strong" x="120" y="350" text-anchor="middle">✓ 로컬 테스트 통과</text>
+  <text class="d-muted" x="120" y="374" text-anchor="middle">빠진 권한이 드러나지 않음</text>
+  <text class="d-strong d-accent" x="360" y="350" text-anchor="middle">✗ 보고서 생성 실패</text>
+  <text class="d-muted" x="360" y="374" text-anchor="middle">AccessDenied → store:auth</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 668" role="img" aria-labelledby="iam-fig-title-n iam-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="iam-fig-title-n">보고서 생성: 로컬은 통과하고 배포는 실패한 이유</title>
+  <desc id="iam-fig-desc-n">같은 보고서 생성 코드에 UpdateItem과 ConditionCheckItem 권한이 필요하다. 관리자 키로 돌린 로컬 테스트는 모든 권한이 있어 통과했고, 허용 목록만 가진 배포 환경의 태스크 역할에는 두 권한이 없어 AccessDenied로 거부되어 보고서 생성이 실패했다. 로그에는 store:auth로 기록됐다.</desc>
+  <text class="d-strong" x="160" y="26" text-anchor="middle">같은 보고서 생성 코드</text>
+  <text class="d-muted" x="160" y="50" text-anchor="middle">필요 권한</text>
+  <text class="d-mono d-muted" x="160" y="72" text-anchor="middle">UpdateItem · ConditionCheckItem</text>
+  <path class="d-line" d="M12 90 H308"/>
+  <text class="d-strong" x="12" y="122">로컬 e2e 테스트</text>
+  <text class="d-muted" x="12" y="144">관리자 키 · 모든 권한</text>
+  <rect class="d-box" x="12" y="156" width="296" height="160"/>
+  <text class="d-muted d-small" x="28" y="180">관련 권한 일부</text>
+  <g class="d-mono">
+    <text x="28" y="204">✓ GetItem</text>
+    <text x="28" y="227">✓ PutItem</text>
+    <text x="28" y="250">✓ Query</text>
+    <text x="28" y="273">✓ UpdateItem</text>
+    <text x="28" y="296">✓ ConditionCheckItem</text>
+  </g>
+  <text class="d-strong" x="12" y="346">✓ 로컬 테스트 통과</text>
+  <text class="d-muted" x="308" y="346" text-anchor="end">빠진 권한이 안 보임</text>
+  <text class="d-strong" x="12" y="398">배포 사이트 (ECS)</text>
+  <text class="d-muted" x="12" y="420">태스크 역할 · 허용 목록만</text>
+  <rect class="d-box" x="12" y="432" width="296" height="160"/>
+  <text class="d-muted d-small" x="28" y="456">관련 권한 일부</text>
+  <g class="d-mono">
+    <text x="28" y="480">✓ GetItem</text>
+    <text x="28" y="503">✓ PutItem</text>
+    <text x="28" y="526">✓ Query</text>
+    <text class="d-accent" x="28" y="549">✗ UpdateItem</text>
+    <text class="d-accent" x="28" y="572">✗ ConditionCheckItem</text>
+  </g>
+  <text class="d-strong d-accent" x="12" y="624">✗ 보고서 생성 실패</text>
+  <text class="d-muted" x="12" y="650">AccessDenied → 로그에는 store:auth</text>
+</svg>

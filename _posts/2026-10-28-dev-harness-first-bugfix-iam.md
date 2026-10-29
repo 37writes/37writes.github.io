@@ -24,6 +24,11 @@ description: "Deep Insight식 에이전트 하네스로 처음 처리한 실제 
 - 서버는 AWS ECS(Fargate)에서 돌고, 데이터는 DynamoDB에 저장합니다. 인프라는 AWS CDK로 관리합니다.
 - **로컬에서 끝까지 돌려 본 테스트(e2e)는 통과**했습니다. 그런데 배포한 사이트에서만 실패했습니다.
 
+<figure class="diagram">
+{% include figures/dev-harness-first-bugfix-iam/local-vs-deploy.svg %}
+<figcaption>관리자 키로 돌린 로컬 테스트가 배포 역할의 권한 누락을 가렸습니다.</figcaption>
+</figure>
+
 이 글에서는 하네스 절차에 따라 이 문제를 진단하고 고친 과정을 단계별로 정리합니다. (서비스 이름, 리소스 이름, 계정 정보는 예시 값으로 바꿨습니다.)
 
 ## 1단계: 분류 (Coordinator)

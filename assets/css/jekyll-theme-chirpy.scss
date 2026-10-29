@@ -413,3 +413,78 @@ code.highlighter-rouge {
     @include night-syntax;
   }
 }
+
+/* --- 도표: 글 안에 직접 넣는 SVG (_includes/figures/<글>/). 색은 위 변수를 따라 다크 모드에서도 바뀐다 --- */
+
+figure.diagram {
+  margin: 2rem 0;
+
+  .diagram-svg {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    margin: 0 auto;
+    font-family: var(--ui-font);
+    font-size: 16px;
+    fill: var(--ink);
+  }
+
+  /* 넓은 그림(480)과 세로로 쌓은 좁은 그림(320)을 같이 넣고 폭에 따라 하나만 보인다.
+     모바일에서 넓은 그림을 줄이면 글자가 11px까지 작아지기 때문 */
+  .diagram-narrow {
+    display: none;
+    max-width: 360px;
+  }
+
+  @media (max-width: 576px) {
+    .diagram-wide {
+      display: none;
+    }
+
+    .diagram-narrow {
+      display: block;
+    }
+  }
+
+  .d-strong {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .d-muted {
+    fill: var(--ink-muted);
+    font-size: 15px;
+  }
+
+  .d-small {
+    font-size: 13px;
+  }
+
+  .d-mono {
+    font-family: var(--mono-font);
+    font-size: 15px;
+  }
+
+  .d-accent {
+    fill: var(--accent);
+  }
+
+  .d-box {
+    fill: var(--paper-deep);
+  }
+
+  .d-line {
+    fill: none;
+    stroke: var(--rule-strong);
+    stroke-width: 1.5;
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-family: var(--ui-font);
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+  }
+}
