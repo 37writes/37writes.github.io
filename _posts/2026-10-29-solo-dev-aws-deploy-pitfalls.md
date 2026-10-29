@@ -7,7 +7,7 @@ description: "웹은 Amplify Hosting, API는 Fargate로 혼자 배포하며 실�
 ---
 
 > **시리즈: 1인 개발자의 AWS 배포**
-> 1. 구조: 웹은 Amplify Hosting, API는 Fargate — 왜 이렇게 골랐나
+> 1. [구조: 웹은 Amplify Hosting, API는 Fargate — 왜 이렇게 골랐나]({% post_url 2026-10-29-solo-dev-aws-deploy-architecture %})
 > 2. **실제로 부딪힌 배포 함정들과 해결** ← 지금 글
 > 3. CI/CD: API 이미지 빌드와 Fargate 배포 자동화 (예정)
 
@@ -19,7 +19,7 @@ description: "웹은 Amplify Hosting, API는 Fargate로 혼자 배포하며 실�
 - **로그인·데이터·파일**: Amplify Gen 2 백엔드로 만든 Cognito, DynamoDB, S3. 웹 배포와 별개로, 명령(`ampx sandbox`)으로 직접 올립니다.
 - **API 서버**: 오래 열려 있는 연결(SSE)과 응답 뒤에도 계속 도는 작업이 있어서 Lambda 대신 컨테이너를 골랐습니다. ECS Fargate에서 돌고, 앞에 ALB와 CloudFront가 있습니다. CDK로 정의하고 내 Mac에서 배포 스크립트로 올립니다.
 
-구조를 고른 이유는 1편에서 다룹니다. 이 글은 그 구조를 실제로 올리면서 막혔던 곳 12가지를 **증상 → 원인 → 해결** 순서로 정리합니다. 전부 직접 겪고 해결한 것들입니다. 함정은 한곳에 몰려 있지 않고, 아래 그림처럼 배포 경로 곳곳에서 터졌습니다.
+구조를 고른 이유는 [1편: 1인 개발자의 AWS 배포 구조]({% post_url 2026-10-29-solo-dev-aws-deploy-architecture %})에서 다룹니다. 이 글은 그 구조를 실제로 올리면서 막혔던 곳 12가지를 **증상 → 원인 → 해결** 순서로 정리합니다. 전부 직접 겪고 해결한 것들입니다. 함정은 한곳에 몰려 있지 않고, 아래 그림처럼 배포 경로 곳곳에서 터졌습니다.
 
 <figure class="diagram">
 {% include figures/solo-dev-aws-deploy-pitfalls/where-it-breaks.svg %}

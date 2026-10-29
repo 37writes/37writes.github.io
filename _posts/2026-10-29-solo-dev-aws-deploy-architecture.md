@@ -8,7 +8,7 @@ description: "로그인 있는 SPA와 오래 도는 작업·SSE가 있는 API를
 
 > **시리즈: 1인 개발자의 AWS 배포**
 > 1. **구조: 웹은 Amplify Hosting, API는 Fargate** ← 지금 글
-> 2. 실제로 부딪힌 배포 함정들과 해결
+> 2. [실제로 부딪힌 배포 함정들과 해결]({% post_url 2026-10-29-solo-dev-aws-deploy-pitfalls %})
 > 3. CI/CD: API 이미지 빌드와 Fargate 배포 자동화 (예정)
 
 ## 어떤 문제였나
@@ -304,4 +304,4 @@ API 배포 스크립트는 이런 순서로 돕니다.
 - 메모리 상태 때문에 **태스크는 1개**, 비용 때문에 **NAT Gateway는 0개**입니다.
 - 권한은 **앱 권한(Cognito JWT)**과 **AWS 권한(태스크 IAM 역할)** 두 층으로 나눴습니다.
 
-다음 편에서는 이 구조를 실제로 올리면서 부딪힌 배포 함정들과 해결 방법을 정리합니다.
+다음 편 [Amplify Hosting + Fargate 배포에서 실제로 부딪힌 함정 12가지와 해결]({% post_url 2026-10-29-solo-dev-aws-deploy-pitfalls %})에서는 이 구조를 실제로 올리면서 부딪힌 배포 함정들과 해결 방법을 정리합니다.
