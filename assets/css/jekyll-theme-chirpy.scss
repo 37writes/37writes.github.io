@@ -3,8 +3,9 @@
 
 @use 'abstracts/variables' with (
   $theme: '{{ site.theme_mode }}',
-  $font-family-base: ('Noto Serif KR', 'Apple SD Gothic Neo', serif),
-  $font-family-heading: ('Noto Serif KR', 'Apple SD Gothic Neo', serif)
+  $topbar-height: 3.5rem,  /* 44px 검색창·버튼 위아래에 숨 쉴 여백 (기본 3rem은 꽉 찬다) */
+  $font-family-base: var(--kit-font-reading-family),
+  $font-family-heading: var(--kit-font-reading-family)
 );
 
 /* prettier-ignore */
@@ -18,105 +19,14 @@
 @use 'kit/core';
 @use 'kit/themes/neutral';
 @use 'kit/themes/paper';
+@use 'theme-map';
 
 /* ---------------------------------------------------------------
  * 종이 노트: 미색 종이 + 세리프 본문 + 강조색 하나.
  * 위계는 상자 대신 크기·굵기·여백으로 만든다.
+ * 색·글꼴·반경은 kit 토큰(--kit-*)만 쓰고 값은 _sass/kit 테마 원본에 있다. 연결은 _sass/_theme-map.scss.
  * 레이아웃 파일은 덮어쓰지 않는다 (Chirpy 업데이트를 그대로 받기 위해).
  * --------------------------------------------------------------- */
-
-:root {
-  --paper: #f6f2ea;
-  --paper-deep: #ece6da;  /* 코드, 표 머리 */
-  --ink: #26241f;
-  --ink-muted: #6a645a;   /* 대비 5.25:1 */
-  --rule: #ddd5c6;        /* 구분선 (장식용, 글자에 쓰지 않음) */
-  --rule-strong: #8c8477; /* 입력창 테두리처럼 기능이 있는 선. 대비 3.31:1 */
-  --code-muted: #5f594f;  /* 코드 바탕 위 주석·줄 번호·아이콘. 대비 5.58:1 */
-  --accent: #a8431f;      /* 링크·현재 위치에만. 대비 5.39:1 */
-  --ui-font: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-  --mono-font: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-}
-
-/* 밤의 종이: 같은 방향을 어두운 바탕으로. 대비는 #1c1a17 바탕 기준 */
-@mixin night-paper {
-  --paper: #1c1a17;
-  --paper-deep: #26231f;
-  --ink: #e8e1d3;         /* 13.35:1 */
-  --ink-muted: #a39a8b;   /* 6.24:1 */
-  --rule: #38342e;
-  --rule-strong: #7d766a; /* 3.86:1 */
-  --code-muted: #a39a8b;  /* 코드 바탕에서 5.63:1 */
-  --accent: #e08a5f;      /* 6.59:1 */
-}
-
-:root[data-bs-theme='dark'] {
-  @include night-paper;
-}
-
-/* 모드를 고르지 않으면(시스템 따름) 속성이 없으므로 따로 건다 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-bs-theme]) {
-    @include night-paper;
-  }
-}
-
-/* 테마가 :root[data-bs-theme=light]와 :root:not([data-bs-theme])에 변수를 걸므로
-   같은 우선순위로 뒤에서 덮는다 */
-:root[data-bs-theme],
-:root:not([data-bs-theme]) {
-  --main-bg: var(--paper);
-  --main-border-color: var(--rule);
-  --text-color: var(--ink);
-  --text-muted-color: var(--ink-muted);
-  --heading-color: var(--ink);
-  --label-color: var(--ink-muted);
-  --link-color: var(--accent);
-  --link-underline-color: var(--rule);
-  --blockquote-border-color: var(--rule);
-  --blockquote-text-color: var(--ink-muted);
-
-  --sidebar-bg: var(--paper);
-  --sidebar-border-color: var(--rule);
-  --sidebar-muted-color: var(--ink-muted);
-  --sidebar-active-color: var(--ink);
-  --sidebar-hover-bg: transparent;
-  --sidebar-btn-bg: transparent;
-  --sidebar-btn-color: var(--ink-muted);
-  --site-title-color: var(--ink);
-  --site-subtitle-color: var(--ink-muted);
-  --avatar-border-color: transparent;
-
-  --topbar-bg: var(--paper);
-  --topbar-text-color: var(--ink-muted);
-  --search-border-color: var(--rule-strong);
-  --search-icon-color: var(--ink-muted);
-
-  --card-bg: transparent;
-  --card-shadow: none;
-  --toc-highlight: var(--accent);
-  --tb-odd-bg: transparent;
-  --tb-even-bg: transparent;
-  --tb-border-color: var(--rule);
-
-  --highlight-bg-color: var(--paper-deep);
-  --inline-code-bg: var(--paper-deep);
-  --language-border-color: var(--rule);
-  --code-header-text-color: var(--code-muted);
-  --code-header-icon-color: var(--code-muted);
-  --highlight-lineno-color: var(--code-muted);
-
-  --tag-border: var(--rule);
-  --timeline-color: var(--rule);
-  --timeline-node-bg: var(--ink-muted);
-
-  /* 모드 선택 메뉴 */
-  --menu-bg: var(--paper);
-  --menu-border-color: var(--rule-strong);
-  --menu-shadow-color: transparent;
-  --menu-highlight-bg: var(--paper-deep);
-  --menu-active-color: var(--ink);
-}
 
 body {
   word-break: keep-all;
@@ -131,20 +41,20 @@ body {
 .pagination,
 .post-tail-wrapper,
 #search-result-wrapper {
-  font-family: var(--ui-font);
+  font-family: var(--kit-font-ui);
 }
 
 code,
 kbd,
 pre,
 .highlight {
-  font-family: var(--mono-font);
+  font-family: var(--kit-font-mono);
 }
 
 /* --- 사이드바: 별도 패널 대신 종이 위의 여백 --- */
 
 #sidebar {
-  border-right: 1px solid var(--rule);
+  border-right: 1px solid var(--kit-rule);
 
   #avatar {
     width: 4.5rem;
@@ -153,7 +63,10 @@ pre,
   }
 
   .site-title {
-    font-family: 'Noto Serif KR', serif;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--kit-control-min);
+    font-family: var(--kit-font-reading-family);
     font-weight: 700;
     font-size: 1.5rem;
     letter-spacing: -0.01em;
@@ -165,6 +78,7 @@ pre,
 
   ul li.nav-item {
     a.nav-link {
+      min-height: var(--kit-control-min);
       padding-left: 0;
       border-radius: 0;
       font-weight: 500;
@@ -180,38 +94,91 @@ pre,
     }
 
     &.active .nav-link span {
-      color: var(--accent);
+      color: var(--kit-accent);
     }
   }
 
-  /* 원형 아이콘 버튼 대신 아이콘만 */
+  /* 원형 아이콘 버튼 대신 아이콘만. 누르는 영역은 44px */
   .sidebar-bottom > a,
   .sidebar-bottom #mode-toggle {
-    border-radius: 0;
+    width: var(--kit-control-min);
+    height: var(--kit-control-min);
+    margin-left: calc((1.75rem - var(--kit-control-min)) / 2);  /* 아이콘 자리는 그대로, 영역만 넓힌다 */
+    border-radius: var(--kit-radius-control);
 
-    &:not(:focus-visible) {
-      box-shadow: none;  /* 키보드 포커스 표시는 테마 것을 그대로 둔다 */
+    /* 테마가 :not(:focus-visible)로 거는 테두리 그림자를 같은 깊이로 지운다. 초점은 공통 외곽선 */
+    &:not(:focus-visible),
+    &:focus-visible {
+      box-shadow: none;
+    }
+
+    i {
+      line-height: var(--kit-control-min);
     }
   }
 
-  /* 모드 선택 메뉴도 둥근 떠 있는 상자 대신 선 하나로 두른 목록 */
+  /* 모드 선택 메뉴: 떠 있는 면 하나 */
   .sidebar-bottom #mode-toggle + .dropdown-menu {
-    border-radius: 0 !important;
-    box-shadow: none;
+    border: 1px solid var(--kit-rule);
+    border-radius: var(--kit-radius-control) !important;
+    box-shadow: var(--kit-shadow-floating);
+    /* 키보드로 옮겨 다닐 때 Bootstrap 기본(푸른 회색) 대신 마우스 hover와 같은 면 */
+    --bs-dropdown-link-hover-bg: var(--kit-surface-alt);
+    --bs-dropdown-link-hover-color: var(--kit-text);
+    --bs-dropdown-link-active-bg: var(--kit-surface-alt);
+    --bs-dropdown-link-active-color: var(--kit-text);
 
     .dropdown-item {
-      border-radius: 0;
+      min-height: var(--kit-control-min);
+      border-radius: calc(var(--kit-radius-control) - 4px);
     }
   }
 }
 
 #topbar-wrapper {
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--kit-rule);
+}
+
+/* --- 상단: 버튼·검색은 44px, 경로는 한 줄 (전체 제목은 바로 아래 h1에 있다) --- */
+
+#topbar-title {
+  font-family: var(--kit-font-ui);
+}
+
+#sidebar-trigger,
+#search-trigger,
+#search-cancel {
+  min-width: var(--kit-control-min);
+  min-height: var(--kit-control-min);
 }
 
 #search {
-  border-radius: 0;
+  min-height: var(--kit-control-min);
+  border-color: var(--kit-control-border);
+  border-radius: var(--kit-radius-control);
   background: transparent;
+
+  &:focus-within {
+    outline: 3px solid var(--kit-focus);
+    outline-offset: 2px;
+  }
+}
+
+#search-input {
+  min-height: calc(var(--kit-control-min) - 2px);  /* 테두리 안을 다 채워 누르는 영역이 44px */
+
+  /* 초점 표시는 감싼 검색창이 맡는다 */
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+#breadcrumb {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* --- 홈: 카드 대신 목록 --- */
@@ -224,7 +191,7 @@ pre,
 
   .card {
     border: 0;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--kit-rule);
     border-radius: 0;
     box-shadow: none;
   }
@@ -260,7 +227,7 @@ pre,
   }
 
   a:hover .card-title {
-    color: var(--accent) !important;
+    color: var(--kit-accent) !important;
   }
 }
 
@@ -275,7 +242,7 @@ pre,
   .panel-heading {
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--ink-muted);
+    color: var(--kit-muted);
   }
 
   .post-tag {
@@ -283,7 +250,7 @@ pre,
     padding: 0;
     margin: 0 0.75rem 0.4rem 0;
     background: none;
-    color: var(--ink-muted);
+    color: var(--kit-muted);
     font-size: 0.85rem;
 
     &::before {
@@ -291,7 +258,7 @@ pre,
     }
 
     &:hover {
-      color: var(--accent);
+      color: var(--kit-accent);
       background: none;
     }
   }
@@ -301,14 +268,14 @@ pre,
 
 article.px-1 {
   > header h1 {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 1.1rem + 1.8vw, 2rem);  /* 320px에서 긴 제목이 7줄로 꺾이지 않게 */
     font-weight: 700;
     line-height: 1.4;
     letter-spacing: -0.01em;
   }
 
   .post-desc {
-    color: var(--ink-muted);
+    color: var(--kit-muted);
     font-size: 1.05rem;
     line-height: 1.7;
   }
@@ -338,25 +305,37 @@ article.px-1 {
   }
 
   table {
-    font-family: var(--ui-font);
+    font-family: var(--kit-font-ui);
     font-size: 0.9rem;
 
     thead {
-      background: var(--paper-deep);
+      background: var(--kit-surface-alt);
     }
   }
 }
 
 div[class^='language-'],
-.highlight,
+.highlight {
+  border-radius: var(--kit-radius-control) !important;
+  box-shadow: none !important;
+}
+
+/* 576px 미만에서 Chirpy는 코드 블록을 화면 끝까지 붙이므로 모서리를 둥글리지 않는다 */
+@media (max-width: 575.98px) {
+  .content > div[class^='language-'],
+  .content > div[class^='language-'] .highlight {
+    border-radius: 0 !important;
+  }
+}
+
 code.highlighter-rouge {
-  border-radius: 3px !important;
+  border-radius: 0.25em !important;  /* 문장 속 코드는 글자 크기를 따른다 */
   box-shadow: none !important;
 }
 
 .highlight,
 .highlight .w {
-  background-color: var(--paper-deep) !important;
+  background-color: var(--kit-surface-alt) !important;
 }
 
 /* 코드 머리의 창 버튼 점 세 개(장식)는 빼고, 언어 이름은 왼쪽에 작게 */
@@ -373,7 +352,7 @@ code.highlighter-rouge {
     }
 
     &::after {
-      font-family: var(--ui-font);
+      font-family: var(--kit-font-ui);
       font-size: 0.8rem;
       font-weight: 500;
     }
@@ -381,6 +360,25 @@ code.highlighter-rouge {
 
   span:first-child {
     margin-right: auto;
+  }
+
+  /* 고정 2.25rem 머리에 44px 복사 버튼이 들어가도록 머리가 내용에 맞춰 늘어난다 */
+  height: auto;
+  min-height: var(--kit-control-min);
+
+  button {
+    width: var(--kit-control-min);
+    height: var(--kit-control-min);
+    border-radius: var(--kit-radius-control);
+
+    /* 테마 기본(회색 37% + 흰 아이콘)은 종이 바탕에서 1.81:1 */
+    &:not([timeout]):hover {
+      background-color: var(--kit-surface);
+
+      i {
+        color: var(--kit-text);
+      }
+    }
   }
 }
 
@@ -393,18 +391,23 @@ code.highlighter-rouge {
 .highlight .cpf,
 .highlight .c1,
 .highlight .cs {
-  color: var(--code-muted) !important;
+  color: var(--kit-muted) !important;
 }
 
-/* 다크 구문 색: 테마 기본 키워드(#aa759f) 4.29:1, 이스케이프(#b76d45) 3.94:1이라 부족 */
+/* 다크 구문 색: 코드 바탕(--kit-surface-alt #302c26) 기준. 테마 기본 키워드(#aa759f) 3.80:1,
+   이스케이프(#b76d45) 3.49:1, 프롬프트(#87939d) 4.42:1이라 부족 */
 @mixin night-syntax {
   .highlight {
     .k, .kc, .kd, .kn, .kp, .kr, .kv, .sa {
-      color: #c48ab8; /* 5.72:1 */
+      color: #c48ab8; /* 5.07:1 */
     }
 
     .si, .se {
-      color: #cf8f62; /* 5.78:1 */
+      color: #cf8f62; /* 5.12:1 */
+    }
+
+    .gp {
+      color: var(--kit-muted); /* 6.86:1 */
     }
   }
 }
@@ -413,9 +416,51 @@ code.highlighter-rouge {
   @include night-syntax;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-bs-theme]) {
-    @include night-syntax;
+/* --- 글 아래·목차: 누르는 버튼은 44px, 목차 제목은 자르지 않고 줄바꿈 --- */
+
+.share-wrapper .share-icons {
+  a,
+  button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--kit-control-min);
+    min-height: var(--kit-control-min);
+    margin: 0;
+    border-radius: var(--kit-radius-control);
+  }
+}
+
+#toc-wrapper ul .toc-link {
+  white-space: normal;
+  overflow: visible;
+}
+
+#toc-bar .toc-trigger {
+  min-width: var(--kit-control-min);
+  min-height: var(--kit-control-min);
+}
+
+#toc-popup-close {
+  flex-shrink: 0;  /* 긴 제목 옆에서 줄어들지 않게 */
+  box-sizing: border-box;
+  width: var(--kit-control-min);
+  height: var(--kit-control-min);
+}
+
+/* --- 초점 표시: 모든 조작 요소에 같은 선 하나 (Bootstrap 파란 반투명 그림자 대신) --- */
+
+:root :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--kit-focus);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #sidebar,
+  #main-wrapper,
+  #topbar-wrapper {
+    transition: none !important;
   }
 }
 
@@ -430,9 +475,9 @@ figure.diagram {
     max-width: 480px;
     height: auto;
     margin: 0 auto;
-    font-family: var(--ui-font);
+    font-family: var(--kit-font-ui);
     font-size: 16px;
-    fill: var(--ink);
+    fill: var(--kit-text);
   }
 
   /* 넓은 그림(480)과 세로로 쌓은 좁은 그림(320)을 같이 넣고 폭에 따라 하나만 보인다.
@@ -463,7 +508,7 @@ figure.diagram {
   }
 
   .d-muted {
-    fill: var(--ink-muted);
+    fill: var(--kit-muted);
     font-size: 15px;
   }
 
@@ -472,33 +517,33 @@ figure.diagram {
   }
 
   .d-mono {
-    font-family: var(--mono-font);
+    font-family: var(--kit-font-mono);
     font-size: 15px;
   }
 
   .d-accent {
-    fill: var(--accent);
+    fill: var(--kit-accent);
   }
 
   .d-box {
-    fill: var(--paper-deep);
+    fill: var(--kit-surface-alt);
   }
 
   .d-line {
     fill: none;
-    stroke: var(--rule-strong);
+    stroke: var(--kit-control-border);
     stroke-width: 1.5;
   }
 
   .d-dot {
-    fill: var(--ink-muted);
+    fill: var(--kit-muted);
   }
 
   figcaption {
     margin-top: 0.75rem;
     text-align: center;
-    font-family: var(--ui-font);
+    font-family: var(--kit-font-ui);
     font-size: 0.9rem;
-    color: var(--ink-muted);
+    color: var(--kit-muted);
   }
 }

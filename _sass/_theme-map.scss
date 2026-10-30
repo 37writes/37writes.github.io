@@ -1,0 +1,84 @@
+/* ---------------------------------------------------------------
+ * 프로젝트 매핑: Chirpy 변수 → kit 토큰 (_sass/kit). 색 값은 여기 쓰지 않는다.
+ * 테마 원본을 바꾸면(data-kit-theme) 이 연결을 따라 블로그 전체가 바뀐다.
+ * 역할: bg 종이 · surface 떠 있는 면 · surface-alt 코드·표 머리 · text · muted 보조 글자
+ *       rule 장식 선 · control-border 입력창처럼 기능 있는 선 · accent 링크·현재 위치 · focus 초점
+ * --------------------------------------------------------------- */
+
+/* 프로젝트 예외: UI 글꼴은 시스템 고딕. Noto Sans KR를 받지 않으므로 kit 1순위를 쓰면
+   설치 여부에 따라 메뉴 글꼴이 갈린다. 테마를 바꿔도 유지된다 */
+:root[data-kit-theme] {
+  --kit-font-ui: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+
+/* Chirpy가 :root[data-bs-theme=light|dark]와 :root:not([data-bs-theme])에 변수를 걸므로
+   같은 우선순위로 뒤에서 덮는다 */
+:root[data-bs-theme],
+:root:not([data-bs-theme]) {
+  --main-bg: var(--kit-bg);
+  --main-border-color: var(--kit-rule);
+  --text-color: var(--kit-text);
+  --text-muted-color: var(--kit-muted);
+  --heading-color: var(--kit-text);
+  --label-color: var(--kit-muted);
+  --link-color: var(--kit-accent);
+  --link-underline-color: var(--kit-rule);
+  --blockquote-border-color: var(--kit-rule);
+  --blockquote-text-color: var(--kit-muted);
+  --post-list-text-color: var(--kit-muted);
+
+  --sidebar-bg: var(--kit-bg);
+  --sidebar-border-color: var(--kit-rule);
+  --sidebar-muted-color: var(--kit-muted);
+  --sidebar-active-color: var(--kit-text);
+  --sidebar-hover-bg: transparent;
+  --sidebar-btn-bg: transparent;
+  --sidebar-btn-color: var(--kit-muted);
+  --site-title-color: var(--kit-text);
+  --site-subtitle-color: var(--kit-muted);
+  --avatar-border-color: transparent;
+
+  --topbar-bg: var(--kit-bg);
+  --topbar-text-color: var(--kit-muted);
+  --search-border-color: var(--kit-control-border);
+  --search-icon-color: var(--kit-muted);
+  --input-focus-border-color: var(--kit-control-border);
+
+  --button-bg: var(--kit-surface);
+  --btn-border-color: var(--kit-rule);
+  --btn-backtotop-color: var(--kit-muted);
+  --btn-backtotop-border-color: var(--kit-rule);
+  --btn-share-color: var(--kit-muted);
+  --btn-share-hover-color: var(--kit-accent);
+  --btn-patinator-text-color: var(--kit-text); /* Chirpy 변수 이름 그대로 */
+  --btn-paginator-hover-color: var(--kit-surface-alt);
+
+  --card-bg: transparent;
+  --card-shadow: none;
+  --toc-highlight: var(--kit-accent);
+  --toc-popup-border-color: var(--kit-rule);
+  --tb-odd-bg: transparent;
+  --tb-even-bg: transparent;
+  --tb-border-color: var(--kit-rule);
+
+  --highlight-bg-color: var(--kit-surface-alt);
+  --inline-code-bg: var(--kit-surface-alt);
+  --code-color: var(--kit-text);
+  --highlighter-rouge-color: var(--kit-text);
+  --language-border-color: var(--kit-rule);
+  --code-header-text-color: var(--kit-muted);
+  --code-header-icon-color: var(--kit-muted);
+  --highlight-lineno-color: var(--kit-muted);
+  --clipboard-checked-color: var(--kit-success);
+
+  --tag-border: var(--kit-rule);
+  --timeline-color: var(--kit-rule);
+  --timeline-node-bg: var(--kit-muted);
+
+  /* 모드 선택 메뉴: 떠 있는 면 */
+  --menu-bg: var(--kit-surface);
+  --menu-border-color: var(--kit-rule);
+  --menu-shadow-color: transparent;
+  --menu-highlight-bg: var(--kit-surface-alt);
+  --menu-active-color: var(--kit-text);
+}

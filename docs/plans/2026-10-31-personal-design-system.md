@@ -43,6 +43,10 @@ tier: T2
 - **44px 대상**: 상단 버튼·검색 입력·취소, 사이드바 메뉴·모드 버튼·모드 메뉴 항목, 페이지 이동, 코드 복사, 공유, 모바일 목차 버튼, 맨 위로. **예외**: 본문 인라인 링크, 글 메타의 카테고리, 태그 목록, 데스크톱(≥1200, 가는 포인터) 목차 항목, 라이선스 링크 → 문장 속 링크·목록이며 간격으로 구분.
 - **경로 표시(breadcrumb) 한 줄 말줄임** → 바로 아래 h1에 전체 제목이 보이므로 핵심 제목 자르기가 아니다. 목차는 자르지 않고 줄바꿈.
 - **사이드바 닫힘은 `inert`(JS) — visibility 지연 안 씀** → 반박 1 수용. visibility 지연은 닫히는 0.4초 동안 링크가 Tab에 남고, 어댑터가 속성을 직접 지우면 Chirpy 내부 값과 어긋난다. `inert`는 즉시 상호작용만 막고 슬라이드는 그대로 보인다. JS가 없으면 전과 같다(메뉴 자체가 JS로 열림).
+- **상단 바 높이 3rem→3.5rem** (Chirpy 공개 Sass 변수 `$topbar-height`) → 44px 검색창이 48px 바에 꽉 차 위아래 2px만 남았다. 변수 하나로 목차 바·스크롤 여백(`scroll-margin-top`)·팝업 위치가 같이 바뀌어 포크가 필요 없다.
+- **검색 입력 42px** → 검색창 테두리(1px×2) 안을 다 채운 값이고 테두리 포함 44px. ego 측정의 `small-target` 1건은 이 예외다.
+- **576px 미만 코드 블록은 직각** → Chirpy가 이 폭에서 코드 블록을 화면 끝까지 붙이므로 10px 반경이 화면 모서리에서 잘려 보였다.
+- **모드 선택 뒤 초점은 모드 토글로** → Chirpy 원래 동작은 메뉴가 닫히며 고른 항목이 숨겨져 초점이 body로 빠진다(전 빌드에서도 같음). 키보드면 고리가 보이고, 마우스면 `:focus-visible`이 아니라 고리가 없다. 메뉴 항목의 키보드 초점 면은 Bootstrap 푸른 회색 대신 `--kit-surface-alt`.
 - **코드 복사 버튼**: 44×44, 코드 머리는 고정 36px 대신 `min-height: 44px`, hover는 `--kit-surface`·아이콘 `--kit-text`(Chirpy 기본 회색 37%+흰 아이콘은 라이트 1.81:1), `button:focus{outline:none}`을 `:focus-visible` 규칙으로 덮는다 (반박 3).
 
 ## 기획 반박
@@ -66,8 +70,10 @@ tier: T2
   - 결과: 반례 3개 모두 수용(사이드바 inert·Chirpy 경로로 닫기, 글꼴 Sass 변수 토큰화·neutral 왕복 검사, 복사 버튼 상태·머리 높이). Sass plain CSS `@use`는 검토자가 컴파일로 확인
 - [x] S1. kit 자산 복사·해시·검사 도구 — 나(Claude) — `tools/design-check.sh` 통과, production 빌드 성공, 화면 변화 없음
   - 결과: `@use 'kit/...'`로 plain CSS가 한 파일에 묶임(`--kit-bg: #f6f2ea` 포함). 경로 검사는 처음 `37writes-claude-kit` 문자열로 잡았다가 글 본문의 정상 GitHub 링크(git-commit-msg-hook 글)에 걸려 `/Users/`·`/home/`·`file://`·`claude-kit/skills/`로 좁혔다. 추가된 CSS는 `--kit-*`와 `.kit-*`뿐이라 화면 변화 없음
-- [ ] S2. 테마 매핑·모드 어댑터·글꼴 토큰 — 나 — light/dark/system에서 `--main-bg` 등이 kit 값, 모드 전환 즉시 반영
-- [ ] S3. 공통 부품 규칙(44px·초점·사이드바 disclosure·목차·경로·제목) — 나 — ego 측정에서 대상 조작영역 44px 이상, 닫힌 사이드바 Tab 제외, Escape 닫힘·초점 복귀
+- [x] S2. 테마 매핑·모드 어댑터·글꼴 토큰 — 나 — light/dark/system에서 `--main-bg` 등이 kit 값, 모드 전환 즉시 반영
+  - 결과: 매핑은 `_sass/_theme-map.scss`(색 값 0개), 기존 `--paper/--ink` 블록 삭제. light `#f6f2ea`·dark `#1c1a17`, 저장값 없는 시스템 모드에서 OS 모드를 바꾸면 새로고침 없이 `data-kit-mode`·배경이 따라온다. 다크 구문 색은 `#302c26` 위에서 다시 재 키워드 `#c48ab8` 5.07:1·이스케이프 `#cf8f62` 5.12:1·프롬프트 muted 6.86:1. 실제 글꼴(CDP)은 전후 동일: 본문·제목·사이트 제목 Noto Serif KR 웹폰트(400/700 로드), 메뉴 Apple SD Gothic Neo, 메타·표·검색 SF, 코드 Menlo → 코드 예외 불필요. neutral 왕복에서 h1/h2/본문/사이트 제목/목차/코드/검색의 family·색이 모두 바뀌고 되돌아온다
+- [x] S3. 공통 부품 규칙(44px·초점·사이드바 disclosure·목차·경로·제목) — 나 — ego 측정에서 대상 조작영역 44px 이상, 닫힌 사이드바 Tab 제외, Escape 닫힘·초점 복귀
+  - 결과: 모바일 측정에서 예외(태그·카테고리·라이선스) 밖 작은 대상 0건, 데스크톱은 검색 입력 42px(예외)·목차 항목(예외)만. 초점은 3px `--kit-focus`(라이트 5.88:1, 다크 9.02:1). 사이드바: 처음 inert → Tab이 트리거, 터치 열기 시 아바타로 초점, Escape 닫힘 후 트리거, 마스크·항목 선택 닫힘, 모드 메뉴가 열려 있으면 Escape는 메뉴만, 열린 채 849→851에서 닫혀 본문 클릭 가능, 849 복귀 시 inert·초점 트리거. 검증 중 고친 것: 모드 토글 1px 테두리(Chirpy `:not(:focus-visible)`), 목차 말줄임(Chirpy 선택자 깊이), 목차 팝업 닫기 버튼이 flex에서 20px로 줄던 것, 위 결정의 상단 바·코드 블록·모드 초점
 - [ ] S4. 프로필 문서 `docs/design-system.md`·`CLAUDE.md`·exclude — 나 — 빌드 산출물에 CLAUDE.md 없음
 - [ ] S5. ego 전후 검증 매트릭스 — 나 — 320/360/390/430/768/1280/1440 + 575/576/577·849/850/851·1199/1200/1201, light/dark/system, 실제 innerWidth·touch 기록, 사이드바 연속 시퀀스·폭 왕복, 복사 버튼 상태, neutral 교체 왕복, 전후 캡처 직접 확인
 - [ ] S6. 독립 검증 — Codex 워커 — 빌드·htmlproofer·design-check 재실행, 변경 범위, 직접 고른 실패 시나리오 1~3개(ego 같은 TaskSpace 다른 Page)

@@ -1,0 +1,73 @@
+<script>
+  /* kit 디자인 시스템 연결. 모드의 원본은 Chirpy(data-bs-theme, localStorage 'theme')이고 여기서는 따라가기만 한다.
+     외관 교체는 아래 테마 이름과 jekyll-theme-chirpy.scss의 @use 테마 파일 두 곳. */
+  (function () {
+    var root = document.documentElement;
+    root.setAttribute('data-kit-theme', 'paper');
+
+    function mirrorMode() {
+      var mode = root.getAttribute('data-bs-theme');
+      if (mode === 'light' || mode === 'dark') root.setAttribute('data-kit-mode', mode);
+      else root.removeAttribute('data-kit-mode');
+    }
+    mirrorMode();
+    new MutationObserver(mirrorMode).observe(root, { attributes: true, attributeFilter: ['data-bs-theme'] });
+
+    /* 모바일 사이드바(850px 미만). 열림 상태는 Chirpy가 body[sidebar-display]로 갖는다.
+       여기서는 그 속성을 관찰해 접근성 속성·초점을 맞추고, 닫을 때도 Chirpy의 마스크 클릭 경로를 쓴다. */
+    document.addEventListener('DOMContentLoaded', function () {
+      var body = document.body;
+      var sidebar = document.getElementById('sidebar');
+      var trigger = document.getElementById('sidebar-trigger');
+      var mask = document.getElementById('mask');
+      if (!sidebar || !trigger || !mask) return;
+
+      var narrow = window.matchMedia('(max-width: 849.98px)');
+      var isOpen = function () { return body.hasAttribute('sidebar-display'); };
+
+      trigger.setAttribute('aria-controls', 'sidebar');
+
+      function sync(moveFocus) {
+        var open = isOpen();
+        trigger.setAttribute('aria-expanded', String(open));
+        var hide = narrow.matches && !open;
+        /* 숨겨지는 메뉴 안에 초점이 남으면 body로 사라지므로 먼저 트리거로 옮긴다 */
+        if (hide && sidebar.contains(document.activeElement)) trigger.focus();
+        sidebar.inert = hide;
+
+        if (moveFocus && open && narrow.matches && document.activeElement === trigger) {
+          var first = sidebar.querySelector('a[href], button:not([disabled])');
+          if (first) first.focus();
+        }
+      }
+      sync(false);
+
+      new MutationObserver(function () { sync(true); })
+        .observe(body, { attributes: true, attributeFilter: ['sidebar-display'] });
+
+      /* 열린 채 넓어지면 Chirpy는 화면 전체 마스크를 남겨 본문을 막으므로 닫는다 */
+      narrow.addEventListener('change', function () {
+        if (!narrow.matches && isOpen()) mask.click();
+        else sync(false);
+      });
+
+      /* 모드를 고르면 Bootstrap이 메뉴를 닫아 고른 항목(초점 위치)이 숨겨지고 초점이 body로 빠지므로 토글로 돌려준다 */
+      var modeToggle = document.getElementById('mode-toggle');
+      if (modeToggle) modeToggle.parentElement.addEventListener('click', function (e) {
+        var item = e.target.closest('.dropdown-item');
+        if (!item) return;
+        setTimeout(function () {
+          var a = document.activeElement;
+          if (a === body || a === item) modeToggle.focus();
+        });
+      });
+
+      /* 캡처 단계에서 본다: 모드 메뉴가 열려 있으면 Bootstrap이 그 메뉴만 닫게 둔다 */
+      window.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || !narrow.matches || !isOpen()) return;
+        if (sidebar.querySelector('.dropdown-menu.show')) return;
+        mask.click();
+      }, true);
+    });
+  })();
+</script>
