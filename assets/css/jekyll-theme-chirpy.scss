@@ -436,6 +436,14 @@ code.highlighter-rouge {
   overflow: visible;
 }
 
+/* 넓은 터치 화면(가로 태블릿)은 오른쪽 목차도 손가락으로 누르므로 한 줄이 44px. 작은 목차 예외는 가는 포인터만 */
+@media (pointer: coarse) {
+  #toc-wrapper ul li a {
+    padding-top: calc((var(--kit-control-min) - 1.25em) / 2);
+    padding-bottom: calc((var(--kit-control-min) - 1.25em) / 2);
+  }
+}
+
 #toc-bar .toc-trigger {
   min-width: var(--kit-control-min);
   min-height: var(--kit-control-min);

@@ -38,7 +38,7 @@
 | UI 글꼴 = 시스템 고딕 스택 (`-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`) | Noto Sans KR를 받지 않으므로 kit 1순위를 쓰면 설치 여부에 따라 메뉴 글꼴이 갈린다. 테마를 바꿔도 유지 |
 | 상단 바 3.5rem (Chirpy 기본 3rem) | 44px 검색창·버튼이 48px 바에 꽉 찼다. `$topbar-height` 하나로 목차 바·`scroll-margin-top`·팝업 위치가 같이 바뀐다 |
 | 검색 입력 42px | 검색창 테두리 1px×2 안을 다 채운 값. 테두리 포함 44px |
-| 44px 미만 허용: 본문 인라인 링크, 글 메타의 카테고리, 태그 목록, 데스크톱(≥1200) 목차 항목, 라이선스 링크 | 문장·목록 속 링크이고 간격으로 구분된다 |
+| 44px 미만 허용: 본문 인라인 링크, 글 메타의 카테고리, 태그 목록, 1200px 이상 오른쪽 목차 항목 중 가는 포인터(마우스)일 때 — 터치(`pointer: coarse`)면 한 줄 44px, 라이선스 링크 | 문장·목록 속 링크이고 간격으로 구분된다 |
 | 576px 미만 코드 블록 직각 | Chirpy가 이 폭에서 코드 블록을 화면 끝까지 붙여 반경이 화면 모서리에서 잘린다 |
 | 경로 표시(breadcrumb) 한 줄 말줄임 | 바로 아래 h1에 전체 제목이 보인다. 목차는 자르지 않고 줄바꿈 |
 | viewport `user-scalable=no` 그대로 | Chirpy `head.html` 소유라 포크가 필요하다. 접근성 미해결 항목으로 남긴다 |
