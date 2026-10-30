@@ -1,0 +1,49 @@
+/* 37writes-theme: paper 1.0.0 — load after neutral.css; changes tokens only. */
+:root[data-kit-theme="paper"] {
+  --kit-color-scheme: light;
+  --kit-bg: #f6f2ea;
+  --kit-surface: #fffcf6;
+  --kit-surface-alt: #ece6da;
+  --kit-text: #26241f;
+  --kit-muted: #625d53;
+  --kit-rule: #ddd5c6;
+  --kit-control-border: #81796c;
+  --kit-accent: #a13d1c;
+  --kit-on-accent: #ffffff;
+  --kit-focus: #a13d1c;
+  --kit-danger: #a32520;
+  --kit-success: #376541;
+  --kit-font-reading-family: "Noto Serif KR", "AppleMyungjo", "Batang", serif;
+}
+:root[data-kit-theme="paper"][data-kit-mode="dark"] {
+  --kit-color-scheme: dark;
+  --kit-bg: #1c1a17;
+  --kit-surface: #26231f;
+  --kit-surface-alt: #302c26;
+  --kit-text: #eee7dc;
+  --kit-muted: #c0b5a3;
+  --kit-rule: #484137;
+  --kit-control-border: #948a7b;
+  --kit-accent: #efac84;
+  --kit-on-accent: #352014;
+  --kit-focus: #efac84;
+  --kit-danger: #ffb4ab;
+  --kit-success: #a3caa5;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-kit-theme="paper"]:not([data-kit-mode]) {
+    --kit-color-scheme: dark;
+    --kit-bg: #1c1a17;
+    --kit-surface: #26231f;
+    --kit-surface-alt: #302c26;
+    --kit-text: #eee7dc;
+    --kit-muted: #c0b5a3;
+    --kit-rule: #484137;
+    --kit-control-border: #948a7b;
+    --kit-accent: #efac84;
+    --kit-on-accent: #352014;
+    --kit-focus: #efac84;
+    --kit-danger: #ffb4ab;
+    --kit-success: #a3caa5;
+  }
+}

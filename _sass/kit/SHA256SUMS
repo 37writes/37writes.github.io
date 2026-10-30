@@ -1,0 +1,5 @@
+# 37writes-claude-kit skills/design/assets 원본 그대로 (수정 금지, 바꿀 때는 다시 복사하고 이 파일을 갱신)
+# kit 플러그인 0.16.0, 저장소 커밋 fdc2663, 자산 마지막 변경 c6c832f, 디자인 시스템 1.0.0
+49e31837d2374212af4c985142c9ffaa4300de74d41ad6aa00aadbc080ef79a1  core.css
+ae73a6ee5ef7e5e5b9b397f82097b81b2069f205879ffd2f1024153d06e300a3  themes/neutral.css
+88607aca5f225e862dcf6b6a09eb080ba347f23c2d36ddada80170d4b2a3f0dc  themes/paper.css

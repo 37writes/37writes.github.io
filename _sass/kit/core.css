@@ -1,0 +1,65 @@
+/* 37writes-ui: core 1.0.0 — vendor unchanged; adapt in a separate mapping file. */
+:root {
+  --kit-space-1: 4px;
+  --kit-space-2: 8px;
+  --kit-space-3: 12px;
+  --kit-space-4: 16px;
+  --kit-space-6: 24px;
+  --kit-space-8: 32px;
+  --kit-space-12: 48px;
+  --kit-space-16: 64px;
+  --kit-control-min: 44px;
+  --kit-font-small: .875rem;
+  --kit-font-body: 1rem;
+  --kit-font-reading: 1.125rem;
+  --kit-width-reading: 44rem;
+  --kit-width-work: 76rem;
+}
+.kit-ui {
+  box-sizing: border-box;
+  color-scheme: var(--kit-color-scheme);
+  font-family: var(--kit-font-ui);
+  font-size: var(--kit-font-body);
+  line-height: 1.55;
+  color: var(--kit-text);
+  background: var(--kit-bg);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.kit-ui *, .kit-ui *::before, .kit-ui *::after { box-sizing: inherit; }
+.kit-container { max-inline-size: var(--kit-width-work); margin-inline: auto; padding: var(--kit-space-6); }
+.kit-stack > * + * { margin-block-start: var(--kit-space-6); }
+.kit-row { display: flex; align-items: center; gap: var(--kit-space-3); flex-wrap: wrap; min-inline-size: 0; }
+.kit-title { margin: 0; font-size: clamp(1.75rem, 4vw, 2.75rem); line-height: 1.2; letter-spacing: -.025em; }
+.kit-muted { color: var(--kit-muted); }
+.kit-reading { max-inline-size: var(--kit-width-reading); font-family: var(--kit-font-reading-family); font-size: var(--kit-font-reading); line-height: 1.8; }
+.kit-panel { background: var(--kit-surface); padding: var(--kit-space-6); border: 1px solid var(--kit-rule); border-radius: var(--kit-radius-panel); }
+.kit-button, .kit-input, .kit-tab {
+  font: inherit;
+  color: var(--kit-text);
+  background: var(--kit-surface);
+  min-block-size: var(--kit-control-min);
+  min-inline-size: var(--kit-control-min);
+  border: 1px solid var(--kit-control-border);
+  border-radius: var(--kit-radius-control);
+  padding: var(--kit-space-2) var(--kit-space-4);
+}
+.kit-button, .kit-tab { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; cursor: pointer; }
+.kit-button:hover, .kit-tab:hover { background: var(--kit-surface-alt); }
+.kit-button[data-variant="primary"], .kit-tab[aria-selected="true"], .kit-tab[aria-current]:not([aria-current="false"]) {
+  background: var(--kit-accent); color: var(--kit-on-accent); border-color: var(--kit-accent);
+}
+.kit-button:disabled { color: var(--kit-muted); background: var(--kit-surface-alt); cursor: not-allowed; }
+.kit-button:focus-visible, .kit-tab:focus-visible, .kit-input:focus-visible, .kit-ui summary:focus-visible {
+  outline: 3px solid var(--kit-focus); outline-offset: 3px;
+}
+.kit-input { inline-size: 100%; max-inline-size: 32rem; }
+.kit-input[aria-invalid="true"] { border-color: var(--kit-danger); }
+.kit-error { color: var(--kit-danger); }
+.kit-scroll { min-inline-size: 0; max-inline-size: 100%; overflow-x: auto; padding: var(--kit-space-2); }
+.kit-tabs { display: flex; gap: var(--kit-space-2); inline-size: max-content; min-inline-size: 100%; }
+.kit-tab { white-space: nowrap; flex-shrink: 0; }
+.kit-code { font-family: var(--kit-font-mono); background: var(--kit-surface-alt); padding: var(--kit-space-4); overflow-x: auto; }
+@media (max-width: 40rem) {
+  .kit-container, .kit-panel { padding: var(--kit-space-4); }
+}

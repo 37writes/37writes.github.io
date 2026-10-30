@@ -24,7 +24,7 @@ tier: T2
 
 ## 설계
 - 신규: `_sass/kit/core.css`, `_sass/kit/themes/neutral.css`, `_sass/kit/themes/paper.css` — kit `skills/design/assets/`에서 내용 그대로 복사 (Sass가 plain CSS를 `@use`로 묶어 CSS 한 파일로 나간다)
-- 신규: `_sass/kit/SHA256SUMS` — 원본 해시 (kit 0.16.0 커밋 `06401de`)
+- 신규: `_sass/kit/SHA256SUMS` — 원본 해시 (kit 플러그인 0.16.0, 저장소 `fdc2663`, 자산 마지막 변경 `c6c832f`)
 - 신규: `_sass/_theme-map.scss` — Chirpy 변수 → `--kit-*` 연결과 프로젝트 예외만. 색 값을 다시 적지 않는다
 - 신규: `_includes/kit-theme-adapter.html` — (head 즉시) `data-kit-theme="paper"` 지정, `data-bs-theme` → `data-kit-mode` 미러(MutationObserver). (DOMContentLoaded 뒤) 모바일 사이드바 보강: 열림 상태는 Chirpy가 소유(`body[sidebar-display]`)하고 어댑터는 관찰만 한다 → `aria-expanded`/`aria-controls`, 닫힘이면 `#sidebar.inert`, 열 때 첫 링크로 초점·닫을 때 트리거로 복귀, Escape와 850px 이상 전환은 `#mask.click()`(Chirpy 토글 경로)로 닫는다
 - 변경: `_includes/metadata-hook.html` — 어댑터 include (폰트 로딩은 그대로)
@@ -64,7 +64,8 @@ tier: T2
 ## 작업 단계
 - [x] S0. 기획 반박 — Codex 워커 — 보고서 `docs/plans/2026-10-31-personal-design-system/rebuttal.md`, 반례별 수용/기각 기록
   - 결과: 반례 3개 모두 수용(사이드바 inert·Chirpy 경로로 닫기, 글꼴 Sass 변수 토큰화·neutral 왕복 검사, 복사 버튼 상태·머리 높이). Sass plain CSS `@use`는 검토자가 컴파일로 확인
-- [ ] S1. kit 자산 복사·해시·검사 도구 — 나(Claude) — `tools/design-check.sh` 통과, production 빌드 성공, 화면 변화 없음
+- [x] S1. kit 자산 복사·해시·검사 도구 — 나(Claude) — `tools/design-check.sh` 통과, production 빌드 성공, 화면 변화 없음
+  - 결과: `@use 'kit/...'`로 plain CSS가 한 파일에 묶임(`--kit-bg: #f6f2ea` 포함). 경로 검사는 처음 `37writes-claude-kit` 문자열로 잡았다가 글 본문의 정상 GitHub 링크(git-commit-msg-hook 글)에 걸려 `/Users/`·`/home/`·`file://`·`claude-kit/skills/`로 좁혔다. 추가된 CSS는 `--kit-*`와 `.kit-*`뿐이라 화면 변화 없음
 - [ ] S2. 테마 매핑·모드 어댑터·글꼴 토큰 — 나 — light/dark/system에서 `--main-bg` 등이 kit 값, 모드 전환 즉시 반영
 - [ ] S3. 공통 부품 규칙(44px·초점·사이드바 disclosure·목차·경로·제목) — 나 — ego 측정에서 대상 조작영역 44px 이상, 닫힌 사이드바 Tab 제외, Escape 닫힘·초점 복귀
 - [ ] S4. 프로필 문서 `docs/design-system.md`·`CLAUDE.md`·exclude — 나 — 빌드 산출물에 CLAUDE.md 없음

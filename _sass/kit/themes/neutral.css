@@ -1,0 +1,54 @@
+/* 37writes-theme: neutral 1.0.0 — font loading belongs to the project. */
+:root, :root[data-kit-theme="neutral"] {
+  --kit-color-scheme: light;
+  --kit-bg: #f5f5f7;
+  --kit-surface: #ffffff;
+  --kit-surface-alt: #e9eaee;
+  --kit-text: #1d1d1f;
+  --kit-muted: #55565e;
+  --kit-rule: #d5d6dc;
+  --kit-control-border: #767780;
+  --kit-accent: #005bb5;
+  --kit-on-accent: #ffffff;
+  --kit-focus: #005bb5;
+  --kit-danger: #b42318;
+  --kit-success: #216e3b;
+  --kit-font-ui: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --kit-font-reading-family: var(--kit-font-ui);
+  --kit-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --kit-radius-control: 10px;
+  --kit-radius-panel: 16px;
+  --kit-shadow-floating: 0 8px 24px rgb(0 0 0 / .12);
+}
+:root[data-kit-mode="dark"], :root[data-kit-theme="neutral"][data-kit-mode="dark"] {
+  --kit-color-scheme: dark;
+  --kit-bg: #18181b;
+  --kit-surface: #242428;
+  --kit-surface-alt: #303036;
+  --kit-text: #f5f5f7;
+  --kit-muted: #bfc0c8;
+  --kit-rule: #45454d;
+  --kit-control-border: #8b8c96;
+  --kit-accent: #9ac8ff;
+  --kit-on-accent: #102d4b;
+  --kit-focus: #9ac8ff;
+  --kit-danger: #ffb4ab;
+  --kit-success: #9ed5aa;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-kit-mode]), :root[data-kit-theme="neutral"]:not([data-kit-mode]) {
+    --kit-color-scheme: dark;
+    --kit-bg: #18181b;
+    --kit-surface: #242428;
+    --kit-surface-alt: #303036;
+    --kit-text: #f5f5f7;
+    --kit-muted: #bfc0c8;
+    --kit-rule: #45454d;
+    --kit-control-border: #8b8c96;
+    --kit-accent: #9ac8ff;
+    --kit-on-accent: #102d4b;
+    --kit-focus: #9ac8ff;
+    --kit-danger: #ffb4ab;
+    --kit-success: #9ed5aa;
+  }
+}
