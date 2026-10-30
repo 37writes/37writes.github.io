@@ -74,8 +74,10 @@ tier: T2
   - 결과: 매핑은 `_sass/_theme-map.scss`(색 값 0개), 기존 `--paper/--ink` 블록 삭제. light `#f6f2ea`·dark `#1c1a17`, 저장값 없는 시스템 모드에서 OS 모드를 바꾸면 새로고침 없이 `data-kit-mode`·배경이 따라온다. 다크 구문 색은 `#302c26` 위에서 다시 재 키워드 `#c48ab8` 5.07:1·이스케이프 `#cf8f62` 5.12:1·프롬프트 muted 6.86:1. 실제 글꼴(CDP)은 전후 동일: 본문·제목·사이트 제목 Noto Serif KR 웹폰트(400/700 로드), 메뉴 Apple SD Gothic Neo, 메타·표·검색 SF, 코드 Menlo → 코드 예외 불필요. neutral 왕복에서 h1/h2/본문/사이트 제목/목차/코드/검색의 family·색이 모두 바뀌고 되돌아온다
 - [x] S3. 공통 부품 규칙(44px·초점·사이드바 disclosure·목차·경로·제목) — 나 — ego 측정에서 대상 조작영역 44px 이상, 닫힌 사이드바 Tab 제외, Escape 닫힘·초점 복귀
   - 결과: 모바일 측정에서 예외(태그·카테고리·라이선스) 밖 작은 대상 0건, 데스크톱은 검색 입력 42px(예외)·목차 항목(예외)만. 초점은 3px `--kit-focus`(라이트 5.88:1, 다크 9.02:1). 사이드바: 처음 inert → Tab이 트리거, 터치 열기 시 아바타로 초점, Escape 닫힘 후 트리거, 마스크·항목 선택 닫힘, 모드 메뉴가 열려 있으면 Escape는 메뉴만, 열린 채 849→851에서 닫혀 본문 클릭 가능, 849 복귀 시 inert·초점 트리거. 검증 중 고친 것: 모드 토글 1px 테두리(Chirpy `:not(:focus-visible)`), 목차 말줄임(Chirpy 선택자 깊이), 목차 팝업 닫기 버튼이 flex에서 20px로 줄던 것, 위 결정의 상단 바·코드 블록·모드 초점
-- [ ] S4. 프로필 문서 `docs/design-system.md`·`CLAUDE.md`·exclude — 나 — 빌드 산출물에 CLAUDE.md 없음
-- [ ] S5. ego 전후 검증 매트릭스 — 나 — 320/360/390/430/768/1280/1440 + 575/576/577·849/850/851·1199/1200/1201, light/dark/system, 실제 innerWidth·touch 기록, 사이드바 연속 시퀀스·폭 왕복, 복사 버튼 상태, neutral 교체 왕복, 전후 캡처 직접 확인
+- [x] S4. 프로필 문서 `docs/design-system.md`·`CLAUDE.md`·exclude — 나 — 빌드 산출물에 CLAUDE.md 없음
+  - 결과: 디자인 프로필에 원본 해시·매핑·예외 7개·글꼴·반응형 경계·교체 절차·검증 범위·기준 경로를 적고, 기준 캡처 8장은 /tmp가 아니라 `docs/design-baseline/`(빌드 제외)에 둔다. `CLAUDE.md` 프로필은 push 줄 `배포`, 자동 배포 줄 없음. 빌드 산출물에 CLAUDE.md·docs 없음, design-check·htmlproofer 통과. 쓰다가 본문 대비를 복사 아이콘 값(15.14)으로 잘못 옮긴 것을 다시 재 13.88:1로 고쳤다
+- [x] S5. ego 전후 검증 매트릭스 — 나 — 320/360/390/430/768/1280/1440 + 575/576/577·849/850/851·1199/1200/1201, light/dark/system, 실제 innerWidth·touch 기록, 사이드바 연속 시퀀스·폭 왕복, 복사 버튼 상태, neutral 교체 왕복, 전후 캡처 직접 확인
+  - 결과: 모든 행에서 실제 innerWidth·touch가 설정과 일치(<850 coarse·maxTouchPoints>0). 320~1440과 경계 폭에서 가로 넘침 0, 도표는 576 이하 좁은 그림·577 이상 넓은 그림, 가장 작은 도표 글자 11.8px(360, 세로로 긴 그림 1장)·나머지 13px 이상, 목차는 1200 이상 오른쪽·미만 목차 바, 표는 가로 스크롤. 사이드바 연속 시퀀스·849↔851·848/850/851, 모드 메뉴 키보드, 검색 390, 복사 버튼 1280 마우스·320 터치, 모바일 목차, neutral 왕복, 시스템 모드 OS 전환 모두 통과. 실제 글꼴·제목 앵커는 전후 동일. 캡처는 전후를 직접 열어 확인(작업 중 `/tmp/tb-design/shots/`, 기준 8장은 `docs/design-baseline/`). iOS Safari·가상 키보드·실기기는 미확인
 - [ ] S6. 독립 검증 — Codex 워커 — 빌드·htmlproofer·design-check 재실행, 변경 범위, 직접 고른 실패 시나리오 1~3개(ego 같은 TaskSpace 다른 Page)
 - [ ] S7. 배포 — 승인 후 — `git push origin <SHA>:refs/heads/main`, 그 SHA의 Pages 실행 성공 + 배포 사이트에서 홈·글·모드·검색·모바일 메뉴 확인
 
@@ -91,3 +93,5 @@ tier: T2
 
 ## 남은 일
 - 실제 iOS Safari·가상 키보드·실기기 터치는 ego Chromium 에뮬레이션으로 증명할 수 없음 → 사용자 확인 항목
+- viewport `user-scalable=no`(Chirpy `head.html` 소유)는 그대로다. 확대 제한을 풀려면 head 포크가 필요해 범위 밖
+- 세로로 긴 도표(`.diagram-tall`, 360px 한 장)는 360px 폭에서 작은 글자가 11.8px로 줄어든다. 도표는 글 콘텐츠(`_includes/figures/<글>/`)라 이번에 바꾸지 않았다
