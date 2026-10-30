@@ -1,7 +1,7 @@
 ---
 title: 블로그 UI를 개인 디자인 시스템(kit paper 테마)으로 정돈
 date: 2026-10-31
-status: in-progress
+status: done
 tier: T2
 ---
 
@@ -80,7 +80,8 @@ tier: T2
   - 결과: 모든 행에서 실제 innerWidth·touch가 설정과 일치(<850 coarse·maxTouchPoints>0). 320~1440과 경계 폭에서 가로 넘침 0, 도표는 576 이하 좁은 그림·577 이상 넓은 그림, 가장 작은 도표 글자 11.8px(360, 세로로 긴 그림 1장)·나머지 13px 이상, 목차는 1200 이상 오른쪽·미만 목차 바, 표는 가로 스크롤. 사이드바 연속 시퀀스·849↔851·848/850/851, 모드 메뉴 키보드, 검색 390, 복사 버튼 1280 마우스·320 터치, 모바일 목차, neutral 왕복, 시스템 모드 OS 전환 모두 통과. 실제 글꼴·제목 앵커는 전후 동일. 캡처는 전후를 직접 열어 확인(작업 중 `/tmp/tb-design/shots/`, 기준 8장은 `docs/design-baseline/`). iOS Safari·가상 키보드·실기기는 미확인
 - [x] S6. 독립 검증 — Codex 워커 — 빌드·htmlproofer·design-check 재실행, 변경 범위, 직접 고른 실패 시나리오 1~3개(ego 같은 TaskSpace 다른 Page)
   - 결과: Codex `global.openai.gpt-6-astra`(Task `task_192e55eca054` / Dispatch `ctx_693c33a4c570`, 보고서 `validation.md`). 빌드·htmlproofer·design-check·kit 원본 직접 해시·산출물 경로·`_posts`/`_tabs` 변경 0·시크릿 패턴 0 모두 통과. 직접 고른 시나리오 3개(780×360 가로 화면 메뉴 스크롤·모드 선택·이동, 열린 목차 팝업 1199→1201→1199 전환·앵커, 빈 검색→재검색·320→575·도표 글 이동·OS 모드 전환) 기능 통과. 낮음 1건: 1201 coarse에서 오른쪽 목차 29.8px → 터치면 44px로 고치고 1201/1440 coarse 최소 44px, 1280 마우스 29.8px 그대로, 활성 표시 위치 정상 재확인
-- [ ] S7. 배포 — 승인 후 — `git push origin <SHA>:refs/heads/main`, 그 SHA의 Pages 실행 성공 + 배포 사이트에서 홈·글·모드·검색·모바일 메뉴 확인
+- [x] S7. 배포 — 승인 후 — `git push origin <SHA>:refs/heads/main`, 그 SHA의 Pages 실행 성공 + 배포 사이트에서 홈·글·모드·검색·모바일 메뉴 확인
+  - 결과: 사용자 승인 뒤 `bb6f8483e19f4472522b3c9218cd4f9caed5444e`를 main에 fast-forward push, Pages 실행 41093003850(build·deploy) success. 배포 CSS에 kit 토큰과 터치 목차 규칙이 있고 `/CLAUDE.md`·`/docs/...`는 404. ego(TaskSpace 11, 0.6.1.13)로 배포 사이트 확인: 홈·긴 글·코드 글·도표 글 light/dark에서 paper 바탕·Noto Serif KR·가로 넘침 0, 작은 대상은 예외(카테고리·태그·CC BY·검색 입력 42px)뿐. 사이드바 390 터치 열기(초점 아바타)·Escape(초점 트리거)·마스크 닫기, 검색 "배포" 7건·취소, 시스템 모드 OS 전환 추종·키보드로 다크 선택 뒤 초점 토글, 목차 390 팝업 11개·닫기 44px·Escape, 1201 터치 목차 최소 44px·1280 마우스 29.8px, 복사 320 터치 동작. 검증 중 TaskSpace 11이 종료돼 있어 사용자 허락을 받고 다시 잡았다
 
 ## 완료 기준
 - https://37writes.github.io/ 홈·긴 제목 글·코드/표 글에서 종이색·세리프가 유지되고, 모바일 메뉴를 터치로 열고 닫을 수 있으며 Tab/Escape가 동작하고, 다크·시스템 모드 전환과 검색·목차가 그대로 동작한다.
@@ -93,6 +94,7 @@ tier: T2
 - 자동 배포: 정책 밖 (프로필에 자동 배포 줄 없음)
 
 ## 남은 일
+- 실기기 확인(사용자): iPhone Safari에서 홈·글을 열고 메뉴 열기/닫기, 검색창을 눌러 가상 키보드가 올라온 상태에서 입력·취소, 다크 모드 전환
 - 실제 iOS Safari·가상 키보드·실기기 터치는 ego Chromium 에뮬레이션으로 증명할 수 없음 → 사용자 확인 항목
 - viewport `user-scalable=no`(Chirpy `head.html` 소유)는 그대로다. 확대 제한을 풀려면 head 포크가 필요해 범위 밖
 - 세로로 긴 도표(`.diagram-tall`, 360px 한 장)는 360px 폭에서 작은 글자가 11.8px로 줄어든다. 도표는 글 콘텐츠(`_includes/figures/<글>/`)라 이번에 바꾸지 않았다
