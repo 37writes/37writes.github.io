@@ -1,0 +1,36 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 544" role="img" aria-labelledby="authflow-fig-title authflow-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="authflow-fig-title">로그인 서비스 설계안: 사람은 JWT로, 서버는 IAM으로 증명한다</title>
+  <desc id="authflow-fig-desc">아직 구현 전인 설계안이다. ① 사용자가 웹이나 앱에서 Cognito user pool에 로그인해 JWT를 받는다. ② 앱은 질문에 Authorization: Bearer JWT 헤더를 붙여 백엔드(에이전트 서버)로 보내고, 백엔드가 JWT를 검증하고 사용자별 한도를 확인한다. ③ 백엔드는 자기 IAM 역할로 SigV4 서명해 Bedrock 모델과 AgentCore Gateway를 부른다. ④ Gateway는 자기 서비스 역할(IAM)로 AWS가 제공하는 Web Search 커넥터를 부른다. 사용자에서 백엔드까지는 JWT, 백엔드부터 AWS까지는 IAM으로 증명한다.</desc>
+  <text class="d-strong" x="12" y="24">사람 → 백엔드: JWT</text>
+  <rect class="d-box" x="12" y="40" width="128" height="60"/>
+  <text class="d-strong" x="76" y="66" text-anchor="middle">사용자</text>
+  <text class="d-muted" x="76" y="88" text-anchor="middle">웹 · 앱</text>
+  <path class="d-line" d="M140 70 H220"/>
+  <text x="180" y="62" text-anchor="middle">① 로그인</text>
+  <text class="d-mono d-muted" x="180" y="90" text-anchor="middle">JWT</text>
+  <rect class="d-box" x="220" y="40" width="128" height="60"/>
+  <text class="d-strong" x="284" y="66" text-anchor="middle">Cognito</text>
+  <text class="d-muted" x="284" y="88" text-anchor="middle">user pool</text>
+  <path class="d-line" d="M76 100 V200"/>
+  <text x="92" y="140">② 질문 + JWT</text>
+  <text class="d-mono d-muted" x="92" y="164">Bearer &lt;JWT&gt;</text>
+  <rect class="d-box" x="12" y="200" width="336" height="70"/>
+  <text class="d-strong" x="28" y="228">백엔드 (에이전트 서버)</text>
+  <text class="d-muted" x="28" y="252">JWT 검증 · 사용자별 한도 확인</text>
+  <path class="d-line" d="M180 270 V330 M92 330 H268 M92 330 V346 M268 330 V346"/>
+  <text x="192" y="294">③ 자기 IAM 역할로</text>
+  <text x="192" y="316">SigV4 서명</text>
+  <rect class="d-box" x="12" y="346" width="160" height="60"/>
+  <text class="d-strong" x="92" y="372" text-anchor="middle">Bedrock</text>
+  <text class="d-muted" x="92" y="394" text-anchor="middle">모델</text>
+  <rect class="d-box" x="188" y="346" width="160" height="60"/>
+  <text class="d-strong" x="268" y="372" text-anchor="middle">AgentCore</text>
+  <text class="d-muted" x="268" y="394" text-anchor="middle">Gateway</text>
+  <path class="d-line" d="M268 406 V470"/>
+  <text x="256" y="444" text-anchor="end">④ 서비스 역할(IAM)</text>
+  <rect class="d-box" x="188" y="470" width="160" height="60"/>
+  <text class="d-strong" x="268" y="496" text-anchor="middle">Web Search</text>
+  <text class="d-muted" x="268" y="518" text-anchor="middle">커넥터 · AWS 제공</text>
+  <text class="d-muted" x="12" y="496">백엔드 → AWS:</text>
+  <text class="d-strong" x="12" y="520">IAM 서명</text>
+</svg>
