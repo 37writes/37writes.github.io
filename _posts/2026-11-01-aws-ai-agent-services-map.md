@@ -45,7 +45,7 @@ AWS 서비스를 이 틀에 놓으면 이렇게 됩니다.
 
 ## 1. 두뇌: Amazon Bedrock
 
-Bedrock은 여러 회사의 파운데이션 모델을 하나의 AWS API로 쓰게 해 주는 완전관리형 서비스입니다. 공식 문서 기준으로 100개 이상의 모델이 있고, 공급자는 Amazon(Nova), Anthropic(Claude), DeepSeek, Moonshot AI(Kimi), MiniMax, OpenAI, xAI 등입니다.
+Bedrock은 여러 회사의 파운데이션 모델을 하나의 AWS API로 쓰게 해 주는 완전관리형 서비스입니다. [공식 문서](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) 기준으로 100개 이상의 모델이 있고, 공급자는 Amazon(Nova), Anthropic(Claude), DeepSeek, Moonshot AI(Kimi), MiniMax, OpenAI, xAI 등입니다.
 
 ### 호출 방법은 여러 가지
 
@@ -58,11 +58,13 @@ Bedrock은 여러 회사의 파운데이션 모델을 하나의 AWS API로 쓰�
 
 처음 만든다면 **Converse**가 편합니다. 모델을 바꿀 때 요청 코드를 거의 고치지 않아도 되기 때문입니다. 두뇌를 갈아 끼우기 쉬워야 한다는 위의 원칙과 맞습니다.
 
-모델 ID 앞에 `global.`이나 `apac.` 같은 접두사가 붙은 것은 **Cross-Region inference profile**입니다. 요청을 여러 리전에 나눠 보내 처리량을 높이는 방식이고, 저는 `global.anthropic.claude-haiku-5-5`, `apac.amazon.nova-lite-v1:0`을 이 형태로 썼습니다.
+모델 ID 앞에 `global.`이나 `apac.` 같은 접두사가 붙은 것은 **[Cross-Region inference](https://docs.aws.amazon.com/bedrock/latest/userguide/cross-region-inference.html) profile**입니다. 요청을 여러 리전에 나눠 보내 처리량을 높이는 방식이고, 저는 `global.anthropic.claude-haiku-5-5`, `apac.amazon.nova-lite-v1:0`을 이 형태로 썼습니다. 두 접두사는 처리되는 범위가 다릅니다. `apac.`처럼 지역이 붙은 profile은 그 지역(아시아·태평양) 안의 리전으로만 요청을 보내고, `global.` profile은 전 세계의 지원 상용 리전 어디로든 보낼 수 있습니다. 그래서 서울 엔드포인트로 요청해도 실제 추론은 다른 나라 리전에서 처리될 수 있습니다. 데이터가 처리되는 위치가 중요하면 지역 profile을 고르고, 실제 처리 리전은 CloudTrail 기록의 `additionalEventData.inferenceRegion`으로 확인합니다.
 
 ### Converse 최소 예시: 도구 호출을 강제해서 JSON 받기
 
-모델 답을 정해진 JSON 모양으로 받고 싶을 때 쓸 수 있는 방법이 있습니다. 도구를 하나 정의하고 `toolChoice`로 **그 도구를 반드시 부르게** 하면, 모델은 자유 문장 대신 도구 입력(JSON)으로 답합니다. 문의 분류기를 시험 삼아 만들 때 이 방식을 썼습니다.
+모델 답을 정해진 JSON 모양으로 받고 싶을 때 쓸 수 있는 방법이 있습니다. 도구를 하나 정의하고 `toolChoice`로 **그 도구를 반드시 부르게** 하면, 모델은 자유 문장 대신 도구 입력(JSON)으로 답합니다. 문의 분류기를 시험 삼아 만들 때 이 방식을 썼습니다. 다만 특정 도구를 강제하는 `toolChoice.tool`은 [API 참조](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html)에 지원 모델이 따로 적힌 기능이고(문서에는 Claude 3와 Nova로 적혀 있고, 저는 Claude Haiku 5.5에서 동작하는 것을 확인했습니다), 도구를 강제로 부르게 한다고 입력이 스키마를 반드시 지키는 것은 아니므로 받은 입력은 서버에서 다시 검증해야 합니다.
+
+실행하려면 AWS 자격 증명과 해당 모델 호출 권한이 필요합니다.
 
 ```python
 import boto3
@@ -103,20 +105,20 @@ for block in resp["output"]["message"]["content"]:
 
 에이전트를 만들다 보면 모델 호출 옆에 붙이고 싶은 것이 생깁니다. Bedrock 안에 이미 있는 기능들입니다.
 
-**Knowledge Bases (RAG)**: 내 문서를 검색해서 답의 근거로 넣고, 답에 출처 인용도 붙입니다. 두 종류가 있습니다.
+**[Knowledge Bases](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html) (RAG)**: 내 문서를 검색해서 답의 근거로 넣고, 답에 출처 인용도 붙입니다. 두 종류가 있습니다.
 
 - **Managed Knowledge Base**: 수집, 색인, 저장, 검색을 Bedrock이 맡습니다. S3, SharePoint, Confluence, Google Drive, OneDrive, Web Crawler 커넥터가 있고, **AgentCore Gateway와 기본 연동**돼서 MCP 도구로 바로 붙일 수 있습니다.
 - **Customer-managed Knowledge Base**: 벡터 저장소(OpenSearch Serverless, Aurora, Neptune 등)를 직접 두고 파이프라인을 직접 다룹니다. 서드파티 커넥터, 문서 단위 권한, Gateway 기본 연동은 Managed 쪽에만 있습니다.
 
-**Guardrails**: 입력과 출력에 거는 필터입니다. 유해 콘텐츠(프롬프트 공격 포함), 금지 주제, 금지 단어, 개인정보(PII) 차단·마스킹, 답이 근거 문서에서 벗어났는지 보는 contextual grounding 검사, 논리 규칙으로 답을 검증하는 Automated Reasoning 검사가 있습니다. 모델 호출에 guardrail ID를 붙여 쓰거나, 모델 없이 `ApplyGuardrail` API로 따로 쓸 수 있습니다.
+**[Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)**: 입력과 출력에 거는 필터입니다. 유해 콘텐츠(프롬프트 공격 포함), 금지 주제, 금지 단어, 개인정보(PII) 차단·마스킹, 답이 근거 문서에서 벗어났는지 보는 contextual grounding 검사, 논리 규칙으로 답을 검증하는 Automated Reasoning 검사가 있습니다. 모델 호출에 guardrail ID와 버전을 붙여 쓰거나, 모델 없이 `ApplyGuardrail` API로 따로 쓸 수 있습니다. 에이전트에서 주의할 점이 있습니다. [Converse에 붙인 Guardrails의 평가 대상 표](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-use-converse-api.html)를 보면, 사용자 입력과 모델 응답 텍스트는 검사하지만 도구 정의, 모델이 만든 도구 호출 인자(`toolUse.input`), 앱이 돌려준 도구 결과(`toolResult`)는 검사하지 않습니다. 검색 결과에 섞여 들어온 지시문이나 위험한 도구 인자를 막으려면, 도구 결과를 `ApplyGuardrail`에 따로 넣는 식으로 도구 쪽 검사를 별도로 설계해야 합니다.
 
-**Intelligent Prompt Routing**: 같은 계열의 작은 모델과 큰 모델 중 질문마다 하나를 골라 보냅니다. 쉬운 질문은 싼 모델로, 어려운 질문은 큰 모델로 보내 비용을 줄이는 기능입니다. 실제로 호출해 본 결과는 아래 "직접 확인한 것"에 있습니다.
+**[Intelligent Prompt Routing](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html)**: 같은 계열의 작은 모델과 큰 모델 중 질문마다 하나를 골라 보냅니다. 쉬운 질문은 싼 모델로, 어려운 질문은 큰 모델로 보내 비용을 줄이는 기능입니다. 실제로 호출해 본 결과는 아래 "직접 확인한 것"에 있습니다.
 
-**Bedrock 내장 Web Search**: 2026년 8월에 Bedrock 안에 웹 검색 서버 도구가 생겼습니다. 다만 **OpenAI GPT 모델을 Responses API로 쓸 때만** 쓸 수 있고, 리전도 미국 세 곳(버지니아 북부, 오하이오, 오레곤)뿐입니다. Claude 기반 구성에는 이 길이 없어서, 저는 AgentCore 쪽 Web Search를 골랐습니다.
+**Bedrock 내장 Web Search**: 2026년 8월에 Bedrock 안에 웹 검색 서버 도구가 생겼습니다. 다만 **OpenAI GPT 모델을 Responses API로 쓸 때만** 쓸 수 있고, 리전도 미국 세 곳(버지니아 북부, 오하이오, 오레곤)뿐입니다([Bedrock 개요](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html) 기준). Claude 기반 구성에는 이 길이 없어서, 저는 AgentCore 쪽 Web Search를 골랐습니다.
 
 ## 2. 손발과 운영: Amazon Bedrock AgentCore
 
-AgentCore는 문서 정의로 "어떤 프레임워크, 어떤 모델로든 에이전트를 만들고 배포하고 운영하는 플랫폼"입니다. 안에 서비스가 여러 개 있는데, **모듈식이라 하나만 써도 되고 같이 써도 됩니다.** Bedrock 모델만 써야 하는 것도 아닙니다.
+AgentCore는 [문서](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html) 정의로 "어떤 프레임워크, 어떤 모델로든 에이전트를 만들고 배포하고 운영하는 플랫폼"입니다. 안에 서비스가 여러 개 있는데, **모듈식이라 하나만 써도 되고 같이 써도 됩니다.** Bedrock 모델만 써야 하는 것도 아닙니다.
 
 서비스가 많아 보이지만, 처음 에이전트 서비스를 만들 때 알아야 할 것은 다섯 개입니다.
 
@@ -126,7 +128,7 @@ Gateway는 API, Lambda 함수, 기존 서비스를 **MCP(Model Context Protocol)
 
 비유하면 **Gateway는 멀티탭이고, 커넥터는 AWS가 파는 완제품 플러그**입니다. 같은 멀티탭에 내가 만든 Lambda 도구, Knowledge Base, AWS가 만든 Web Search 커넥터를 같이 꽂을 수 있고, 모델은 이것을 전부 한 목록의 도구로 봅니다.
 
-Gateway를 누가 부를 수 있는지(인바운드 인증)는 만들 때 정합니다.
+Gateway를 누가 부를 수 있는지([인바운드 인증](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-inbound-auth.html))는 만들 때 정합니다.
 
 | 방식 | 설명 |
 |---|---|
@@ -135,7 +137,7 @@ Gateway를 누가 부를 수 있는지(인바운드 인증)는 만들 때 정합
 | `AUTHENTICATE_ONLY` | SigV4 서명으로 누구인지만 확인하고, 허용 판단은 뒤쪽(정책 엔진, interceptor Lambda, 대상 서비스)에 맡김 |
 | `NONE` | 인증 없음. 판단을 전부 다른 곳에 맡김 |
 
-뒤의 두 방식은 Gateway가 스스로 막지 않으므로, 다른 곳에서 권한을 꼭 검사해야 합니다. 서버가 자기 IAM 역할로 Gateway를 부르는 구조라면 IAM 방식이 가장 단순합니다. 권한 정책은 이런 모양입니다 (예시 계정 ID).
+뒤의 두 방식은 Gateway가 자체 인가 판단을 하지 않으므로, 다른 곳에서 권한을 꼭 검사해야 합니다. 서버가 자기 IAM 역할로 Gateway를 부르는 구조라면 IAM 방식이 가장 단순합니다. 권한 정책은 이런 모양입니다 (예시 계정 ID).
 
 ```json
 {
@@ -150,13 +152,13 @@ Gateway를 누가 부를 수 있는지(인바운드 인증)는 만들 때 정합
 
 ### Web Search 커넥터
 
-제가 처음 찾던 것이 이것입니다. Gateway에 `connectorId: "web-search"`로 대상을 하나 추가하면, 에이전트는 `WebSearch`라는 MCP 도구를 얻습니다. 검색어(200자 이하)를 보내면 결과마다 본문 발췌, URL, 제목, 게시일이 돌아옵니다.
+제가 처음 찾던 것이 이것입니다. Gateway에 `connectorId: "web-search"`로 대상을 하나 추가하면, 에이전트는 `WebSearch`라는 MCP 도구를 얻습니다([Web Search Tool 문서](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-target-connector-web-search-tool.html)). 검색어(200자 이하)를 보내면 본문 발췌와 함께 URL·제목·게시일 등이 돌아옵니다. 응답 형식에서 필수는 본문 발췌뿐이라, 일부 메타데이터(게시일 등)는 없을 수 있습니다.
 
 직접 검색 API 업체와 계약하고, 키를 관리하고, 호출 코드를 서버에 올리는 일을 AWS가 대신 맡는 셈입니다. 알아 둘 점은 세 가지입니다.
 
 - **리전**: 2026-11-01 문서 기준으로 us-east-1, us-east-2, us-west-2, eu-west-1, ap-southeast-2, ap-northeast-1(도쿄), us-gov-west-1입니다. **서울(ap-northeast-2)에는 없습니다.** 저는 가장 가까운 도쿄를 골랐습니다.
-- **가격**: AgentCore 가격 페이지 기준 검색 1,000건에 $7입니다 (2026-11-01 확인).
-- **이용 조건**: 사용자에게 보여 주는 답에 검색 결과를 쓰면 **출처 인용과 링크를 같이 보여 줘야** 합니다. 결과를 대량으로 저장하거나 경쟁 색인을 만드는 데 쓰는 것은 금지입니다.
+- **가격**: [AgentCore 가격 페이지](https://aws.amazon.com/bedrock/agentcore/pricing/) 기준 검색 1,000건에 $7입니다 (2026-11-01 확인).
+- **이용 조건** (같은 문서의 Acceptable use): 사용자에게 보여 주는 답에 검색 결과를 쓰면 **출처 인용과 링크를 같이 보여 줘야** 합니다. 결과를 대량으로 저장하거나 경쟁 색인을 만드는 데 쓰는 것은 금지입니다.
 
 검색 API(Tavily 같은 곳)를 직접 붙이는 방법도 있습니다. 두 방식의 품질과 속도는 아직 비교하지 못했습니다.
 
@@ -170,7 +172,7 @@ Runtime이 꼭 필요한 것은 아닙니다. 같은 코드를 ECS나 Lambda에 
 
 - **Identity**: 에이전트가 **사용자 대신** 외부 서비스(구글 캘린더, 슬랙 등)에 접근할 때 필요한 자격 증명과 인증을 관리합니다. Cognito, Okta, Microsoft Entra ID, Auth0 같은 기존 ID 제공자와 연동됩니다. "사람이 내 서비스에 로그인하는 것"(Cognito의 일)과는 다른 문제입니다.
 - **Memory**: 대화 안에서의 단기 기억과, 세션을 넘어 남는 장기 기억을 제공합니다.
-- **Observability**: 에이전트가 어떤 단계를 거쳐 답을 만들었는지 추적합니다. OpenTelemetry 형식이고 CloudWatch에서 봅니다. 모델을 바꿨을 때 무엇이 달라졌는지 볼 수 있어야 하므로, 서비스로 가면 사실상 필수입니다.
+- **[Observability](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/observability.html)**: 에이전트가 어떤 단계를 거쳐 답을 만들었는지 추적합니다. OpenTelemetry 형식이고 CloudWatch에서 봅니다. 에이전트·Gateway·Memory의 기본 지표는 자동으로 나오지만, 더 자세한 추적이나 로그인·사용량 확인 같은 앱 쪽 단계는 코드에 계측을 추가해야 보입니다. 모델을 바꿨을 때 무엇이 달라졌는지 볼 수 있어야 하므로, 서비스로 가면 사실상 필수입니다.
 
 ### 필요해지면 보는 것
 
@@ -189,9 +191,9 @@ Runtime이 꼭 필요한 것은 아닙니다. 같은 코드를 ECS나 Lambda에 
 
 ## 3. 루프: Strands Agents
 
-Strands Agents는 AWS가 만든 오픈소스(Apache 라이선스) 에이전트 SDK입니다. Python과 TypeScript를 지원합니다. 모델과 도구, 지시문을 넘기면 SDK가 "모델에게 묻기 → 도구 실행 → 결과를 다시 모델에게" 루프를 돌려 줍니다. 모델 공급자는 Bedrock 말고도 Anthropic, OpenAI, Google, Ollama 등을 고를 수 있고, MCP 서버도 도구로 연결할 수 있습니다.
+[Strands Agents](https://strandsagents.com/latest/)는 AWS가 만든 오픈소스(Apache 라이선스) 에이전트 SDK입니다. Python과 TypeScript를 지원합니다. 모델과 도구, 지시문을 넘기면 SDK가 "모델에게 묻기 → 도구 실행 → 결과를 다시 모델에게" 루프를 돌려 줍니다. 모델 공급자는 Bedrock 말고도 Anthropic, OpenAI, Google, Ollama 등을 고를 수 있고, MCP 서버도 도구로 연결할 수 있습니다.
 
-함수에 `@tool`을 붙이면 도구가 됩니다.
+함수에 `@tool`을 붙이면 도구가 됩니다. 아래 코드도 실행하려면 AWS 자격 증명과 해당 모델 호출 권한이 필요합니다.
 
 ```python
 # pip install strands-agents
@@ -237,7 +239,7 @@ agent("주문 A-1024 어디쯤 왔나요?")
 - **사람 → 내 서버**: 사용자는 Cognito user pool로 로그인해서 JWT를 받고, 질문할 때 그 토큰을 붙입니다. 서버는 토큰을 검증해서 누구인지, 오늘 얼마나 썼는지를 확인합니다.
 - **내 서버 → AWS**: 에이전트 서버는 자기 **IAM 역할**로 Bedrock과 Gateway를 호출합니다. 사용자가 Gateway를 직접 부르지 않습니다.
 
-JWT, IAM(SigV4), Cognito가 각각 무엇이고 어떻게 다른지는 따로 정리한 인증 글에서 자세히 다룹니다. 개발 중에 IAM 사용자에 인라인 정책을 계속 붙이다가 **사용자당 인라인 정책 합계 2048자 한도**에 걸린 적이 있는데, 관리형 정책으로 옮겨서 해결했습니다.
+JWT, IAM(SigV4), Cognito가 각각 무엇이고 어떻게 다른지는 [인증 한 번에 정리: JWT, IAM(SigV4), Cognito는 각각 무엇을 증명하나]({% post_url 2026-11-01-auth-basics-jwt-iam-cognito %})에서 자세히 다룹니다. 개발 중에 IAM 사용자에 인라인 정책을 계속 붙이다가 **[사용자당 인라인 정책 합계 2048자 한도](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html)**에 걸린 적이 있는데, 관리형 정책으로 옮겨서 해결했습니다.
 
 ## 전체 구조 (설계안, 아직 구현 전)
 
@@ -252,21 +254,21 @@ JWT, IAM(SigV4), Cognito가 각각 무엇이고 어떻게 다른지는 따로 �
 
 1. 사용자가 웹이나 앱에서 Cognito로 로그인하고 JWT를 받습니다.
 2. 질문에 JWT를 붙여 에이전트 서버로 보냅니다. 서버는 토큰을 검증하고, 이 사용자의 사용량 한도를 확인합니다.
-3. 서버의 루프(Strands)가 Bedrock 모델을 부릅니다. Guardrails가 입력과 출력을 검사합니다.
-4. 모델이 도구를 고르면 서버가 Gateway를 부릅니다. Gateway 뒤에는 Web Search 커넥터, 내 Lambda 도구, Knowledge Base가 있습니다.
+3. 서버의 루프(Strands)가 서버의 IAM 역할로 Bedrock 모델을 부릅니다. Guardrails로 모델의 텍스트 입출력을 검사합니다(도구 결과 검사는 따로 설계합니다).
+4. 모델이 도구를 고르면 서버가 같은 IAM 역할로 Gateway를 부릅니다. Gateway 뒤에는 Web Search 커넥터, 내 Lambda 도구, Managed Knowledge Base가 있습니다.
 5. 사용자별 대화 기억은 Memory에, 사용자 대신 외부 서비스에 접근하는 권한은 Identity에 맡깁니다.
-6. 이 모든 단계는 Observability로 추적합니다.
+6. 에이전트와 도구 실행은 Observability로 추적합니다. 로그인, 사용량 확인 같은 앱 쪽 단계까지 한 흐름으로 보려면 서버 코드에 계측을 더합니다.
 
 ### 만드는 순서 (계획)
 
 한 번에 다 만들지 않고, 앞 단계에서 만든 것을 뒤 단계에서 그대로 쓰는 순서로 잡았습니다. 이것도 계획이고 아직 진행 전입니다.
 
-1. **도구 먼저**: Gateway + Web Search를 만들고 개발 도구(Claude Code)에 MCP로 붙여서, 도구가 제대로 도는지 직접 써 보며 확인합니다.
+1. **도구 먼저**: Gateway + Web Search를 만들고 개발 도구(Claude Code)에 MCP로 붙여서, 도구가 제대로 도는지 직접 써 보며 확인합니다. IAM 인증 Gateway는 요청마다 SigV4 서명이 필요하므로, Claude Code와 Gateway 사이에 서명을 대신 해 주는 로컬 MCP 프록시([mcp-proxy-for-aws](https://github.com/aws/mcp-proxy-for-aws))를 두고 연결할 계획입니다. AWS의 [Web Search 샘플](https://github.com/aws-samples/sample-agentcore-websearch-agent-skill)도 이 방식으로 Claude Code를 연결합니다. 제 환경에서는 아직 검증 전입니다.
 2. **작은 에이전트**: 같은 Gateway를 부르는 작은 에이전트를 Runtime에 올립니다. 로그인 없이 나 혼자 씁니다.
 3. **사용자 붙이기**: Cognito 로그인, 웹 화면, 사용자별 사용량 한도를 붙입니다.
 4. **확장**: Memory, Identity, 도구를 더합니다.
 
-1단계에서 IAM 인증으로 만든 Gateway는 2단계 이후에도 그대로 씁니다. 개발 도구가 부르든 서버가 자기 IAM 역할로 부르든, Gateway 입장에서는 똑같이 SigV4로 서명된 IAM 호출이기 때문입니다.
+1단계에서 IAM 인증으로 만든 Gateway를 2단계 이후에도 그대로 쓸 수 있도록 설계했습니다. 개발 도구가 프록시를 거쳐 부르든 서버가 자기 IAM 역할로 부르든, Gateway 입장에서는 똑같이 SigV4로 서명된 IAM 호출이기 때문입니다.
 
 ### 서비스로 갈 때 꼭 둘 것: 사용자별 사용량 한도
 
@@ -287,7 +289,7 @@ JWT, IAM(SigV4), Cognito가 각각 무엇이고 어떻게 다른지는 따로 �
 
 Anthropic 라우터는 난이도에 따라 모델을 바꿨고, Nova 라우터는 두 질문 모두 Lite로 보냈습니다. **질문 두 개로 본 결과라 라우터 성능을 일반화할 수는 없습니다.** 라우팅은 영어 프롬프트에 최적화돼 있다고 문서에 적혀 있다는 점도 감안해야 합니다.
 
-더 걸리는 점은 라우터에 넣을 수 있는 모델입니다. 기본 Anthropic 라우터 뒤에 있는 것은 2024년의 Claude 3 계열입니다. 2026-11-01 기준 문서의 지원 모델 표에는 Nova Lite·Pro와 Llama 3.1·3.3 일부만 있습니다(같은 문서의 명령 예시에는 Claude 모델 ID가 들어 있어 표와 어긋납니다). **최신 Claude를 직접 만든 라우터에 넣을 수 있는지는 확인하지 못했습니다.** 최신 모델 사이에서 고르고 싶다면, 작은 모델에게 먼저 난이도를 판정시키고 그 결과로 모델을 고르는 방법도 있습니다. 이쪽은 어떤 모델이든 넣을 수 있습니다.
+더 걸리는 점은 라우터에 넣을 수 있는 모델입니다. 기본 Anthropic 라우터 뒤에 있는 것은 2024년의 Claude 3 계열입니다. 2026-11-01 기준 [Prompt Routing 문서](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-routing.html)의 지원 모델 표에는 Nova Lite·Pro와 Llama 3.1·3.3 일부만 있습니다(같은 문서의 명령 예시에는 Claude 모델 ID가 들어 있어 표와 어긋납니다). **최신 Claude를 직접 만든 라우터에 넣을 수 있는지는 확인하지 못했습니다.** 최신 모델 사이에서 고르고 싶다면, 작은 모델에게 먼저 난이도를 판정시키고 그 결과로 모델을 고르는 방법도 있습니다. 이쪽은 어떤 모델이든 넣을 수 있습니다.
 
 ### 최신 모델은 예전 파라미터를 받지 않을 수 있다
 
@@ -302,17 +304,17 @@ The model returned the following errors: `temperature` is deprecated for this mo
 
 ### 강제 tool use로 받은 JSON 분류는 호출당 1.1~1.6초
 
-앞의 Converse 예시처럼 `toolChoice`로 도구 하나를 강제해서 Claude Haiku 5.5에게 문의 분류를 시켰습니다. 매번 정해진 JSON 모양으로 답이 왔고, 시험한 세 문장에서 호출 하나에 약 1.1~1.6초가 걸렸습니다.
+앞의 Converse 예시처럼 `toolChoice`로 도구 하나를 강제해서 Claude Haiku 5.5에게 문의 분류를 시켰습니다. 매번 정해진 JSON 모양으로 답이 왔고, 시험한 세 문장에서 호출 하나에 약 1.1~1.6초가 걸렸습니다. 세 번 모두 모양이 맞았다고 해서 스키마 준수가 보장되는 것은 아니므로, 서비스에서는 받은 입력을 서버에서 검증하는 단계를 둡니다.
 
 ### Web Search 커넥터는 서울에 없다
 
-앞에서 적은 대로 Web Search 커넥터 지원 리전에 서울이 없어서 도쿄(ap-northeast-1)를 골랐고, Gateway도 도쿄에 만들기로 했습니다. 모델 호출은 서울에 둘 수 있으므로, 도쿄로 가는 것은 검색 요청뿐입니다. 이 Gateway 구축은 아직 진행 전입니다.
+앞에서 적은 대로 Web Search 커넥터 지원 리전에 서울이 없어서 도쿄(ap-northeast-1)를 골랐고, Gateway도 도쿄에 만들기로 했습니다. Bedrock 요청을 보내는 엔드포인트는 서울, 검색 Gateway는 도쿄에 둘 계획입니다. 다만 앞에서 본 것처럼 `global.` 모델은 서울로 요청해도 실제 추론을 다른 리전에서 처리할 수 있습니다. 이 Gateway 구축은 아직 진행 전입니다.
 
 ## 주의할 점
 
 - **설계안과 확인한 것을 구분하세요.** 이 글의 전체 구조와 만드는 순서는 계획입니다. 직접 확인한 것은 바로 위 절의 내용입니다.
 - **리전부터 확인하세요.** Web Search 커넥터처럼 서울에 없는 기능이 있고, Bedrock 내장 Web Search처럼 미국에만 있는 기능도 있습니다.
-- **Gateway 인증을 `NONE`이나 `AUTHENTICATE_ONLY`로 두면** Gateway가 스스로 막지 않습니다. 정책 엔진이나 interceptor Lambda, 대상 서비스에서 권한을 검사해야 합니다.
+- **Gateway 인증을 `NONE`이나 `AUTHENTICATE_ONLY`로 두면** Gateway가 자체 인가 판단을 하지 않습니다. 정책 엔진이나 interceptor Lambda, 대상 서비스에서 권한을 검사해야 합니다.
 - **검색 결과를 보여 줄 때는 출처를 같이 보여 주세요.** Web Search 커넥터의 이용 조건입니다.
 - **모델을 바꾸기 전에 평가 세트로 먼저 돌려 보세요.** 파라미터 하나로도 코드가 깨질 수 있습니다.
 

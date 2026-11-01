@@ -1,6 +1,6 @@
-<svg class="diagram-svg diagram-tall" viewBox="0 0 360 540" role="img" aria-labelledby="map-fig-title map-fig-desc" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 572" role="img" aria-labelledby="map-fig-title map-fig-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="map-fig-title">로그인해서 쓰는 AI 에이전트 서비스의 AWS 구성 (설계안)</title>
-  <desc id="map-fig-desc">아직 구현하지 않은 설계안이다. 사용자는 웹이나 앱에서 Cognito로 로그인해 JWT를 받고, 질문에 JWT를 붙여 에이전트 서버로 보낸다. 에이전트 서버는 AgentCore Runtime 위에서 도는 Strands 코드(루프)이며 JWT를 검증하고 사용자별 사용량 한도를 확인한다. 서버는 두뇌인 Bedrock 모델을 부르고 Guardrails가 입출력을 검사한다. 손발인 AgentCore Gateway 뒤에는 Web Search 커넥터, 내 Lambda 도구, Knowledge Base가 있다. Memory는 사용자별 기억을, Identity는 사용자 대신 외부 서비스에 접근하는 권한을 맡는다. Observability가 모든 단계를 추적한다.</desc>
+  <desc id="map-fig-desc">아직 구현하지 않은 설계안이다. 사용자는 웹이나 앱에서 Cognito로 로그인해 JWT를 받고, 질문에 JWT를 붙여 에이전트 서버로 보낸다. 에이전트 서버는 AgentCore Runtime 위에서 도는 Strands 코드(루프)이며 JWT를 검증하고 사용자별 사용량 한도를 확인한다. 서버는 자기 IAM 역할로 AWS 서비스를 호출한다. 두뇌인 Bedrock 모델을 부르고, Guardrails로 모델의 텍스트 입출력을 검사한다. 손발인 AgentCore Gateway 뒤에는 Web Search 커넥터, 내 Lambda 도구, Managed Knowledge Base가 있다. Memory는 사용자별 기억을, Identity는 사용자 대신 외부 서비스에 접근하는 권한을 맡는다. Observability는 에이전트와 도구 실행을 추적하고, 로그인 같은 앱 단계는 계측을 추가해야 추적된다.</desc>
   <text class="d-muted d-small" x="12" y="20">설계안 · 아직 구현 전</text>
   <rect class="d-box" x="12" y="32" width="140" height="52"/>
   <text class="d-strong" x="82" y="55" text-anchor="middle">사용자</text>
@@ -17,20 +17,22 @@
   <text class="d-muted" x="332" y="138" text-anchor="end">루프</text>
   <text class="d-muted d-small" x="28" y="160">Strands 코드 · AgentCore Runtime</text>
   <text class="d-muted d-small" x="28" y="178">JWT 검증 · 사용자별 사용량 한도</text>
-  <path class="d-line" d="M36 192 V420 M36 244 H56 M36 332 H56 M36 420 H56"/>
-  <rect class="d-box" x="56" y="212" width="292" height="64"/>
-  <text class="d-strong" x="72" y="238">Bedrock</text>
-  <text class="d-muted" x="332" y="238" text-anchor="end">두뇌</text>
-  <text class="d-muted d-small" x="72" y="260">모델 호출 · Guardrails 입출력 검사</text>
-  <rect class="d-box" x="56" y="292" width="292" height="80"/>
-  <text class="d-strong" x="72" y="318">AgentCore Gateway</text>
-  <text class="d-muted" x="332" y="318" text-anchor="end">손발</text>
-  <text class="d-muted d-small" x="72" y="340">Web Search 커넥터 · 내 Lambda 도구</text>
-  <text class="d-muted d-small" x="72" y="358">Knowledge Base</text>
-  <rect class="d-box" x="56" y="388" width="292" height="64"/>
-  <text class="d-strong" x="72" y="414">Memory · Identity</text>
-  <text class="d-muted d-small" x="72" y="436">사용자별 기억 · 사용자 대신 외부 접근</text>
-  <rect class="d-box" x="12" y="472" width="336" height="56"/>
-  <text class="d-strong" x="28" y="496">Observability</text>
-  <text class="d-muted d-small" x="28" y="516">위 모든 단계를 추적 (OpenTelemetry)</text>
+  <path class="d-line" d="M36 192 V432 M36 256 H56 M36 344 H56 M36 432 H56"/>
+  <text class="d-muted d-small" x="46" y="213">서버 IAM 역할로 호출</text>
+  <rect class="d-box" x="56" y="224" width="292" height="64"/>
+  <text class="d-strong" x="72" y="250">Bedrock</text>
+  <text class="d-muted" x="332" y="250" text-anchor="end">두뇌</text>
+  <text class="d-muted d-small" x="72" y="272">모델 호출 · Guardrails로 모델 입출력 검사</text>
+  <rect class="d-box" x="56" y="304" width="292" height="80"/>
+  <text class="d-strong" x="72" y="330">AgentCore Gateway</text>
+  <text class="d-muted" x="332" y="330" text-anchor="end">손발</text>
+  <text class="d-muted d-small" x="72" y="352">Web Search 커넥터 · 내 Lambda 도구</text>
+  <text class="d-muted d-small" x="72" y="370">Managed Knowledge Base</text>
+  <rect class="d-box" x="56" y="400" width="292" height="64"/>
+  <text class="d-strong" x="72" y="426">Memory · Identity</text>
+  <text class="d-muted d-small" x="72" y="448">사용자별 기억 · 사용자 대신 외부 접근</text>
+  <rect class="d-box" x="12" y="484" width="336" height="76"/>
+  <text class="d-strong" x="28" y="508">Observability</text>
+  <text class="d-muted d-small" x="28" y="528">에이전트·도구 실행 추적 (OpenTelemetry)</text>
+  <text class="d-muted d-small" x="28" y="546">로그인 같은 앱 단계는 계측을 추가</text>
 </svg>
