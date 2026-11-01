@@ -27,20 +27,22 @@ Gateway를 만들려고 하니 첫 설정부터 **인바운드 인증**을 고�
 
 서버에 "나 이 사람(이 프로그램)이야"를 증명하는 방법은 크게 두 갈래입니다.
 
-**토큰을 들고 다니는 방식 (bearer token, 대표적으로 JWT).** 로그인하면 발급자가 서명한 토큰을 받고, 요청마다 그 토큰을 그대로 보여 줍니다(`Authorization: Bearer <토큰>`). 받는 쪽은 발급자의 서명이 맞는지, 만료되지 않았는지, 자기에게 발급된 토큰인지를 봅니다. 구조가 단순한 대신, 토큰 자체가 열쇠입니다. **새어 나가면 만료될 때까지 누구나 그 토큰으로 요청할 수 있습니다.**
+**토큰을 들고 다니는 방식 (bearer token, 대표적으로 JWT).** bearer는 토큰 형식이 아니라 "가진 사람을 믿는다"는 사용 방식이고, JWT는 그런 토큰에 많이 쓰는 형식입니다. 로그인하면 발급자가 서명한 토큰을 받고, 요청마다 그 토큰을 그대로 보여 줍니다(`Authorization: Bearer <토큰>`). 받는 쪽은 발급자의 서명이 맞는지, 만료되지 않았는지, 자기에게 발급된 토큰인지를 봅니다. 구조가 단순한 대신, 토큰 자체가 열쇠입니다. **새어 나가면 만료될 때까지 누구나 그 토큰으로 요청할 수 있습니다.**
 
-**요청마다 서명하는 방식 (AWS SigV4).** 비밀키는 내 쪽에만 두고, 요청 내용(메서드, 경로, 헤더, 본문 해시, 시각)에 대한 서명만 보냅니다. 받는 쪽(AWS)은 같은 계산을 다시 해서 서명이 맞는지 봅니다. 서명은 그 요청 내용에 묶여 있어서 요청을 바꾸면 맞지 않고, 대부분의 경우 서명 시각으로부터 5분 안에 도착해야 받아 줍니다. **서명이 새어 나가도 쓸 수 있는 범위가 그 요청 하나, 짧은 시간으로 좁습니다.**
+**요청마다 서명하는 방식 (AWS SigV4).** 비밀키는 내 쪽에만 두고, 요청 내용(메서드, 경로, 헤더, 본문 해시, 시각)에 대한 서명만 보냅니다. 받는 쪽(AWS)은 같은 계산을 다시 해서 서명이 맞는지 봅니다. 서명은 그 요청 내용에 묶여 있어서 요청을 바꾸면 맞지 않고, 대부분의 경우 서명 시각으로부터 5분 안에 도착해야 받아 줍니다. **서명이 새어 나가도 쓸 수 있는 범위가 그 요청 내용, 짧은 시간으로 좁습니다.** 다만 허용 시간 안에 똑같은 요청을 다시 보내는 것까지 막지는 않습니다.
 
 <figure class="diagram">
 {% include figures/auth-basics-jwt-iam-cognito/token-vs-signature.svg %}
 <figcaption>JWT는 토큰 자체를 보여 주고, SigV4는 비밀키 대신 요청마다 만든 서명을 보낸다</figcaption>
 </figure>
 
-이 차이가 뒤에서 "사람은 JWT, 서버는 IAM"으로 이어집니다. 브라우저나 앱에 AWS 비밀키를 넣을 수는 없으니 사람 쪽은 토큰을 쓰고, 비밀키(또는 역할의 임시 자격 증명)를 안전하게 둘 수 있는 서버 쪽은 서명을 씁니다.
+이 차이가 뒤에서 이 글의 설계인 "사람은 JWT, 서버는 IAM"으로 이어집니다. 브라우저나 앱에 장기 AWS 비밀키를 넣을 수는 없으니 이 설계에서는 사람 쪽이 토큰을 쓰고, 역할의 임시 자격 증명을 안전하게 둘 수 있는 서버 쪽이 서명을 씁니다. 다른 길도 있습니다. 클라이언트가 Cognito identity pool에서 임시 자격 증명을 받아 직접 SigV4로 부를 수도 있고, 서버끼리 OAuth client credentials로 받은 JWT를 쓸 수도 있습니다.
 
 ## JWT: 서명된 JSON 쪽지
 
 ### 구조
+
+이 글은 Cognito가 발급하는 **서명된 JWT(JWS)**를 다룹니다. 암호화된 JWE 형식도 있지만 여기서는 제외합니다.
 
 JWT(JSON Web Token, [RFC 7519](https://www.rfc-editor.org/rfc/rfc7519))는 점(`.`)으로 나뉜 세 부분입니다.
 
@@ -52,7 +54,7 @@ header.payload.signature
 - **payload**: 클레임(claim)이라 부르는 정보 묶음. 누가, 누구에게서, 언제까지 유효한지가 들어갑니다.
 - **signature**: 발급자가 비밀키로 header와 payload에 서명한 값.
 
-header와 payload는 **base64url로 인코딩한 JSON**입니다. 그래서 둘 다 `eyJ`(디코드하면 `{"`)로 시작합니다.
+header와 payload는 **base64url로 인코딩한 JSON**입니다. 공백 없이 `{"`로 시작하는 JSON이면 보통 `eyJ`로 시작합니다.
 
 RFC 7519가 정한 표준 클레임은 이렇습니다.
 
@@ -96,7 +98,7 @@ $ python3 jwt_peek.py eyJraWQiOiJleGFtcGxlLWtpZCIsImFsZyI6IlJTMjU2In0.eyJzdWIiOi
 }
 ```
 
-키 없이 내용이 다 보입니다. 그러니 **payload에 비밀번호나 개인정보를 넣으면 안 됩니다.** 그리고 읽을 수 있다는 것은 고칠 수도 있다는 뜻입니다. `sub`를 남의 ID로 바꿔 다시 인코딩하는 것은 몇 줄이면 됩니다. Cognito 문서도 JWT는 쉽게 디코드되고 수정될 수 있으며, 수정된 access 토큰은 권한 상승, 수정된 ID 토큰은 사칭으로 이어질 수 있다고 경고합니다.
+키 없이 내용이 다 보입니다. 그러니 **payload에 비밀번호 같은 비밀값은 넣지 않습니다.** 개인정보는 필요한 것만 담고, 토큰이 어디까지 전달되고 기록되는지 의식합니다(Cognito ID 토큰은 `email` 같은 사용자 속성을 담습니다). 그리고 읽을 수 있다는 것은 고칠 수도 있다는 뜻입니다. `sub`를 남의 ID로 바꿔 다시 인코딩하는 것은 몇 줄이면 됩니다. Cognito 문서도 JWT는 쉽게 디코드되고 수정될 수 있으며, 수정된 access 토큰은 권한 상승, 수정된 ID 토큰은 사칭으로 이어질 수 있다고 경고합니다.
 
 위조를 막는 것은 **세 번째 부분, 서명**입니다. payload를 한 글자라도 바꾸면 서명이 맞지 않습니다. 디코드는 "읽기"일 뿐이고, 서버가 믿어도 되는지는 **검증**으로만 알 수 있습니다.
 
@@ -110,7 +112,7 @@ Cognito가 발급한 토큰을 받는 서버라면 [Cognito의 JWT 검증 문서
 4. **대상**: ID 토큰은 `aud`, access 토큰은 `client_id`가 내 앱 클라이언트 ID와 같은지.
 5. **`token_use`**: API에서 access 토큰만 받기로 했다면 값이 `access`인지.
 
-빠지기 쉬운 것이 하나 더 있습니다. **서명과 `exp`가 맞아도, 그 사이 로그아웃이나 철회가 있었는지는 알 수 없습니다.** 토큰이 스스로 유효 기간을 들고 다니는 구조라서, 오프라인 검증만으로는 철회를 감지하지 못합니다. 철회를 바로 반영해야 하면 Cognito에 상태를 묻거나, access 토큰 수명을 짧게 두는 쪽을 택합니다.
+빠지기 쉬운 것이 하나 더 있습니다. **서명과 `exp`가 맞아도, 그 사이 로그아웃이나 철회가 있었는지는 알 수 없습니다.** 토큰이 스스로 유효 기간을 들고 다니는 구조라서, 오프라인 검증만으로는 철회를 감지하지 못합니다. access 토큰 수명을 짧게 두면 새어 나간 토큰이 통하는 시간이 줄어들지만, 이것은 피해를 줄이는 완화책입니다. 즉시 막아야 한다면 서버 쪽에 세션이나 철회 상태를 따로 두고 요청마다 확인해야 합니다.
 
 ## IAM: 누가, 무엇을, 어디에
 
@@ -118,7 +120,7 @@ Cognito가 발급한 토큰을 받는 서버라면 [Cognito의 JWT 검증 문서
 
 AWS IAM은 "**누가(Principal)** **무엇을(Action)** **어디에(Resource)** 할 수 있나"를 JSON 정책으로 정합니다. 주체에는 사람이 쓰는 **IAM 사용자**, 서버나 다른 계정이 맡는 **역할(Role)**, 그리고 AWS 서비스가 대신 일할 때 맡는 **서비스 역할**(예: Gateway가 커넥터를 부를 때 맡는 역할)이 있습니다.
 
-예를 들어 "이 주체는 이 Gateway 하나만 호출할 수 있다"는 정책은 이렇게 씁니다. 계정 ID와 Gateway ID는 예시 값입니다.
+예를 들어 "이 주체는 이 Gateway 하나만 호출할 수 있다"는 정책은 이렇게 씁니다. 호출할 사용자·역할에 붙이는 identity-based 정책이라 `Principal`이 없고, 붙인 대상이 곧 주체입니다. 계정 ID와 Gateway ID는 예시 값입니다.
 
 ```json
 {
@@ -143,7 +145,7 @@ AWS IAM은 "**누가(Principal)** **무엇을(Action)** **어디에(Resource)** 
 - **기본은 거부입니다(암묵적 거부).** 정책 어디에도 허용이 없으면 거부됩니다. (루트 사용자만 예외입니다.)
 - **명시적 `Deny`는 `Allow`를 이깁니다.** 여러 정책 중 하나라도 이 요청을 `Deny`하면 다른 곳의 `Allow`와 상관없이 거부됩니다.
 
-그래서 IAM 권한 문제는 대부분 "허용을 빠뜨린 것"입니다. 뒤의 "주의할 점"에서 실제로 빠뜨린 사례를 다룹니다.
+이 글에서 겪은 IAM 문제도 "허용을 빠뜨린 것"이었습니다. 뒤의 "주의할 점"에서 그 사례를 다룹니다.
 
 ### SigV4: IAM 자격 증명으로 요청에 서명하기
 
@@ -162,11 +164,13 @@ Authorization: AWS4-HMAC-SHA256
   Signature=<요청마다 다른 값>
 ```
 
+보기 좋게 줄을 나눴지만 실제로는 한 줄 문자열입니다. 역할의 임시 자격 증명으로 서명하면 `X-Amz-Security-Token` 헤더도 함께 붙습니다.
+
 받은 쪽은 같은 계산을 다시 해서 서명을 비교합니다. 이 과정 덕분에 세 가지가 보장됩니다.
 
 - **신원 확인**: 비밀 액세스 키를 가진 사람만 맞는 서명을 만들 수 있습니다. 비밀키 자체는 네트워크로 나가지 않습니다.
 - **변조 방지**: 요청 내용이 서명에 들어가 있어서 중간에 바꾸면 서명이 맞지 않습니다.
-- **재전송 공격 완화**: 대부분의 경우 요청이 서명 시각으로부터 5분 안에 도착해야 합니다.
+- **재전송 공격 완화**: 대부분의 경우 요청이 서명 시각으로부터 5분 안에 도착해야 합니다. 서명은 요청 내용에 묶이지만, 그 시간 안에 같은 요청을 다시 보내는 것까지 막지는 않습니다.
 
 JWT와 비교하면, JWT는 "발급자가 이 사람을 보증한다"는 **쪽지**이고 SigV4는 "이 요청을 내가 지금 보냈다"는 **도장**입니다.
 
@@ -181,9 +185,9 @@ Amazon Cognito는 이름 하나에 부품이 두 개 들어 있습니다. [공�
 | 내주는 것 | ID 토큰, access 토큰, refresh 토큰 | 권한이 제한된 임시 AWS 자격 증명 |
 | 쓰는 때 | 내 앱·API에 로그인을 붙일 때 | 앱이 S3, DynamoDB 같은 AWS 서비스를 **직접** 부를 때 |
 
-User pool은 구글·애플 같은 소셜 로그인, 기업 SAML·OIDC 연동, MFA도 맡습니다. 어느 방식으로 로그인했든 앱이 받는 토큰은 같은 형식의 JWT라서, 백엔드는 검증 코드 하나만 두면 됩니다.
+User pool은 구글·애플 같은 소셜 로그인, 기업 SAML·OIDC 연동, MFA도 맡습니다. 어느 방식으로 로그인했든 앱이 받는 ID·access 토큰은 Cognito가 발급한 같은 형식의 JWT라서, 백엔드는 검증 코드 하나만 두면 됩니다. refresh 토큰은 새 토큰을 받을 때만 쓰는 값이라 앱이 내용을 읽지 않습니다.
 
-**둘은 서로 없어도 쓸 수 있습니다.** 내 백엔드만 요청을 받고 AWS 호출은 백엔드가 한다면 user pool만으로 충분합니다. 브라우저가 S3에 직접 올리는 것처럼 클라이언트가 AWS를 직접 부를 때 identity pool이 필요해집니다. 실제로 user pool만 쓴 배포 구성은 [1인 개발자의 AWS 배포 구조]({% post_url 2026-10-29-solo-dev-aws-deploy-architecture %})에서 다뤘습니다.
+**둘은 서로 없어도 쓸 수 있습니다.** 내 백엔드만 요청을 받고 AWS 호출은 백엔드가 한다면 user pool만으로 충분합니다. 브라우저가 S3에 직접 올리는 것처럼 클라이언트가 AWS를 직접 부를 때 identity pool이 필요해질 수 있습니다(백엔드가 만든 presigned URL로 올리면 필요 없습니다). Cognito user pool로 로그인하고 토큰을 API 요청에 붙이는 배포 구성은 [1인 개발자의 AWS 배포 구조]({% post_url 2026-10-29-solo-dev-aws-deploy-architecture %})에서 다뤘습니다.
 
 백엔드에서 Cognito 토큰을 검증할 때는 직접 구현하기보다 라이브러리를 씁니다. Node.js라면 AWS가 권하는 [`aws-jwt-verify`](https://github.com/awslabs/aws-jwt-verify)가 앞에서 말한 서명·`exp`·`iss`·`client_id`·`token_use` 확인과 JWKS 캐시를 맡아 줍니다. 최소 형태는 이 정도입니다.
 
@@ -199,8 +203,9 @@ const verifier = CognitoJwtVerifier.create({
 
 // 요청마다: "Authorization: Bearer <토큰>"에서 꺼내 검증
 export async function currentUser(authorizationHeader = "") {
-  const [scheme, token] = authorizationHeader.split(" ");
-  if (scheme !== "Bearer" || !token) return null;   // → 401
+  const match = /^Bearer\s+(\S+)$/.exec(authorizationHeader);
+  if (!match) return null;                          // → 401
+  const token = match[1];
   try {
     const claims = await verifier.verify(token);    // 서명·exp·iss·client_id·token_use
     return claims.sub;                               // 이후 사용자 ID로 쓴다
@@ -216,7 +221,7 @@ export async function currentUser(authorizationHeader = "") {
 
 <figure class="diagram">
 {% include figures/auth-basics-jwt-iam-cognito/human-jwt-server-iam.svg %}
-<figcaption>사용자는 Cognito JWT로 백엔드에 자신을 증명하고, 백엔드부터는 IAM 역할의 SigV4 서명으로 AWS를 부른다</figcaption>
+<figcaption>설계안: 사용자는 Cognito JWT로 백엔드에 자신을 증명하고, 백엔드부터는 IAM 역할의 SigV4 서명으로 AWS를 부른다</figcaption>
 </figure>
 
 1. **사용자 → Cognito user pool**: 로그인하고 JWT(access 토큰)를 받습니다.
@@ -224,7 +229,7 @@ export async function currentUser(authorizationHeader = "") {
 3. **백엔드 → Bedrock 모델, AgentCore Gateway**: 백엔드는 **자기 IAM 역할**로 SigV4 서명해서 부릅니다. 사용자의 JWT는 여기까지 내려가지 않습니다.
 4. **Gateway → Web Search 커넥터**: Gateway는 자기 **서비스 역할**로 커넥터를 부릅니다(아웃바운드).
 
-경계는 백엔드 한 곳입니다. 그 앞은 사람의 세계라 JWT로, 그 뒤는 기계의 세계라 IAM으로 증명합니다. 처음에 혼자 쓰려고 IAM 인증으로 정한 Gateway도, 서비스에서는 백엔드가 같은 방식으로 부르면 되니 그대로 쓸 수 있습니다.
+이 설계에서 경계는 백엔드 한 곳입니다. 그 앞은 사람의 세계라 JWT로, 그 뒤는 기계의 세계라 IAM으로 증명합니다. 처음에 혼자 쓰려고 IAM 인증으로 정한 Gateway도, 서비스에서는 백엔드가 같은 방식으로 부르면 되니 그대로 쓸 수 있습니다.
 
 Gateway를 `CUSTOM_JWT`로 두어 사용자 토큰을 Gateway가 직접 검증하게 할 수도 있습니다. 그래도 이 설계에서 Gateway를 IAM으로 둔 이유는, **사용자별 한도와 과금 통제는 어차피 백엔드가 해야 하기 때문**입니다. 검색 한 건, 모델 호출 한 번마다 돈이 드니, 한 사용자가 요청을 쏟아내면 그 비용은 서비스가 냅니다. 검증을 백엔드 한 곳에 모으면 "누구인지"와 "얼마나 썼는지"를 같은 자리에서 판단할 수 있습니다.
 
@@ -267,19 +272,19 @@ Maximum policy size of 2048 bytes exceeded for user my-agent-user
 
 Bedrock의 프롬프트 라우터를 만드는 `CreatePromptRouter`를 부르다 `AccessDenied`가 났습니다. 정책에는 라우터 ARN만 Resource로 넣었는데, 거부된 대상은 라우터에 넣으려던 **모델(추론 프로필) ARN**이었습니다. 이 API는 라우터를 만들면서 안에 넣을 모델도 참조하는데, 정책 초안이 그 모델 ARN을 Resource에서 빠뜨린 것이 원인이었던 것으로 보입니다.
 
-교훈은 **Action뿐 아니라 그 Action이 건드리는 Resource 전부가 정책에 있어야 한다**는 것입니다. 앞에서 말한 "기본은 거부" 때문에, 빠진 Resource 하나가 요청 전체를 막습니다. 비슷하게 권한 하나가 빠져 배포 환경에서만 기능이 실패한 사례는 [배포 환경에서만 실패하던 기능, 원인은 IAM 권한 누락]({% post_url 2026-10-28-dev-harness-first-bugfix-iam %})에 정리했습니다.
+교훈은 **그 API가 평가하는 Action과 필요한 Resource(타입)를 [서비스 권한 참조(Service Authorization Reference)](https://docs.aws.amazon.com/service-authorization/latest/reference/reference_policies_actions-resources-contextkeys.html)에서 함께 확인한다**는 것입니다. 앞에서 말한 "기본은 거부" 때문에, 빠진 허용 하나가 요청 전체를 막습니다. 비슷하게 권한 하나가 빠져 배포 환경에서만 기능이 실패한 사례는 [배포 환경에서만 실패하던 기능, 원인은 IAM 권한 누락]({% post_url 2026-10-28-dev-harness-first-bugfix-iam %})에 정리했습니다.
 
 ### 3. 붙이는 계정과 확인하는 계정을 나눈다
 
-권한을 붙이는 일은 관리자 계정으로 하고, 확인은 **실제로 그 권한을 쓸 에이전트 계정**으로 따로 했습니다. 에이전트 계정에는 IAM 쓰기 권한이 아예 없어서 자기 권한을 바꿀 수도 없습니다.
+같은 AWS 계정 안에서, 권한을 붙이는 일은 관리자 IAM 주체로 하고 확인은 **실제로 그 권한을 쓸 에이전트 IAM 사용자**로 따로 했습니다. 에이전트 IAM 사용자에게는 IAM 쓰기 권한이 아예 없어서 자기 권한을 바꿀 수도 없습니다.
 
-관리자 키로 테스트하면 거의 모든 권한이 있으니 정책에 빠진 것이 있어도 통과합니다. 권한 누락은 **실제 주체의 자격 증명으로 실행해 봐야** 드러납니다.
+관리자 자격 증명으로 테스트하면 거의 모든 권한이 있으니 정책에 빠진 것이 있어도 통과합니다. 권한 누락은 **실제 주체의 자격 증명으로 실행해 봐야** 드러납니다.
 
 ## 정리
 
 - **인증**은 "누구야", **인가**는 "해도 돼"입니다. 401과 403이 이 둘을 나눕니다.
-- **JWT**는 발급자가 서명한 토큰을 그대로 보여 주는 방식입니다. payload는 누구나 읽을 수 있으니 비밀을 넣지 않고, 서버는 서명(JWKS의 `kid`)·`exp`·`iss`·`aud`/`client_id`·`token_use`를 검증합니다. 철회는 오프라인으로 알 수 없으니 수명을 짧게 둡니다.
-- **IAM**은 Principal·Action·Resource를 정책으로 정하고, 기본은 거부이며 명시적 Deny가 이깁니다. **SigV4**는 비밀키를 보내지 않고 요청마다 서명해, 서명이 새어도 쓸 수 있는 범위를 좁힙니다.
+- **JWT**는 발급자가 서명한 토큰을 그대로 보여 주는 방식입니다. payload는 누구나 읽을 수 있으니 비밀을 넣지 않고, 서버는 서명(JWKS의 `kid`)·`exp`·`iss`·`aud`/`client_id`·`token_use`를 검증합니다. 철회는 오프라인으로 알 수 없습니다. 짧은 수명은 피해 시간을 줄일 뿐이고, 즉시 차단은 서버 쪽 상태 관리가 맡습니다.
+- **IAM**은 Principal·Action·Resource를 정책으로 정하고, 기본은 거부이며 명시적 Deny가 이깁니다. **SigV4**는 비밀키를 보내지 않고 요청마다 서명해, 서명이 새어도 쓸 수 있는 범위를 그 요청 내용과 짧은 시간으로 좁힙니다.
 - **Cognito user pool**은 로그인과 JWT 발급, **identity pool**은 토큰을 임시 AWS 자격 증명으로 바꾸는 일을 맡고, 둘은 따로 써도 됩니다.
-- 로그인 서비스에서는 **사람은 JWT로, 서버는 IAM으로** 증명합니다. 경계인 백엔드가 JWT를 검증하고 사용자별 한도를 지키며, 그 뒤의 AWS 호출은 백엔드의 IAM 역할로 합니다.
-- IAM 권한은 인라인 합계 한도, Action이 참조하는 Resource, 확인하는 주체를 함께 챙겨야 합니다.
+- 이 글의 로그인 서비스 설계에서는 **사람은 JWT로, 서버는 IAM으로** 증명합니다. 경계인 백엔드가 JWT를 검증하고 사용자별 한도를 지키며, 그 뒤의 AWS 호출은 백엔드의 IAM 역할로 합니다.
+- IAM 권한은 인라인 합계 한도, API가 평가하는 Action과 Resource, 확인하는 주체를 함께 챙겨야 합니다.

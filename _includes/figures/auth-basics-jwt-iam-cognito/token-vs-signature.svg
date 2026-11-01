@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-wide" viewBox="0 0 480 370" role="img" aria-labelledby="tvs-fig-title tvs-fig-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="tvs-fig-title">JWT 토큰 방식과 SigV4 요청 서명 방식 비교</title>
-  <desc id="tvs-fig-desc">JWT(bearer 토큰)는 주로 로그인한 사람이 쓰고, 토큰 그 자체를 Authorization: Bearer 헤더로 보낸다. 받는 쪽은 발급자 서명, exp, iss, aud를 확인한다. 토큰이 새어 나가면 만료 전까지 누구나 재사용할 수 있다. SigV4(요청 서명)는 주로 IAM 자격 증명을 가진 서버가 쓰고, 비밀키 대신 요청마다 만든 서명만 보낸다. 받는 쪽은 같은 방식으로 서명을 다시 계산해 보낸 값과 비교한다. 서명이 새어도 쓸 수 있는 범위는 그 요청 하나이고 대부분 5분 안이다.</desc>
+  <desc id="tvs-fig-desc">JWT(bearer 토큰)는 주로 로그인한 사람이 쓰고, 토큰 그 자체를 Authorization: Bearer 헤더로 보낸다. 받는 쪽은 발급자 서명, exp, iss, 그리고 ID 토큰이면 aud, access 토큰이면 client_id를 확인한다. 토큰이 새어 나가면 만료 전까지 누구나 재사용할 수 있다. SigV4(요청 서명)는 주로 IAM 자격 증명을 가진 서버가 쓰고, 비밀키 대신 요청마다 만든 서명만 보낸다. 받는 쪽은 같은 방식으로 서명을 다시 계산해 보낸 값과 비교한다. 서명이 새어도 쓸 수 있는 범위는 서명한 그 요청 내용과 대부분 5분 안의 시간이다. 그 시간 안에 같은 요청을 다시 보내는 것까지 막지는 않는다.</desc>
   <text class="d-strong" x="120" y="26" text-anchor="middle">JWT (bearer 토큰)</text>
   <text class="d-muted" x="120" y="50" text-anchor="middle">주로 사람 · 로그인한 사용자</text>
   <text class="d-strong" x="360" y="26" text-anchor="middle">SigV4 (요청 서명)</text>
@@ -16,7 +16,7 @@
   <rect class="d-box" x="15" y="166" width="210" height="88"/>
   <text class="d-muted d-small" x="31" y="188">받는 쪽 확인</text>
   <text x="31" y="214">발급자 서명 · exp</text>
-  <text class="d-mono" x="31" y="238">iss · aud</text>
+  <text class="d-mono" x="31" y="238">iss · aud/client_id</text>
   <rect class="d-box" x="255" y="166" width="210" height="88"/>
   <text class="d-muted d-small" x="271" y="188">받는 쪽 확인</text>
   <text x="271" y="214">서명을 다시 계산해</text>
@@ -27,12 +27,12 @@
   <text class="d-accent" x="31" y="338">누구나 재사용 가능</text>
   <rect class="d-box" x="255" y="266" width="210" height="88"/>
   <text class="d-muted d-small" x="271" y="288">새어 나가면</text>
-  <text x="271" y="314">범위: 그 요청 하나</text>
+  <text x="271" y="314">범위: 서명한 요청 내용</text>
   <text x="271" y="338">대부분 5분 안</text>
 </svg>
 <svg class="diagram-svg diagram-narrow" viewBox="0 0 320 610" role="img" aria-labelledby="tvs-fig-title-n tvs-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="tvs-fig-title-n">JWT 토큰 방식과 SigV4 요청 서명 방식 비교</title>
-  <desc id="tvs-fig-desc-n">JWT(bearer 토큰)는 주로 로그인한 사람이 쓰고, 토큰 그 자체를 Authorization: Bearer 헤더로 보낸다. 받는 쪽은 발급자 서명, exp, iss, aud를 확인한다. 토큰이 새어 나가면 만료 전까지 누구나 재사용할 수 있다. SigV4(요청 서명)는 주로 IAM 자격 증명을 가진 서버가 쓰고, 비밀키 대신 요청마다 만든 서명만 보낸다. 받는 쪽은 같은 방식으로 서명을 다시 계산해 보낸 값과 비교한다. 서명이 새어도 쓸 수 있는 범위는 그 요청 하나이고 대부분 5분 안이다.</desc>
+  <desc id="tvs-fig-desc-n">JWT(bearer 토큰)는 주로 로그인한 사람이 쓰고, 토큰 그 자체를 Authorization: Bearer 헤더로 보낸다. 받는 쪽은 발급자 서명, exp, iss, 그리고 ID 토큰이면 aud, access 토큰이면 client_id를 확인한다. 토큰이 새어 나가면 만료 전까지 누구나 재사용할 수 있다. SigV4(요청 서명)는 주로 IAM 자격 증명을 가진 서버가 쓰고, 비밀키 대신 요청마다 만든 서명만 보낸다. 받는 쪽은 같은 방식으로 서명을 다시 계산해 보낸 값과 비교한다. 서명이 새어도 쓸 수 있는 범위는 서명한 그 요청 내용과 대부분 5분 안의 시간이다. 그 시간 안에 같은 요청을 다시 보내는 것까지 막지는 않는다.</desc>
   <text class="d-strong" x="12" y="26">JWT (bearer 토큰)</text>
   <text class="d-muted" x="12" y="48">주로 사람 · 로그인한 사용자</text>
   <rect class="d-box" x="12" y="60" width="296" height="230"/>
@@ -41,7 +41,7 @@
   <text class="d-mono" x="28" y="132">Bearer eyJ…</text>
   <text class="d-muted d-small" x="28" y="156">받는 쪽 확인</text>
   <text x="28" y="180">발급자 서명 · exp</text>
-  <text class="d-mono" x="28" y="202">iss · aud</text>
+  <text class="d-mono" x="28" y="202">iss · aud/client_id</text>
   <text class="d-muted d-small" x="28" y="226">새어 나가면</text>
   <text class="d-accent" x="28" y="250">✗ 만료 전까지</text>
   <text class="d-accent" x="28" y="272">누구나 재사용 가능</text>
@@ -55,6 +55,6 @@
   <text x="28" y="484">서명을 다시 계산해</text>
   <text x="28" y="506">보낸 값과 비교</text>
   <text class="d-muted d-small" x="28" y="530">새어 나가면</text>
-  <text x="28" y="554">범위: 그 요청 하나</text>
+  <text x="28" y="554">범위: 서명한 요청 내용</text>
   <text x="28" y="576">대부분 5분 안</text>
 </svg>
