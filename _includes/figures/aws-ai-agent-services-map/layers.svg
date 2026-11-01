@@ -1,0 +1,22 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 308" role="img" aria-labelledby="layers-fig-title layers-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="layers-fig-title">Strands Agents, AgentCore Runtime, AgentCore Gateway의 층 비교</title>
+  <desc id="layers-fig-desc">AgentCore Runtime은 서버리스로 세션을 격리해 코드를 돌리는 실행 장소이고, 그 안에서 Strands Agents 루프 코드가 돈다. Strands는 Python과 TypeScript용 코드 라이브러리라 LangGraph 같은 다른 프레임워크로 바꿔도 된다. 루프 코드는 Runtime 밖에 있는 Bedrock(두뇌, 모델)을 모델 호출로 부르고, AgentCore Gateway(손발, MCP 도구 입구)를 도구 호출로 부른다.</desc>
+  <rect class="d-line" x="12" y="12" width="336" height="176"/>
+  <text class="d-strong" x="28" y="40">AgentCore Runtime</text>
+  <text class="d-muted" x="332" y="40" text-anchor="end">실행 장소</text>
+  <text class="d-muted d-small" x="28" y="60">서버리스 · 세션 격리</text>
+  <rect class="d-box" x="32" y="76" width="296" height="92"/>
+  <text class="d-strong" x="48" y="102">Strands Agents</text>
+  <text class="d-muted" x="312" y="102" text-anchor="end">루프 코드</text>
+  <text class="d-muted d-small" x="48" y="124">코드 라이브러리 (Python · TypeScript)</text>
+  <text class="d-muted d-small" x="48" y="146">LangGraph 등으로 바꿔도 됨</text>
+  <path class="d-line" d="M86 168 V224 M262 168 V224"/>
+  <text class="d-muted d-small" x="94" y="212">모델 호출</text>
+  <text class="d-muted d-small" x="270" y="212">도구 호출</text>
+  <rect class="d-box" x="12" y="224" width="148" height="72"/>
+  <text class="d-strong" x="28" y="250">Bedrock</text>
+  <text class="d-muted d-small" x="28" y="274">두뇌 · 모델</text>
+  <rect class="d-box" x="176" y="224" width="172" height="72"/>
+  <text class="d-strong" x="192" y="250">Gateway</text>
+  <text class="d-muted d-small" x="192" y="274">손발 · MCP 도구 입구</text>
+</svg>

@@ -1,0 +1,36 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 540" role="img" aria-labelledby="map-fig-title map-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="map-fig-title">로그인해서 쓰는 AI 에이전트 서비스의 AWS 구성 (설계안)</title>
+  <desc id="map-fig-desc">아직 구현하지 않은 설계안이다. 사용자는 웹이나 앱에서 Cognito로 로그인해 JWT를 받고, 질문에 JWT를 붙여 에이전트 서버로 보낸다. 에이전트 서버는 AgentCore Runtime 위에서 도는 Strands 코드(루프)이며 JWT를 검증하고 사용자별 사용량 한도를 확인한다. 서버는 두뇌인 Bedrock 모델을 부르고 Guardrails가 입출력을 검사한다. 손발인 AgentCore Gateway 뒤에는 Web Search 커넥터, 내 Lambda 도구, Knowledge Base가 있다. Memory는 사용자별 기억을, Identity는 사용자 대신 외부 서비스에 접근하는 권한을 맡는다. Observability가 모든 단계를 추적한다.</desc>
+  <text class="d-muted d-small" x="12" y="20">설계안 · 아직 구현 전</text>
+  <rect class="d-box" x="12" y="32" width="140" height="52"/>
+  <text class="d-strong" x="82" y="55" text-anchor="middle">사용자</text>
+  <text class="d-muted d-small" x="82" y="74" text-anchor="middle">웹 · 앱</text>
+  <path class="d-line" d="M152 58 H208"/>
+  <text class="d-muted d-small" x="180" y="50" text-anchor="middle">로그인</text>
+  <rect class="d-box" x="208" y="32" width="140" height="52"/>
+  <text class="d-strong" x="278" y="55" text-anchor="middle">Cognito</text>
+  <text class="d-muted d-small" x="278" y="74" text-anchor="middle">JWT 발급</text>
+  <path class="d-line" d="M82 84 V112"/>
+  <text class="d-muted d-small" x="92" y="103">질문 + JWT</text>
+  <rect class="d-box" x="12" y="112" width="336" height="80"/>
+  <text class="d-strong" x="28" y="138">에이전트 서버</text>
+  <text class="d-muted" x="332" y="138" text-anchor="end">루프</text>
+  <text class="d-muted d-small" x="28" y="160">Strands 코드 · AgentCore Runtime</text>
+  <text class="d-muted d-small" x="28" y="178">JWT 검증 · 사용자별 사용량 한도</text>
+  <path class="d-line" d="M36 192 V420 M36 244 H56 M36 332 H56 M36 420 H56"/>
+  <rect class="d-box" x="56" y="212" width="292" height="64"/>
+  <text class="d-strong" x="72" y="238">Bedrock</text>
+  <text class="d-muted" x="332" y="238" text-anchor="end">두뇌</text>
+  <text class="d-muted d-small" x="72" y="260">모델 호출 · Guardrails 입출력 검사</text>
+  <rect class="d-box" x="56" y="292" width="292" height="80"/>
+  <text class="d-strong" x="72" y="318">AgentCore Gateway</text>
+  <text class="d-muted" x="332" y="318" text-anchor="end">손발</text>
+  <text class="d-muted d-small" x="72" y="340">Web Search 커넥터 · 내 Lambda 도구</text>
+  <text class="d-muted d-small" x="72" y="358">Knowledge Base</text>
+  <rect class="d-box" x="56" y="388" width="292" height="64"/>
+  <text class="d-strong" x="72" y="414">Memory · Identity</text>
+  <text class="d-muted d-small" x="72" y="436">사용자별 기억 · 사용자 대신 외부 접근</text>
+  <rect class="d-box" x="12" y="472" width="336" height="56"/>
+  <text class="d-strong" x="28" y="496">Observability</text>
+  <text class="d-muted d-small" x="28" y="516">위 모든 단계를 추적 (OpenTelemetry)</text>
+</svg>
