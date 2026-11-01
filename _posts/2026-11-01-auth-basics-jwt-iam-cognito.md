@@ -169,7 +169,7 @@ Authorization: AWS4-HMAC-SHA256
 받은 쪽은 같은 계산을 다시 해서 서명을 비교합니다. 이 과정 덕분에 세 가지가 보장됩니다.
 
 - **신원 확인**: 비밀 액세스 키를 가진 사람만 맞는 서명을 만들 수 있습니다. 비밀키 자체는 네트워크로 나가지 않습니다.
-- **변조 방지**: 요청 내용이 서명에 들어가 있어서 중간에 바꾸면 서명이 맞지 않습니다.
+- **변조 방지**: 서명에 포함된 요청 요소(메서드, 경로, 서명한 헤더, 본문 해시)를 중간에 바꾸면 서명이 맞지 않습니다.
 - **재전송 공격 완화**: 대부분의 경우 요청이 서명 시각으로부터 5분 안에 도착해야 합니다. 서명은 요청 내용에 묶이지만, 그 시간 안에 같은 요청을 다시 보내는 것까지 막지는 않습니다.
 
 JWT와 비교하면, JWT는 "발급자가 이 사람을 보증한다"는 **쪽지**이고 SigV4는 "이 요청을 내가 지금 보냈다"는 **도장**입니다.
@@ -203,7 +203,7 @@ const verifier = CognitoJwtVerifier.create({
 
 // 요청마다: "Authorization: Bearer <토큰>"에서 꺼내 검증
 export async function currentUser(authorizationHeader = "") {
-  const match = /^Bearer\s+(\S+)$/.exec(authorizationHeader);
+  const match = /^Bearer +(\S+)$/.exec(authorizationHeader);
   if (!match) return null;                          // → 401
   const token = match[1];
   try {
@@ -268,7 +268,7 @@ Maximum policy size of 2048 bytes exceeded for user my-agent-user
 
 해결은 **고객 관리형 정책**을 만들어 사용자에게 attach하는 것이었습니다. 관리형 정책은 정책 하나당 6,144자까지 들어가고 인라인 합계 한도와 상관이 없습니다(한도는 [IAM 할당량 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html) 기준). 실패한 시점에 아무것도 바뀌지 않았다는 것도 확인한 뒤에 바꿨습니다.
 
-### 2. Action이 건드리는 Resource를 전부 넣어야 한다
+### 2. API가 평가하는 Action과 Resource를 함께 확인한다
 
 Bedrock의 프롬프트 라우터를 만드는 `CreatePromptRouter`를 부르다 `AccessDenied`가 났습니다. 정책에는 라우터 ARN만 Resource로 넣었는데, 거부된 대상은 라우터에 넣으려던 **모델(추론 프로필) ARN**이었습니다. 이 API는 라우터를 만들면서 안에 넣을 모델도 참조하는데, 정책 초안이 그 모델 ARN을 Resource에서 빠뜨린 것이 원인이었던 것으로 보입니다.
 
