@@ -1,0 +1,16 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 328" role="img" aria-labelledby="wm-403-title wm-403-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-403-title">두 요청에서 같은 403을 관찰한 사례</title>
+  <desc id="wm-403-desc">화면 이름에서 추측해 넣은 데이터셋 이름과, 존재할 리 없게 일부러 틀린 이름 모두에서 HTTP 403을 관찰했다. 추측한 이름이 실제로 있는 데이터셋인지, 구독 범위 밖인지는 확인하지 않았다. 이 응답만으로는 데이터셋의 존재 여부나 구독 상태를 판단할 수 없으므로, 데이터셋 식별자는 Lens 화면의 OData 링크에서, 테이블 이름은 그 데이터셋의 서비스 루트에서 확인한다.</desc>
+  <rect class="d-box" x="12" y="12" width="160" height="80"/>
+  <text class="d-strong" x="92" y="44" text-anchor="middle">추측한 이름</text>
+  <text class="d-muted" x="92" y="72" text-anchor="middle">존재·구독 미확인</text>
+  <rect class="d-box" x="188" y="12" width="160" height="80"/>
+  <text class="d-strong" x="268" y="44" text-anchor="middle">일부러 틀린 이름</text>
+  <text class="d-mono" x="268" y="72" text-anchor="middle">no_such_name</text>
+  <path class="d-line" d="M92 92 V116 H180 M268 92 V116 H180 V140"/>
+  <rect class="d-box" x="70" y="140" width="220" height="56"/>
+  <text class="d-strong d-mono" x="180" y="174" text-anchor="middle">HTTP 403</text>
+  <text class="d-strong d-accent" x="180" y="240" text-anchor="middle">✗ 403만으로는 판단할 수 없음</text>
+  <text class="d-muted" x="180" y="276" text-anchor="middle">데이터셋: 화면의 OData 링크</text>
+  <text class="d-muted" x="180" y="304" text-anchor="middle">테이블: 그 데이터셋의 서비스 루트</text>
+</svg>

@@ -1,0 +1,24 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 452" role="img" aria-labelledby="wm-redirect-title wm-redirect-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-redirect-title">글쓴이가 확인한 Lens Direct OData 데이터 조회가 302 리디렉트를 거치는 흐름</title>
+  <desc id="wm-redirect-desc">curl로 data.woodmac.com의 OData 테이블 주소에 Basic 인증(사용자 이름 apikey)으로 데이터 조회를 보냈을 때, 이 조회에서는 서버가 HTTP 302와 결과 JSON의 위치인 같은 호스트의 CDN 경로 /qe/cdn/data/non-cached/ 를 돌려줬다. curl에 -L이 없으면 302 응답에서 멈춰 데이터 JSON을 받지 못한다. -L이 있으면 그 위치로 후속 요청을 보내 데이터 JSON을 받는다. 이 예시의 리디렉트는 같은 HTTPS 호스트와 포트 안에서 일어난다.</desc>
+  <rect class="d-box" x="30" y="12" width="300" height="88"/>
+  <text class="d-strong" x="180" y="40" text-anchor="middle">데이터 조회 요청</text>
+  <text class="d-mono" x="180" y="64" text-anchor="middle">GET …/odata/&lt;dataset&gt;/&lt;table&gt;</text>
+  <text class="d-muted" x="180" y="88" text-anchor="middle">Basic 인증 <tspan class="d-mono">apikey</tspan> : 키</text>
+  <path class="d-line" d="M180 100 V124"/>
+  <rect class="d-box" x="30" y="124" width="300" height="88"/>
+  <text class="d-strong" x="180" y="152" text-anchor="middle">응답: <tspan class="d-mono">HTTP 302</tspan></text>
+  <text class="d-muted" x="180" y="176" text-anchor="middle">결과 JSON의 위치를 알려 줌</text>
+  <text class="d-mono" x="180" y="200" text-anchor="middle">/qe/cdn/data/non-cached/…</text>
+  <path class="d-line" d="M180 212 V228 H92 V244 M180 228 H268 V244"/>
+  <text class="d-mono" x="92" y="264" text-anchor="middle">curl</text>
+  <text class="d-mono" x="268" y="264" text-anchor="middle">curl -L</text>
+  <rect class="d-box" x="12" y="280" width="160" height="80"/>
+  <text class="d-strong d-accent" x="92" y="312" text-anchor="middle">✗ 302에서 멈춤</text>
+  <text class="d-muted" x="92" y="340" text-anchor="middle">데이터 JSON 못 받음</text>
+  <rect class="d-box" x="188" y="280" width="160" height="80"/>
+  <text x="268" y="312" text-anchor="middle">그 위치로 후속 요청</text>
+  <text class="d-strong" x="268" y="340" text-anchor="middle">✓ 데이터 JSON</text>
+  <text class="d-muted" x="180" y="400" text-anchor="middle">Python <tspan class="d-mono">requests</tspan>는 기본으로 따라감</text>
+  <text class="d-muted d-small" x="180" y="428" text-anchor="middle">이 예시는 같은 HTTPS 호스트·포트 안의 이동이라 인증 유지</text>
+</svg>
