@@ -9,7 +9,7 @@ description: "웹은 Amplify Hosting, API는 Fargate로 혼자 배포하며 실�
 > **시리즈: 1인 개발자의 AWS 배포**
 > 1. [구조: 웹은 Amplify Hosting, API는 Fargate — 왜 이렇게 골랐나]({% post_url 2026-10-29-solo-dev-aws-deploy-architecture %})
 > 2. **실제로 부딪힌 배포 함정들과 해결** ← 지금 글
-> 3. CI/CD: API 이미지 빌드와 Fargate 배포 자동화 (예정)
+> 3. [CI/CD 전에: 손 배포 스크립트 다듬기와 자동화 계획]({% post_url 2026-11-03-solo-dev-aws-deploy-cicd %})
 
 ## 어떤 구조를 올렸나
 
@@ -321,4 +321,4 @@ aws iam simulate-principal-policy \
 - **실패가 빨리 드러나게** 만드는 설정(서킷 브레이커, 빌드가 돌았는지 확인)이 디버깅 시간을 가장 많이 줄였습니다.
 - 증상이 가리키는 곳과 원인이 다른 경우가 많았습니다. 메모리 부족은 메모리를 늘려도 풀리지 않고 번들러 버전을 바꾸자 풀렸고, 권한 오류는 정책이 아니라 반영 지연이었습니다. 경고 한 줄과 "로컬에서는 되는가"를 먼저 확인합니다.
 
-다음 편에서는 지금 손으로 하는 API 이미지 빌드와 Fargate 배포를 CI/CD로 자동화합니다.
+다음 편 [CDK 손 배포 스크립트를 CI/CD 전에 다듬기]({% post_url 2026-11-03-solo-dev-aws-deploy-cicd %})에서는 지금 손으로 하는 API 배포 스크립트를 자동화 전에 다듬은 방법과, CI/CD로 옮길 때 바꿔야 할 점검 목록을 정리합니다.

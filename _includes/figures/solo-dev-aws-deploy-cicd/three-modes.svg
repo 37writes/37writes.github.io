@@ -1,0 +1,34 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 616" role="img" aria-labelledby="cicd-modes-title cicd-modes-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="cicd-modes-title">deploy.sh 세 모드가 같은 준비를 지나 멈추는 곳</title>
+  <desc id="cicd-modes-desc">deploy.sh는 --synth, --diff, --deploy 중 하나를 인자로 받는다. 먼저 공통 준비로 인자를 확인하고(그 밖의 인자는 exit 2), amplify_outputs.json이 있는지 확인하고, 경로를 검사한 뒤 staging에 복사한다. --synth는 여기서 갈라져 계정은 환경변수로, AZ는 고정값으로 받아 AWS 호출 없이 템플릿만 합성한다. 그다음 STS로 계정을 조회하며, 여기부터 AWS 자격 증명이 필요하다. --diff는 cdk diff || true를 돌리고 스택은 바꾸지 않는다. 기본값인 --deploy는 bootstrap 후 cdk deploy를 승인 프롬프트 없이 적용하고 ApiUrl을 출력한다.</desc>
+  <rect class="d-box" x="40" y="12" width="280" height="64"/>
+  <text class="d-mono" x="180" y="38" text-anchor="middle">deploy.sh</text>
+  <text class="d-mono d-muted" x="180" y="62" text-anchor="middle">--synth | --diff | --deploy</text>
+  <path class="d-line" d="M180 76 V96"/>
+  <path class="d-line" d="M175 90 L180 96 L185 90"/>
+  <rect class="d-box" x="40" y="96" width="280" height="120"/>
+  <text class="d-strong" x="180" y="122" text-anchor="middle">공통 준비</text>
+  <text x="180" y="148" text-anchor="middle">인자 확인 · 그 밖은 <tspan class="d-mono">exit 2</tspan></text>
+  <text x="180" y="172" text-anchor="middle"><tspan class="d-mono">amplify_outputs.json</tspan> 확인</text>
+  <text x="180" y="196" text-anchor="middle">경로 검사 → staging 복사</text>
+  <path class="d-line" d="M60 216 V546"/>
+  <path class="d-line" d="M60 274 H92 M86 269 L92 274 L86 279"/>
+  <rect class="d-box" x="92" y="232" width="256" height="84"/>
+  <text class="d-mono d-strong" x="108" y="256">--synth</text>
+  <text x="108" y="280">계정은 환경변수 · AZ는 고정값</text>
+  <text class="d-muted" x="108" y="304">AWS 호출 없이 템플릿만</text>
+  <circle class="d-dot" cx="60" cy="342" r="5"/>
+  <text x="76" y="346">STS로 계정 조회</text>
+  <text class="d-muted" x="76" y="368">여기부터 AWS 자격 증명 필요</text>
+  <path class="d-line" d="M60 426 H92 M86 421 L92 426 L86 431"/>
+  <rect class="d-box" x="92" y="384" width="256" height="84"/>
+  <text class="d-mono d-strong" x="108" y="408">--diff</text>
+  <text class="d-mono" x="108" y="432">cdk diff || true</text>
+  <text class="d-muted" x="108" y="456">스택은 바꾸지 않음</text>
+  <path class="d-line" d="M60 546 H92 M86 541 L92 546 L86 551"/>
+  <rect class="d-box" x="92" y="492" width="256" height="112"/>
+  <text x="108" y="516"><tspan class="d-mono d-strong">--deploy</tspan><tspan class="d-muted"> · 기본값</tspan></text>
+  <text class="d-mono" x="108" y="540">bootstrap → cdk deploy</text>
+  <text class="d-strong d-accent" x="108" y="566">승인 프롬프트 없이 적용</text>
+  <text class="d-muted" x="108" y="590"><tspan class="d-mono">ApiUrl</tspan> 출력</text>
+</svg>

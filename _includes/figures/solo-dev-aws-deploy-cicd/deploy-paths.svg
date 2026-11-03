@@ -1,0 +1,30 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 484" role="img" aria-labelledby="cicd-paths-title cicd-paths-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="cicd-paths-title">지금의 배포 경로: 웹만 자동, 백엔드와 API는 손 배포, CI는 검사만</title>
+  <desc id="cicd-paths-desc">맨 위는 백엔드(Cognito, DynamoDB, S3)로, 사람이 ampx sandbox --once로 손 배포한다. 백엔드를 배포하면 amplify_outputs.json이 생기고 이 파일을 커밋한다. 이 파일은 두 갈래로 쓰인다. 웹은 main에 push하면 Amplify Hosting이 자동 배포한다. API는 사람이 deploy.sh로 Fargate 스택을 손 배포한다. 따로 떨어진 CI(GitHub Actions)는 push와 PR마다 typecheck, lint, test만 돌리고 배포 단계는 없다.</desc>
+  <rect class="d-box" x="40" y="12" width="280" height="112"/>
+  <text class="d-strong" x="180" y="40" text-anchor="middle">백엔드</text>
+  <text class="d-muted" x="180" y="64" text-anchor="middle">Cognito · DynamoDB · S3</text>
+  <text class="d-mono" x="180" y="88" text-anchor="middle">ampx sandbox --once</text>
+  <text class="d-strong d-accent" x="180" y="112" text-anchor="middle">손 배포</text>
+  <path class="d-line" d="M180 124 V148"/>
+  <path class="d-line" d="M175 142 L180 148 L185 142"/>
+  <rect class="d-box" x="60" y="148" width="240" height="56"/>
+  <text class="d-mono" x="180" y="172" text-anchor="middle">amplify_outputs.json</text>
+  <text class="d-muted" x="180" y="194" text-anchor="middle">레포에 커밋</text>
+  <path class="d-line" d="M180 204 V220 H92 V240 M180 220 H268 V240"/>
+  <path class="d-line" d="M87 234 L92 240 L97 234 M263 234 L268 240 L273 234"/>
+  <rect class="d-box" x="12" y="240" width="160" height="112"/>
+  <text class="d-strong" x="92" y="268" text-anchor="middle">웹</text>
+  <text x="92" y="292" text-anchor="middle"><tspan class="d-mono">main</tspan> push →</text>
+  <text x="92" y="316" text-anchor="middle">Amplify Hosting</text>
+  <text class="d-strong" x="92" y="340" text-anchor="middle">✓ 자동 배포</text>
+  <rect class="d-box" x="188" y="240" width="160" height="112"/>
+  <text class="d-strong" x="268" y="268" text-anchor="middle">API</text>
+  <text class="d-mono" x="268" y="292" text-anchor="middle">deploy.sh →</text>
+  <text x="268" y="316" text-anchor="middle">Fargate 스택</text>
+  <text class="d-strong d-accent" x="268" y="340" text-anchor="middle">손 배포</text>
+  <rect class="d-box" x="40" y="384" width="280" height="88"/>
+  <text class="d-strong" x="180" y="410" text-anchor="middle">CI · push와 PR마다</text>
+  <text class="d-mono" x="180" y="434" text-anchor="middle">typecheck · lint · test</text>
+  <text class="d-muted" x="180" y="458" text-anchor="middle">배포 단계 없음</text>
+</svg>

@@ -9,7 +9,7 @@ description: "로그인 있는 SPA와 오래 도는 작업·SSE가 있는 API를
 > **시리즈: 1인 개발자의 AWS 배포**
 > 1. **구조: 웹은 Amplify Hosting, API는 Fargate** ← 지금 글
 > 2. [실제로 부딪힌 배포 함정들과 해결]({% post_url 2026-10-29-solo-dev-aws-deploy-pitfalls %})
-> 3. CI/CD: API 이미지 빌드와 Fargate 배포 자동화 (예정)
+> 3. [CI/CD 전에: 손 배포 스크립트 다듬기와 자동화 계획]({% post_url 2026-11-03-solo-dev-aws-deploy-cicd %})
 
 ## 어떤 문제였나
 
@@ -261,7 +261,7 @@ API 배포 스크립트는 이런 순서로 돕니다.
 
 적용하기 전에는 `deploy.sh --diff`로 **무엇이 바뀌는지 먼저 봅니다**. 이 모드는 `cdk diff`만 실행하고, 배포된 리소스에는 변경을 적용하지 않습니다. IAM 정책이나 네트워크가 바뀌는 배포라면 이 미리보기를 확인한 뒤에 적용합니다.
 
-웹은 push만 하면 되지만, API는 아직 사람이 손으로 배포합니다. 이 부분을 GitHub Actions로 자동화하는 것은 3편에서 다룰 예정입니다.
+웹은 push만 하면 되지만, API는 아직 사람이 손으로 배포합니다. 자동화하기 전에 손 배포 스크립트를 어떻게 다듬었는지, CI/CD로 옮길 때 무엇을 바꿔야 하는지는 3편 [CDK 손 배포 스크립트를 CI/CD 전에 다듬기]({% post_url 2026-11-03-solo-dev-aws-deploy-cicd %})에서 정리했습니다.
 
 ## 비용 감시: Bedrock 일일 알람
 
