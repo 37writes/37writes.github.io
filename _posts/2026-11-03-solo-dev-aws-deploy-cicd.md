@@ -46,6 +46,10 @@ description: "Fargate API를 아직 로컬 스크립트로 배포하는 1인 개
 #!/usr/bin/env bash
 set -euo pipefail
 
+(( $# <= 1 )) || {              # 인자는 0개나 1개만
+  echo "usage: deploy.sh [--synth|--diff|--deploy]" >&2
+  exit 2
+}
 MODE="${1:---deploy}"          # 인자가 없으면 --deploy
 case "$MODE" in
   --synth|--diff|--deploy) ;;
@@ -53,7 +57,7 @@ case "$MODE" in
 esac
 ```
 
-모르는 인자는 사용법을 출력하고 **종료 코드 2**로 끝냅니다. 그래서 오타(`--dif`)가 기본값인 `--deploy`로 흘러가지 않습니다. 배포 실패(1)와 사용법 오류(2)를 종료 코드로 나눠 두면, 나중에 CI 로그에서도 "스크립트를 잘못 불렀다"와 "배포가 실패했다"를 구분할 수 있습니다.
+허용하지 않은 모드나 추가 인자는 사용법을 출력하고 **종료 코드 2**로 끝냅니다. 그래서 오타(`--dif`)가 기본값인 `--deploy`로 흘러가지 않고, `--deploy --dif`처럼 뒤에 붙은 인자가 조용히 무시되지도 않습니다. 다만 다른 실패가 모두 1로 끝나는 것은 아닙니다. `set -e`로 멈출 때 스크립트는 실패한 외부 명령의 종료 코드를 그대로 따릅니다. 그래서 종료 코드만으로는 "스크립트를 잘못 불렀다"와 "배포가 실패했다"를 확실히 나눌 수 없고, 로그의 `usage:` 줄까지 함께 봐야 합니다.
 
 인자 없이 실행하면 `--deploy`가 된다는 점은 주의할 부분입니다. 모드를 넣기 전처럼 `bash deploy.sh` 한 줄로 배포할 수 있지만, 그만큼 인자를 빠뜨리면 바로 적용까지 갑니다. 자동화할 때는 모드를 늘 명시하는 편이 안전합니다.
 
@@ -61,7 +65,7 @@ esac
 
 <figure class="diagram">
 {% include figures/solo-dev-aws-deploy-cicd/three-modes.svg %}
-<figcaption>세 모드는 같은 준비 단계를 지나고 멈추는 곳만 다릅니다. synth는 AWS를 부르지 않고, diff는 스택을 바꾸지 않으며, 스택을 바꾸는 것은 deploy뿐입니다.</figcaption>
+<figcaption>세 모드는 같은 준비 단계를 지나고 멈추는 곳만 다릅니다. synth는 AWS를 부르지 않고, 스택을 바꾸는 것은 deploy뿐입니다. diff는 배포된 리소스를 바꾸지 않지만 변경 세트를 만들거나 자산을 게시할 수 있습니다.</figcaption>
 </figure>
 
 ## `--synth`: AWS에 닿지 않는 합성
@@ -77,8 +81,9 @@ esac
 
 ```sh
 if [[ $MODE == --synth ]]; then
-  # 계정은 환경변수로 직접 받는다 (STS를 부르지 않는다)
+  # 계정과 리전은 환경변수로 직접 받는다 (STS를 부르지 않는다)
   : "${CDK_DEFAULT_ACCOUNT:?--synth needs CDK_DEFAULT_ACCOUNT}"
+  : "${CDK_DEFAULT_REGION:?--synth needs CDK_DEFAULT_REGION}"
   R="$CDK_DEFAULT_REGION"
   # 오프라인 합성용 AZ 고정값. staging 폴더 안에만 쓴다
   printf '{"availability-zones:account=%s:region=%s": ["%sa", "%sc"]}\n' \
@@ -89,10 +94,10 @@ fi
 ```
 
 ```sh
-CDK_DEFAULT_ACCOUNT=123456789012 bash deploy.sh --synth
+CDK_DEFAULT_ACCOUNT=123456789012 CDK_DEFAULT_REGION=ap-northeast-2 bash deploy.sh --synth
 ```
 
-- **계정 ID를 환경변수로 받습니다.** 없으면 바로 멈춥니다. 예시 값을 넣어도 합성은 됩니다.
+- **계정 ID와 리전을 환경변수로 받습니다.** 둘 중 하나라도 없으면 바로 멈춥니다. 예시 값을 넣어도 합성은 됩니다.
 - **AZ 두 개를 고정한 컨텍스트 파일**을 미리 써 둡니다. 키 형식(`availability-zones:account=...:region=...`)은 CDK 문서에 나온 형식 그대로입니다.
 - **`--lookups=false`**: 컨텍스트 조회를 하지 않습니다. 조회가 필요한 값이 빠져 있으면 합성이 실패합니다 ([CDK CLI 전역 옵션](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd.html)). 고정값을 빠뜨렸을 때 몰래 AWS를 부르지 않고 실패로 드러나게 하려는 것입니다.
 - 합성이 끝나면 바로 `exit 0`이므로 bootstrap, 이미지 빌드·push, 배포 단계까지 가지 않습니다.
@@ -104,15 +109,18 @@ CDK_DEFAULT_ACCOUNT=123456789012 bash deploy.sh --synth
 `--diff`는 계정 ID를 STS로 읽은 뒤 `cdk diff`만 돌리고 끝납니다.
 
 ```sh
-export CDK_DEFAULT_ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
+CDK_DEFAULT_ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
+export CDK_DEFAULT_ACCOUNT
 
 if [[ $MODE == --diff ]]; then
-  npx cdk diff || true    # 미리보기는 결과와 상관없이 0으로 끝낸다
+  npx cdk diff || true    # diff의 종료 상태를 무시하고 항상 0으로 끝낸다
   exit 0
 fi
 ```
 
-`|| true`를 붙인 이유는 스크립트 맨 위의 `set -e` 때문입니다. `cdk diff`는 `--fail` 옵션을 주면 차이가 있을 때 종료 코드 1로 끝납니다 ([CDK 문서: cdk diff](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-diff.html)). 어떤 이유로든 `cdk diff`가 0이 아닌 값으로 끝나면 `set -e`가 스크립트를 그 자리에서 멈춥니다. 미리보기는 "보는" 단계이니 결과를 끝까지 보여 주고 정상 종료하게 했습니다.
+대입과 `export`를 두 줄로 나눈 데는 이유가 있습니다. `export A="$(명령)"`처럼 한 줄로 쓰면 그 줄의 종료 상태는 안쪽 명령이 아니라 `export`의 것이라서, STS 호출이 실패해도 `set -e`가 멈추지 않고 빈 계정 ID로 다음 줄로 넘어갑니다. 대입만 따로 하면 STS가 실패할 때 그 자리에서 멈춥니다.
+
+현재 스크립트는 `|| true`로 diff의 종료 상태를 무시하고 항상 0으로 끝내게 해 두었습니다. `cdk diff`는 `--fail` 옵션을 주면 차이가 있을 때 종료 코드 1로 끝나지만 ([CDK 문서: cdk diff](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-diff.html)), 이 스크립트는 `--fail`을 쓰지 않으므로 차이가 있다는 것만으로 실패하지는 않습니다. 그래도 합성이 깨지거나 권한이 없으면 `--fail` 없이도 0이 아닌 값으로 끝날 수 있습니다. 이때 `set -e`는 diff의 출력을 자르지 않습니다. diff가 끝난 뒤에 스크립트를 멈출 뿐입니다. 즉 `|| true`는 출력을 끝까지 보여 주는 장치가 아니라, 미리보기를 늘 정상 종료로 보이게 하는 장치입니다.
 
 대가도 있습니다. `|| true`는 **진짜 오류도 삼킵니다.** 자격 증명이 만료됐거나 합성이 실패해도 스크립트는 0으로 끝납니다. 사람이 터미널에서 출력을 읽을 때는 괜찮지만, CI에서 "미리보기 단계 통과"를 근거로 다음 단계를 진행한다면 위험합니다. 자동화할 때 가장 먼저 고칠 줄입니다.
 
@@ -123,7 +131,7 @@ fi
 기본값인 `--deploy`는 세 단계입니다.
 
 ```sh
-# 1) bootstrap: 이미 돼 있으면 필요할 때만 갱신, 아니면 아무 일도 없음
+# 1) bootstrap: 처음이면 만들고, 이미 있으면 필요할 때 갱신
 npx cdk bootstrap "aws://$CDK_DEFAULT_ACCOUNT/$CDK_DEFAULT_REGION"
 
 # 2) 적용: 확인 프롬프트 없이, 스택 출력을 파일로 남긴다
@@ -133,7 +141,7 @@ npx cdk deploy --require-approval never --outputs-file "$SRC/outputs.json"
 node -e 'console.log(require(process.argv[1]).MyApiStack.ApiUrl)' "$SRC/outputs.json"
 ```
 
-**bootstrap을 매번 돌립니다.** CDK 문서는 환경을 여러 번 bootstrap해도 괜찮다고 안내합니다. 이미 bootstrap된 환경이면 필요할 때만 bootstrap 스택을 갱신하고, 아니면 아무 일도 하지 않습니다 ([CDK 문서: Bootstrap your environment](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-env.html)). 손으로 배포할 때는 "이 계정·리전은 bootstrap했던가"를 기억할 필요가 없어서 편했습니다. 다만 제 원래 스크립트는 bootstrap 출력을 몇 줄만 남기고 실패도 무시하게(`|| true`) 해 두었습니다. 이러면 bootstrap이 실패해도 다음 `cdk deploy`에서야 "bootstrap이 안 됐다"는 오류로 드러납니다.
+**bootstrap을 매번 돌립니다.** CDK 문서는 환경을 여러 번 bootstrap해도 괜찮다고 안내합니다. 처음이면 bootstrap 스택을 만들고, 이미 있으면 필요한 경우에 갱신합니다 ([CDK 문서: Bootstrap your environment](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping-env.html)). 손으로 배포할 때는 "이 계정·리전은 bootstrap했던가"를 기억할 필요가 없어서 편했습니다. 다만 제 원래 스크립트는 bootstrap 출력을 몇 줄만 남기고 실패도 무시하게(`|| true`) 해 두었습니다. 이러면 bootstrap이 실패했을 때 원인이 다음 `cdk deploy`의 오류로 뒤늦게 드러나거나, 기존 bootstrap 자원으로 배포가 그대로 진행되어 실패를 아예 놓칠 수 있습니다.
 
 **`--require-approval never`의 뜻.** `cdk deploy`의 기본값은 `broadening`입니다. 권한(IAM)이나 보안 그룹 규칙이 **넓어지는** 변경이면 적용 전에 사람에게 확인을 받습니다. `never`는 이 확인을 끕니다 ([CDK 문서: cdk deploy](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html)). 스크립트가 중간에 멈춰 입력을 기다리지 않게 하려고 껐습니다.
 
@@ -206,7 +214,7 @@ API 태스크의 환경변수(테이블 이름, 버킷 이름, 사용자 풀 ID 
 지금은 제 Mac의 AWS 프로필로 배포합니다. CI에 장기 액세스 키를 시크릿으로 넣는 대신, GitHub Actions의 OIDC 토큰을 AWS 역할의 임시 자격 증명으로 바꾸는 방식을 쓰려고 합니다. GitHub 문서 기준으로 필요한 것은 이렇습니다 ([GitHub 문서: Configuring OpenID Connect in Amazon Web Services](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)).
 
 - IAM에 OIDC 공급자 `https://token.actions.githubusercontent.com`을 추가하고, 대상(audience)은 `sts.amazonaws.com`
-- 역할의 신뢰 정책에서 `sub` 조건으로 **어떤 레포·브랜치·환경의 워크플로만** 이 역할을 맡을 수 있는지 좁히기
+- 역할의 신뢰 정책에서 `sub` 조건으로 **어떤 레포의 어떤 브랜치나 environment의 워크플로만** 이 역할을 맡을 수 있는지 좁히기
 - 워크플로에 `permissions: id-token: write`를 주고, `aws-actions/configure-aws-credentials`로 역할을 맡기
 
 ```json
@@ -218,7 +226,7 @@ API 태스크의 환경변수(테이블 이름, 버킷 이름, 사용자 풀 ID 
 }
 ```
 
-(문서의 형태를 줄인 예시이고, 아직 적용 전입니다.) `sub`를 레포 전체가 아니라 배포 환경(environment)이나 `main` 브랜치로 좁혀 두면, 아무 브랜치의 워크플로나 배포 역할을 맡는 일을 막을 수 있습니다.
+(문서의 형태를 줄인 예시이고, 아직 적용 전입니다.) 위 `sub`는 이 레포의 `production` environment를 쓰는 job으로 제한합니다. 브랜치를 제한하지는 않습니다. 브랜치까지 막으려면 그 environment의 배포 브랜치·태그 규칙(deployment branches and tags)을 `main`으로 제한해야 합니다. environment를 쓰지 않는 job이라면 `repo:my-org/my-app:ref:refs/heads/main` 형태의 `sub`로 브랜치를 제한합니다. 실제로 발급되는 `sub` 형식은 구현할 때 확인할 생각입니다. 문서는 저장소 ID가 들어간 형식도 안내하고 있어서, 위 문자열이 모든 레포에 그대로 맞는다고 보장할 수 없습니다.
 
 ### 2. bootstrap은 CI 밖으로
 
@@ -229,7 +237,7 @@ API 태스크의 환경변수(테이블 이름, 버킷 이름, 사용자 풀 ID 
 지금 승인 역할을 하는 것은 "사람이 먼저 `--diff`를 본다"는 습관입니다. 자동화에서는 이걸 단계로 만들어야 합니다. 후보는 두 가지입니다.
 
 - **GitHub environment의 required reviewers.** 배포 job이 특정 environment를 쓰게 하면, 지정한 사람이 승인해야 job이 시작됩니다. 다만 GitHub Free·Pro·Team 플랜에서는 required reviewers를 **공개 레포에서만** 쓸 수 있습니다 ([GitHub 문서: Deployments and environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)). 비공개 레포라면 플랜부터 확인해야 합니다.
-- **CDK 변경 세트를 나눠서 실행.** `cdk deploy --method prepare-change-set`으로 변경 세트만 만들고, 검토한 뒤 `--method execute-change-set`으로 그 변경 세트를 실행합니다. CDK 문서도 이 옵션을 변경 세트 승인 절차가 있을 때 쓰라고 안내합니다 ([CDK 문서: cdk deploy](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html)). 지금처럼 `diff`와 `deploy`를 따로 돌리면 그 사이에 코드가 바뀌어도 모르지만, 같은 변경 세트를 실행하면 **본 것과 적용하는 것이 같아집니다.**
+- **CDK 변경 세트를 나눠서 실행.** `cdk deploy --method prepare-change-set`으로 변경 세트만 만들고, 검토한 뒤 `--method execute-change-set`으로 그 변경 세트를 실행합니다. CDK 문서도 이 옵션을 변경 세트 승인 절차가 있을 때 쓰라고 안내합니다 ([CDK 문서: cdk deploy](https://docs.aws.amazon.com/cdk/v2/guide/ref-cli-cmd-deploy.html)). 지금처럼 `diff`와 `deploy`를 따로 돌리면 그 사이에 코드가 바뀌어도 모릅니다. 다만 두 단계로 나누기만 해서는 부족합니다. 변경 세트 이름을 따로 주지 않으면 기본 이름을 쓰고, 같은 이름으로 다시 만들면 이전 변경 세트가 덮어써집니다. 실행마다 고유한 `--change-set-name`을 정하고, 검토한 변경 세트와 대상 스택·계정·리전을 기록한 뒤 **그 변경 세트를 실행해야** 본 것과 적용하는 것이 같아집니다.
 
 ### 4. `|| true` 빼기
 
@@ -240,7 +248,7 @@ API 태스크의 환경변수(테이블 이름, 버킷 이름, 사용자 풀 ID 
 Fargate 태스크와 이미지는 ARM64입니다 (아키텍처를 맞추지 않으면 생기는 `exec format error`는 [2편]({% post_url 2026-10-29-solo-dev-aws-deploy-pitfalls %})의 4번). CI에서 ARM64 이미지를 만드는 길은 두 가지입니다.
 
 - **arm64 러너.** GitHub 호스티드 러너에 `ubuntu-24.04-arm` 같은 arm64 리눅스 러너가 있습니다. 공개 레포와 비공개 레포 모두 쓸 수 있지만 사양과 과금이 다릅니다. 공개 레포는 4 CPU·16GB에 무료, 비공개 레포는 2 CPU·8GB이고 계정의 포함 사용량을 쓴 뒤 분 단위로 과금됩니다 ([GitHub 문서: GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)).
-- **x86 러너 + QEMU.** Docker 문서는 `docker/setup-qemu-action`으로 QEMU를 설정해 다른 플랫폼 이미지를 빌드하는 방법을 안내합니다 ([Docker 문서: Multi-platform image with GitHub Actions](https://docs.docker.com/build/ci/github-actions/multi-platform/)). 이미지 자산에 플랫폼을 ARM64로 명시해 두었으므로, x86에서 빌드해도 ARM64 이미지가 나옵니다.
+- **x86 러너 + QEMU.** Docker 문서는 `docker/setup-qemu-action`으로 QEMU를 설정해 다른 플랫폼 이미지를 빌드하는 방법을 안내합니다 ([Docker 문서: Multi-platform image with GitHub Actions](https://docs.docker.com/build/ci/github-actions/multi-platform/)). 문서의 예시는 QEMU와 Buildx를 함께 설정합니다. x86 러너에 이렇게 ARM64 에뮬레이션을 갖추고 CDK가 쓰는 Docker 빌더에서 쓸 수 있게 하면 ARM64 이미지를 빌드할 수 있을 것입니다. 이미지 자산에는 플랫폼을 ARM64로 명시해 두었지만, CI에서 실제로 빌드가 성공하는지와 걸리는 시간은 아직 확인하지 않았고 검증할 계획입니다.
 
 어느 쪽을 쓸지는 아직 정하지 않았습니다. 빌드 시간과 비용을 실제로 재 보고 정할 생각입니다.
 
@@ -261,8 +269,8 @@ API 배포를 자동화해도 백엔드는 손으로 배포합니다. `amplify_o
 ## 정리
 
 - 자동으로 배포되는 것은 웹뿐이고, 백엔드와 API는 손으로, CI는 검사만 합니다. **자동화는 아직 구현 전입니다.**
-- 손 배포 스크립트는 **`--synth`(AWS에 닿지 않음) · `--diff`(스택을 바꾸지 않음) · `--deploy`(바꿈)** 세 모드로 나눴습니다. 모르는 인자는 종료 코드 2로 멈춥니다.
-- `--synth`는 계정 ID를 환경변수로 받고 AZ를 고정한 컨텍스트와 `--lookups=false`로 오프라인 합성합니다. 고정값은 매번 새로 만드는 staging 안에만 둡니다.
+- 손 배포 스크립트는 **`--synth`(AWS에 닿지 않음) · `--diff`(스택을 바꾸지 않음) · `--deploy`(바꿈)** 세 모드로 나눴습니다. 허용하지 않은 모드나 추가 인자는 종료 코드 2로 멈춥니다.
+- `--synth`는 계정 ID와 리전을 환경변수로 받고 AZ를 고정한 컨텍스트와 `--lookups=false`로 오프라인 합성합니다. 고정값은 매번 새로 만드는 staging 안에만 둡니다.
 - `--deploy`는 확인 프롬프트를 끄므로(`--require-approval never`), 지금은 사람이 먼저 `--diff`를 보는 습관이 승인 역할을 합니다. 자동화할 때는 이 자리를 승인 단계로 바꿔야 합니다.
 - `rm -rf` 전에는 staging 경로를 검사합니다. 패턴 검사만으로는 `..`을 막지 못하므로, 허용할 모양을 좁게 정하는 편이 안전합니다.
 - `amplify_outputs.json`은 있는지만 확인할 수 있고 최신인지는 모릅니다. 백엔드를 바꾸면 API도 다시 배포해야 합니다.
