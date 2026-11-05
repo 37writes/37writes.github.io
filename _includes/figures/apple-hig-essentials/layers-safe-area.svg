@@ -47,7 +47,7 @@
 
   <rect class="d-box" x="64" y="4" width="196" height="392" rx="20"/>
   <rect class="d-line" x="64" y="4" width="196" height="392" rx="20"/>
-  <text class="d-muted d-small" x="162" y="28" text-anchor="middle">상태 바 · 카메라 영역</text>
+  <text class="d-muted" x="162" y="28" text-anchor="middle">상태 바 · 카메라 영역</text>
 
   <rect class="d-line" x="76" y="40" width="172" height="40" rx="20"/>
   <text x="162" y="65" text-anchor="middle">툴바</text>
