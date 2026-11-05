@@ -28,8 +28,10 @@ AI 에이전트(Claude Code)와 Amazon Bedrock 위에 에이전트 서비스를 
 ## 먼저 용어 몇 개
 
 - **리전(Region)**: AWS가 데이터센터를 묶어 운영하는 지역 단위입니다. 서울은 `ap-northeast-2`, 도쿄는 `ap-northeast-1`입니다.
-- **엔드포인트(endpoint)**: API 요청을 받는 주소입니다. Bedrock에서 모델을 부르는 런타임 API는 리전마다 따로 있어서, 서울로 부르면 `bedrock-runtime.ap-northeast-2.amazonaws.com`으로 요청이 갑니다. SDK에서 `region_name="ap-northeast-2"`를 주는 것이 이것입니다.
-- **기반 모델(FM, foundation model)**: Bedrock이 제공하는 모델 자체입니다. IAM에서는 `arn:aws:bedrock:<리전>::foundation-model/<모델 ID>` 같은 자원으로 보입니다.
+- **엔드포인트(endpoint)**: API 요청을 받는 주소입니다. Bedrock에서 모델을 부르는 런타임 API(`bedrock-runtime`)는 리전마다 따로 있어서, 서울로 부르면 `bedrock-runtime.ap-northeast-2.amazonaws.com`으로 요청이 갑니다. Python SDK(Boto3)에서 `region_name="ap-northeast-2"`를 주는 것이 이것입니다. 모델이나 프로필 정보를 조회하는 관리용 API는 `bedrock`이라는 이름으로 따로 있고, 뒤에 나오는 `aws bedrock ...` 명령이 이쪽을 씁니다.
+- **IAM과 역할(role)**: IAM은 "누가 어떤 API를 어떤 자원에 부를 수 있는가"를 정하는 AWS의 권한 서비스입니다. 앱은 보통 **역할**에 붙은 권한으로 Bedrock을 부르는데, 역할은 정책 여러 개를 묶어 둔 권한 꾸러미라고 보면 됩니다. 이 글에서 "실행 역할"은 앱이 모델을 부를 때 쓰는 역할을 말합니다.
+- **ARN(Amazon Resource Name)**: AWS 자원을 가리키는 이름입니다. `arn:aws:<서비스>:<리전>:<계정>:<자원>` 모양이고, IAM 정책의 Resource에는 이 ARN을 적습니다.
+- **기반 모델(FM, foundation model)**: Bedrock이 제공하는 모델 자체입니다. ARN은 `arn:aws:bedrock:<리전>::foundation-model/<모델 ID>`이고, 계정 자리는 비어 있습니다.
 - **추론 프로필(inference profile)**: "어떤 FM을, 어느 리전들로 보내 처리할 수 있는가"를 정의한 자원입니다. 모델 ID 앞에 `apac.`, `global.` 같은 접두사가 붙은 것은 AWS가 미리 만들어 둔 시스템 정의(system-defined) 프로필입니다. 이 프로필로 요청을 여러 리전에 보내는 것을 **교차 리전 추론(cross-Region inference, CRIS)**이라고 합니다.
 - **원본 리전(source Region)**: API를 부른 리전입니다. 서울 엔드포인트로 불렀다면 서울입니다.
 - **목적지 리전(destination Region)**: Bedrock이 그 요청을 실제로 보내 처리할 수 있는 리전입니다.
@@ -50,8 +52,10 @@ Bedrock 문서는 모델 호출을 세 가지 방식으로 나눕니다([Regiona
 
 <figure class="diagram">
 {% include figures/bedrock-cross-region-inference/routing.svg %}
-<figcaption>요청은 늘 서울로 보내지만, 처리되는 곳은 모델 ID의 접두사가 정하고 기록은 서울에 남습니다</figcaption>
+<figcaption>서울에서 요청하는 예입니다. 접두사는 처리 범위의 종류만 알려 주며, 정확한 목적지는 원본 리전에서 프로필을 조회해 확인합니다</figcaption>
 </figure>
+
+그림의 세 갈래가 한 모델에 모두 있는 것은 아닙니다. 어떤 모델은 In-Region과 Global만, 어떤 모델은 Global만 제공합니다. 서울의 실제 사정은 뒤에서 표로 봅니다. 또 같은 접두사라도 목적지 목록은 모델과 원본 리전에 따라 다르고, 실제로 어느 리전에서 처리할지는 요청마다 Bedrock이 고릅니다.
 
 ### 교차 리전일 때 데이터는 어떻게 움직이나
 
@@ -162,6 +166,8 @@ Global은 문서가 "three-part IAM policy"라고 부르는 구조가 필요합�
 | 2. 원본 리전 FM | `…:ap-northeast-2::foundation-model/…` | `ap-northeast-2` | 프로필 ARN |
 | 3. global FM | `arn:aws:bedrock:::foundation-model/…` | **`unspecified`** | 프로필 ARN |
 
+두 번째 문장이 이상해 보일 수 있습니다. 앞의 표에서 Sonnet 5.5는 서울 In-Region이 안 된다고 했는데, 서울 FM을 허용해야 한다니 모순 같습니다. 이 허용은 **Global 호출을 할 때 Bedrock이 거치는 권한 검사 요건**입니다. 서울 FM ARN이 권한 검사의 대상이 된다는 것과, 그 모델을 서울에서 단독으로 추론할 수 있다는 것은 별개입니다.
+
 세 번째가 핵심입니다.
 
 - global FM의 ARN은 **리전과 계정 자리가 모두 비어 있습니다.** 문서는 이것이 의도된 것이고 교차 리전 동작에 필요하다고 적습니다.
@@ -173,17 +179,21 @@ Global은 문서가 "three-part IAM policy"라고 부르는 구조가 필요합�
 
 `unspecified`를 알고 나면 "Global을 어떻게 막는가"의 답이 나옵니다.
 
-### 리전 이름 Deny로는 막히지 않는다
+### 특정 리전을 골라 거부하는 Deny로는 막히지 않는다
 
-"`us-west-2`는 거부" 같은 리전 이름 기반 Deny는 Global의 세 번째 검사에 닿지 않습니다. 그 검사는 `aws:RequestedRegion = unspecified`로 평가되기 때문입니다. 문서도 이 점을 따로 경고합니다.
+`"aws:RequestedRegion": "us-west-2"`를 `StringEquals`로 거부하는 것처럼 **특정 목적지 리전 이름을 골라 거부하는** Deny는 Global의 세 번째 검사에 닿지 않습니다. 그 검사는 `aws:RequestedRegion = unspecified`로 평가되기 때문입니다. 문서도 이 점을 따로 경고합니다.
+
+반대로 `StringNotEquals`로 "서울이 아니면 모두 거부"하는 허용 목록 방식은 `unspecified`도 거부합니다. 이 경우는 Global이 막히는 쪽이라, 아래 [리전 제한 SCP가 있는데 쓰고 싶다면](#반대로-리전-제한-scp가-있는데-쓰고-싶다면)에서 따로 다룹니다. 어느 쪽이든 원본 리전 호출 자체가 거부돼 있으면 Global로 우회할 수는 없습니다.
 
 ### 방법 1: 허용 하나를 빼기
 
-Global은 세 허용이 모두 있어야 동작하므로, 하나만 빠져도 거부됩니다. 특히 리전이 빈 global FM(`arn:aws:bedrock:::foundation-model/…`) 허용을 넣지 않으면 됩니다.
+Global은 세 자원 모두에 대한 권한이 있어야 동작하므로, 그중 하나라도 권한이 없으면 거부됩니다. 특히 리전이 빈 global FM(`arn:aws:bedrock:::foundation-model/…`)에 대한 허용을 넣지 않는 방법이 있습니다.
+
+다만 이것은 **역할에 붙은 정책 전체에서** 그 자원에 대한 Allow가 하나도 남지 않을 때만 성립합니다. IAM은 역할에 적용되는 정책을 모두 모아 평가하므로, 위 예시에서 세 번째 문장을 지워도 다른 정책에 `"Action": "bedrock:InvokeModel*"`, `"Resource": "*"` 같은 넓은 Allow가 남아 있으면 global FM 검사는 그 문장으로 통과합니다. 그래서 이 방법을 쓰려면 역할의 모든 정책을 확인해야 하고, 확실히 막는 것이 목적이면 다음의 명시적 Deny가 낫습니다.
 
 ### 방법 2: 역할에 명시적 Deny
 
-나중에 누가 실수로 허용을 다시 넣어도 막히게 하려면 명시적 Deny를 둡니다. 문서는 이 방법이 보안 의도를 분명히 남긴다는 점도 장점으로 듭니다.
+나중에 누가 실수로 허용을 다시 넣어도 막히게 하려면 명시적 Deny를 둡니다. 문서는 이 방법이 보안 의도를 분명히 남긴다는 점도 장점으로 듭니다. 아래는 정책 전체가 아니라, 역할에 붙인 기존 정책의 `Statement` 배열에 넣는 **문장 하나**입니다.
 
 ```json
 {
@@ -198,17 +208,23 @@ Global은 세 허용이 모두 있어야 동작하므로, 하나만 빠져도 �
 
 ### 방법 3: 조직 단위로 SCP
 
-AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 막을 수 있습니다. 문서의 예시는 `unspecified` 조건에 global 프로필 조건을 함께 겁니다.
+AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 막을 수 있습니다. 문서의 예시는 `unspecified` 조건에 global 프로필 조건을 함께 겁니다. 문서는 Statement 하나만 보여 주는데, IAM 정책 문서에는 `Statement`가 꼭 있어야 하므로 아래는 새 SCP로 바로 쓸 수 있게 정책 전체 모양으로 감쌌습니다. 기존 SCP에 넣을 때는 `Statement` 안의 문장만 옮깁니다.
 
 ```json
 {
-  "Effect": "Deny",
-  "Action": "bedrock:*",
-  "Resource": "*",
-  "Condition": {
-    "StringEquals": { "aws:RequestedRegion": "unspecified" },
-    "ArnLike": { "bedrock:InferenceProfileArn": "arn:aws:bedrock:*:*:inference-profile/global.*" }
-  }
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyGlobalCrossRegionInference",
+      "Effect": "Deny",
+      "Action": "bedrock:*",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:RequestedRegion": "unspecified" },
+        "ArnLike": { "bedrock:InferenceProfileArn": "arn:aws:bedrock:*:*:inference-profile/global.*" }
+      }
+    }
+  ]
 }
 ```
 {: file="scp-deny-global.json" }
@@ -224,7 +240,24 @@ AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 
 
 ## 실제로 어디서 처리됐는지 확인하기
 
-교차 리전 요청도 **CloudTrail은 원본 리전에 기록**합니다. CloudWatch 지표와 로그도 원본 리전에 남습니다. 실제로 처리된 리전은 CloudTrail 이벤트의 `additionalEventData.inferenceRegion` 필드에 남습니다.
+CloudTrail은 "누가 언제 어떤 API를 불렀는가"를 남기는 AWS의 API 활동 기록입니다. `InvokeModel`, `Converse`와 그 스트리밍 버전은 CloudTrail의 관리 이벤트(management event)로 기록되므로, 따로 설정하지 않아도 기본으로 남는 쪽입니다([CloudTrail 로깅](https://docs.aws.amazon.com/bedrock/latest/userguide/logging-using-cloudtrail.html)).
+
+교차 리전 요청도 **CloudTrail은 원본 리전에 기록**하고, CloudWatch 지표도 원본 리전에서 봅니다. 실제로 처리된 리전은 CloudTrail 이벤트의 `additionalEventData.inferenceRegion` 필드에 남습니다.
+
+CloudWatch와 관련해 하나 구분할 것이 있습니다. 요청과 응답 본문까지 남기는 **모델 호출 로그(model invocation logging)는 기본으로 꺼져 있습니다.** 켜려면 리전마다 따로 설정하고, 로그를 보낼 CloudWatch Logs나 S3도 같은 계정·같은 리전에 있어야 합니다([Model invocation logging](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)). 그러니 "CloudWatch에 기록이 남는다"는 말을 프롬프트와 응답이 자동으로 쌓인다는 뜻으로 읽으면 안 됩니다.
+
+### 스트리밍 호출이면 이벤트가 두 개입니다
+
+`ConverseStream`이나 `InvokeModelWithResponseStream`을 부르면 CloudTrail에 이벤트가 두 개 생깁니다. 하나는 API 호출 자체(`eventType`이 `AwsApiCall`)이고, 다른 하나는 응답 스트림이 끝난 뒤 토큰 수를 담아 남는 완료 이벤트(`eventType`이 `AwsServiceEvent`)입니다. 둘은 `eventName`이 같아서 `eventType`으로만 구분됩니다.
+
+완료 이벤트에서는 처리 리전이 다른 경로에 들어 있습니다.
+
+| 이벤트 | `eventType` | 처리 리전 필드 |
+| --- | --- | --- |
+| API 호출 | `AwsApiCall` | `additionalEventData.inferenceRegion` |
+| 스트림 완료 | `AwsServiceEvent` | `serviceEventDetails.AdditionalEventData.additionalEntries.inferenceRegion` |
+
+완료 이벤트 쪽의 `AdditionalEventData`는 앞 글자가 대문자입니다. 호출 횟수를 세거나 "정책이 이 요청을 막았는가"를 볼 때는 `AwsApiCall`만 봐야 합니다. 완료 이벤트는 API 호출이 아니어서 IAM이나 SCP 평가를 거치지 않습니다.
 
 확인 순서는 이렇게 잡을 수 있습니다. 1~3은 호출 전에, 4는 호출 뒤에 합니다.
 
@@ -248,7 +281,7 @@ AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 
      --query 'models[].modelArn'
    ```
 
-4. **호출 뒤**: 원본 리전(서울)의 CloudTrail에서 그 호출 이벤트를 찾아 `additionalEventData.inferenceRegion` 값을 봅니다.
+4. **호출 뒤**: 원본 리전(서울)의 CloudTrail에서 그 호출 이벤트(`eventType`이 `AwsApiCall`)를 찾아 `additionalEventData.inferenceRegion` 값을 봅니다. 스트리밍 완료 이벤트(`AwsServiceEvent`)를 열었다면 위 표의 다른 경로를 봅니다.
 
 솔직하게 적으면, 저는 이 작업에서 4번의 값을 직접 조회해 보지는 않았습니다. 위 순서는 문서로 확인한 방법입니다. 내부 자료를 넣는 단계로 넘어가기 전에 이 값을 실제로 확인하는 것을 남은 일로 둡니다.
 
@@ -285,7 +318,7 @@ AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 
 1. 모델 카드의 *Regional availability*에서 원본 리전의 In-Region / Geo / Global 지원 여부를 봅니다.
 2. `aws bedrock list-inference-profiles --region <원본> --type-equals SYSTEM_DEFINED`로 쓸 수 있는 프로필을 봅니다.
 3. `aws bedrock get-inference-profile --region <원본> --inference-profile-identifier <ID> --query 'models[].modelArn'`으로 목적지 리전을 봅니다. 쓰려는 원본 리전마다 따로 봅니다.
-4. 호출 뒤 원본 리전 CloudTrail 이벤트에서 `additionalEventData.inferenceRegion`을 봅니다.
+4. 호출 뒤 원본 리전 CloudTrail의 `AwsApiCall` 이벤트에서 `additionalEventData.inferenceRegion`을 봅니다. 스트리밍 완료 이벤트(`AwsServiceEvent`)는 `serviceEventDetails.AdditionalEventData.additionalEntries.inferenceRegion`입니다.
 
 **Global을 쓸 때**
 1. 세 부분(프로필, 원본 리전 FM, 리전이 빈 global FM)을 모두 허용합니다.
@@ -293,12 +326,12 @@ AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 
 3. 리전 제한 SCP가 있으면 `unspecified` 허용이나 `bedrock:InferenceProfileArn` 예외를 둡니다.
 
 **Global을 막을 때**
-1. 세 허용 중 하나, 특히 `arn:aws:bedrock:::foundation-model/…`을 넣지 않습니다.
-2. 역할에 `aws:RequestedRegion = unspecified` 조건의 명시적 Deny를 둡니다. 리전 이름 Deny로는 막히지 않습니다.
+1. 역할에 붙은 **모든 정책**에서 세 자원 중 하나, 특히 `arn:aws:bedrock:::foundation-model/…`에 대한 Allow가 남지 않았는지 확인합니다. `Resource: "*"` 같은 넓은 Allow가 하나라도 있으면 이 방법만으로는 막히지 않습니다.
+2. 확실히 막으려면 역할에 `aws:RequestedRegion = unspecified` 조건의 명시적 Deny를 둡니다. 특정 리전 이름을 `StringEquals`로 거부하는 Deny로는 막히지 않습니다.
 3. 조직 단위로는 SCP에 `unspecified` + `ArnLike bedrock:InferenceProfileArn …/global.*` Deny를 둡니다.
 4. FM ARN의 리전 자리에 `*`나 `ap-*` 같은 넓은 와일드카드를 쓰지 않았는지 점검합니다.
 
-처음의 세 질문에 한 줄씩 답하면 이렇습니다. Global이면 요청은 **지원되는 전 세계 상용 리전 어디서든** 처리될 수 있고, 실제 처리 리전은 **원본 리전 CloudTrail의 `inferenceRegion`**으로 확인하며, 막을 때는 리전 이름이 아니라 **`aws:RequestedRegion = unspecified`**를 Deny합니다.
+처음의 세 질문에 한 줄씩 답하면 이렇습니다. Global이면 요청은 **지원되는 전 세계 상용 리전 어디서든** 처리될 수 있고, 실제 처리 리전은 **원본 리전 CloudTrail의 `inferenceRegion`**으로 확인하며, 막을 때는 특정 리전 이름이 아니라 **`aws:RequestedRegion = unspecified`**를 Deny합니다.
 
 ## 더 읽을거리
 
@@ -308,3 +341,5 @@ AWS Organizations를 쓰면 SCP(서비스 제어 정책)로 계정 전체에서 
 - [Supported Regions and models for inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html): 원본·목적지 리전, 확인 명령
 - [Prerequisites for inference profiles](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-prereq.html): `bedrock:InferenceProfileArn` 조건, Deny 예시
 - [Regional availability by models](https://docs.aws.amazon.com/bedrock/latest/userguide/models-region-compatibility.html): 모델별·리전별 In-Region / Geo / Global 표
+- [Monitor Amazon Bedrock API calls using CloudTrail](https://docs.aws.amazon.com/bedrock/latest/userguide/logging-using-cloudtrail.html): 관리 이벤트와 데이터 이벤트, 스트리밍 완료 이벤트(`AwsServiceEvent`)
+- [Model invocation logging](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html): 요청·응답 로그, 기본 비활성
