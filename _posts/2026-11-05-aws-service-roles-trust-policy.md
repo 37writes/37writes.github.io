@@ -6,9 +6,9 @@ tags: [aws-concepts, aws, iam, service-role, service-linked-role, trust-policy, 
 description: "Failed creating service linked role 403과 '역할 없이 만들어진 Gateway'에서 출발해, 신뢰 정책과 권한 정책, 서비스 역할과 서비스 연결 역할(SLR)의 차이, confused deputy를 막는 aws:SourceAccount·aws:SourceArn 조건, IAM 최종 일관성을 정리합니다."
 ---
 
-회사 작업에서 AI 에이전트 런타임과 도구 게이트웨이를 만들던 중이었습니다. AWS 쪽 작업은 AI 에이전트(Claude Code)와 같이 했고, IAM 쓰기처럼 위험한 명령은 에이전트가 건네면 제가 관리자 프로필로 실행하는 방식이었습니다. 그 과정에서 두 장면이 기억에 남았습니다.
+회사 작업에서 AI 에이전트 런타임과 도구 게이트웨이를 만들던 중이었습니다. 둘 다 Amazon Bedrock AgentCore의 기능입니다. **Runtime**은 에이전트 코드를 실행하는 환경이고, **Gateway**는 에이전트가 Lambda 함수 같은 외부 도구를 부를 수 있게 이어 주는 관문입니다. AWS 쪽 작업은 AI 에이전트(Claude Code)와 같이 했고, IAM 쓰기처럼 위험한 명령은 에이전트가 건네면 제가 관리자 프로필로 실행하는 방식이었습니다. 그 과정에서 두 장면이 기억에 남았습니다.
 
-**첫 번째 장면.** 최소 권한만 가진 IAM 사용자로 Amazon Bedrock AgentCore에 에이전트 런타임을 처음 만들었더니 `CREATE_FAILED`가 났습니다. 사유는 이랬습니다.
+**첫 번째 장면.** 최소 권한만 가진 IAM 사용자로 에이전트 런타임을 처음 만들었더니 `CREATE_FAILED`가 났습니다. 사유는 이랬습니다.
 
 ```text
 Failed creating service linked role ... 403
@@ -17,7 +17,7 @@ Failed creating service linked role ... 403
 에이전트는 "서비스가 호출자 권한으로 서비스 연결 역할을 만들려다 막혔다"고 설명하고, 관리자가 이 한 줄로 그 역할을 직접 만들자고 했습니다.
 
 ```sh
-aws iam create-service-linked-role --aws-service-name <서비스 주체>
+aws iam create-service-linked-role --aws-service-name runtime-identity.bedrock-agentcore.amazonaws.com
 ```
 
 되돌리기 문서에는 "런타임이 하나도 없을 때 이 역할을 지운다"는 단계도 추가됐습니다. 저는 명령을 실행했고 런타임은 만들어졌습니다. 그런데 "서비스 연결 역할이 뭔데, 왜 내가 만들어 줘야 하지?"는 모른 채였습니다.
@@ -37,11 +37,11 @@ IAM 주체와 역할의 기초는 [인증 한 번에 정리: JWT, IAM(SigV4), Co
 역할에는 성격이 다른 정책이 두 개 붙습니다.
 
 - **신뢰 정책(trust policy)**: "이 역할을 **누가** 맡아도 되나"를 정합니다. 역할에 반드시 붙는 **자원 기반 정책**이라 `Principal`이 있습니다. CLI에서는 역할을 만들 때 `create-role --assume-role-policy-document`로 넣고, 나중에는 `update-assume-role-policy`로 바꿉니다.
-- **권한 정책(permissions policy)**: "역할을 맡은 뒤 **무엇을** 할 수 있나"를 정합니다. 자격 증명 기반 정책이라 `Principal`이 없고 `Action`과 `Resource`만 있습니다.
+- **권한 정책(permissions policy)**: "역할을 맡은 뒤 **무엇을** 할 수 있나"를 정합니다. 자격 증명 기반 정책이라 `Principal`을 적지 않습니다. 이 정책이 붙은 역할 자신이 주체가 되고, `Effect`·`Action`·`Resource`로 허용(또는 거부)과 범위를 정합니다. 필요하면 여기에도 `Condition`을 붙일 수 있습니다.
 
-비유하자면 신뢰 정책은 **출입증 발급 규칙**, 권한 정책은 **그 출입증으로 열 수 있는 문**입니다. 둘은 따로 따집니다. 신뢰 정책에서 막히면 역할을 맡지도 못하고, 권한 정책이 비어 있으면 맡아도 아무것도 못 합니다.
+비유하자면 신뢰 정책은 **출입증 발급 규칙**, 권한 정책은 **그 출입증으로 열 수 있는 문**입니다. 역할을 맡아도 되는지와 맡은 뒤 자원을 써도 되는지는 따로 따집니다. 신뢰 정책에서 막히면 역할을 맡지도 못합니다. 맡은 뒤의 실제 접근은 역할의 권한 정책만으로 정해지지 않습니다. [정책 평가 로직](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html)에 따르면 같은 계정 안에서는 자격 증명 기반 정책과 대상 자원의 자원 기반 정책이 허용한 것을 합쳐서 보고, 어느 쪽이든 명시적 거부가 있으면 거부가 이깁니다. 아래 예에서는 역할의 권한 정책으로 Lambda 호출을 허용합니다.
 
-Gateway 서비스 역할의 신뢰 정책을 예시 값으로 써 보면 이렇습니다. 계정 `123456789012`, 리전 `ap-northeast-2`, Gateway ID `myproj-tools-abc123def4`는 모두 가짜 값입니다.
+Gateway 서비스 역할의 신뢰 정책을 예시 값으로 써 보면 이렇습니다. 예시에 나오는 **ARN**(Amazon Resource Name)은 `arn:aws:<서비스>:<리전>:<계정>:<자원>` 꼴로 AWS 자원 하나를 가리키는 식별자입니다. 계정 `123456789012`, 리전 `ap-northeast-2`, Gateway ID `myproj-tools-abc123def4`는 모두 가짜 값입니다.
 
 ```json
 {
@@ -81,7 +81,7 @@ Gateway 서비스 역할의 신뢰 정책을 예시 값으로 써 보면 이렇�
 
 <figure class="diagram">
 {% include figures/aws-service-roles-trust-policy/service-assumes-role.svg %}
-<figcaption>서비스 주체가 출처 꼬리표를 달고 역할을 요청하면, 신뢰 정책(위 칸)이 맡을 수 있는지 판단하고 권한 정책(아래 칸)이 맡은 뒤 할 일을 정한다</figcaption>
+<figcaption>신뢰 정책(위 칸)은 서비스 주체와 SourceAccount·SourceArn 출처 꼬리표를 보고 역할을 맡길지 정하고, 권한 정책(아래 칸)은 맡은 뒤 부를 수 있는 대상을 정한다</figcaption>
 </figure>
 
 ## 2. 서비스 역할과 서비스 연결 역할(SLR)
@@ -117,7 +117,7 @@ AgentCore의 [Runtime Identity SLR](https://docs.aws.amazon.com/bedrock-agentcor
 - 언제 생기나: **2025년 10월 13일 이후** Runtime을 만들거나 업데이트할 때
 - 지우는 조건: AgentCore Runtime 자원을 **모두** 지운 뒤
 
-이 SLR을 만들 수 있게 하는 권한은 문서에 이런 모양으로 나옵니다. `Resource`를 그 SLR의 ARN 하나로, `Condition`을 `iam:AWSServiceName`(서비스 주체 이름)으로 좁힙니다.
+이 SLR을 만들 수 있게 하는 권한은 문서에 이런 모양으로 나옵니다. 아래는 정책 문서 전체가 아니라 기존 정책의 `Statement` 배열에 넣을 **항목 하나**입니다. `Resource`는 경로와 이름이 그 SLR로 정해진 ARN 패턴이고(문서 원형은 계정 자리가 `*`라 내 계정으로 좁히려면 `123456789012`처럼 계정 ID를 넣습니다), `Condition`은 `iam:AWSServiceName`(서비스 주체 이름)으로 다시 좁힙니다.
 
 ```json
 {
@@ -132,7 +132,7 @@ AgentCore의 [Runtime Identity SLR](https://docs.aws.amazon.com/bedrock-agentcor
 }
 ```
 
-문서에 따르면 이 권한은 AWS 관리형 정책 `BedrockAgentCoreFullAccess`에 이미 들어 있습니다. 그 정책을 붙인 사용자라면 SLR 생성 단계에서는 막히지 않았을 것입니다. 정책을 직접 좁혀 쓴 최소 권한 사용자가 이 403을 만나는 이유입니다.
+문서에 따르면 이 권한은 AWS 관리형 정책 `BedrockAgentCoreFullAccess`에 이미 들어 있습니다. 그 정책을 쓰면 명시적 거부나 권한 경계, 조직 정책 같은 다른 제한이 없는 한 이번과 같은 "생성 권한 누락"은 피할 수 있습니다. 정책을 직접 좁혀 쓴 최소 권한 사용자가 이 403을 만나기 쉬운 이유입니다.
 
 서비스 주체 이름은 **추측하지 말라**고 IAM 문서가 경고합니다. 대소문자를 구분하고 서비스마다 형식이 다르기 때문입니다. AgentCore만 해도 SLR마다 주체가 다릅니다. Runtime Identity SLR은 `runtime-identity.bedrock-agentcore.amazonaws.com`, VPC 네트워크용 SLR은 `network.bedrock-agentcore.amazonaws.com`입니다. 반드시 그 서비스의 SLR 문서에서 확인합니다.
 
@@ -141,7 +141,7 @@ AgentCore의 [Runtime Identity SLR](https://docs.aws.amazon.com/bedrock-agentcor
 
 ### SLR 권한은 좁게 정의되는 이유
 
-[IAM 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create-service-linked-role.html#create-service-linked-role-permissions-transfer)는 SLR의 **간접 권한**을 설명합니다. SLR을 쓰는 서비스를 호출할 수 있는 사용자는, 그 서비스를 거쳐 SLR의 권한을 간접적으로 쓰게 됩니다. 그래서 서비스가 정의하는 SLR 권한은 꼭 필요한 일만 하도록 좁게 잡혀 있습니다. Runtime Identity SLR이 토큰 세 액션만 가진 것도 같은 맥락입니다.
+[IAM 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create-service-linked-role.html#create-service-linked-role-permissions-transfer)는 SLR의 **간접 권한**을 설명합니다. SLR을 쓰는 서비스를 호출할 수 있는 사용자는, 그 서비스를 거쳐 SLR의 권한을 간접적으로 쓰게 됩니다. 그래서 SLR을 볼 때는 그 역할 자체의 권한뿐 아니라, **그 서비스를 호출할 수 있는 주체가 누구이고 어디까지인지**도 함께 확인해야 합니다. 참고로 Runtime Identity SLR의 [현재 정책](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/BedrockAgentCoreRuntimeIdentityServiceRolePolicy.html)이 허용하는 것은 앞서 본 토큰 세 액션입니다.
 
 ### 있는지 확인하고, 만들고, 지우기
 
@@ -160,22 +160,27 @@ aws iam create-service-linked-role --profile admin \
   --aws-service-name runtime-identity.bedrock-agentcore.amazonaws.com
 ```
 
-지우는 일은 조금 다릅니다. [DeleteServiceLinkedRole](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteServiceLinkedRole.html)은 바로 지우지 않고 **삭제 작업을 제출**한 뒤 `DeletionTaskId`를 돌려줍니다. 서비스가 아직 그 역할로 자원을 쓰고 있으면 작업이 실패하고, 상태 조회가 실패 이유(대개 먼저 지워야 할 자원)를 알려 줍니다.
+지우는 일은 조금 다릅니다. [DeleteServiceLinkedRole](https://docs.aws.amazon.com/IAM/latest/APIReference/API_DeleteServiceLinkedRole.html)은 바로 지우지 않고 **삭제 작업을 제출**한 뒤 `DeletionTaskId`를 돌려줍니다. 서비스가 아직 그 역할로 자원을 쓰고 있으면 작업이 실패하고, [상태 조회](https://docs.aws.amazon.com/IAM/latest/APIReference/API_GetServiceLinkedRoleDeletionStatus.html)가 `NOT_STARTED`·`IN_PROGRESS`·`SUCCEEDED`·`FAILED` 중 하나와, 실패했다면 서비스가 알려 준 이유(그 역할을 쓰는 리전과 자원)를 돌려줍니다.
 
 ```sh
 # 1. 그 SLR을 쓰는 자원이 쓰던 리전 전부에서 0개인지 확인 (리전은 예시)
+#    모든 조회가 오류 없이 끝나고 결과가 전부 []일 때만 2번으로 넘어갑니다.
 for r in ap-northeast-2 us-east-1; do
   aws bedrock-agentcore-control list-agent-runtimes --profile dev --region "$r" \
     --query 'agentRuntimes' --output json
 done
 
-# 2. 삭제 작업 제출 → DeletionTaskId
-aws iam delete-service-linked-role --profile admin \
-  --role-name AWSServiceRoleForBedrockAgentCoreRuntimeIdentity
+# 2. 삭제 작업 제출 → 응답의 DeletionTaskId를 변수에 담기
+TASK_ID=$(aws iam delete-service-linked-role --profile admin \
+  --role-name AWSServiceRoleForBedrockAgentCoreRuntimeIdentity \
+  --query DeletionTaskId --output text)
 
-# 3. 상태 확인 (SUCCEEDED가 될 때까지)
+# 3. 상태 확인
+#    NOT_STARTED·IN_PROGRESS → 잠시 뒤 다시 조회
+#    FAILED → Reason에 나온 남은 자원을 정리한 뒤 2번부터 다시
+#    SUCCEEDED → 4번으로
 aws iam get-service-linked-role-deletion-status --profile admin \
-  --deletion-task-id <DeletionTaskId>
+  --deletion-task-id "$TASK_ID"
 
 # 4. 정말 없어졌는지 (NoSuchEntity가 나와야 함)
 aws iam get-role --profile dev \
@@ -192,7 +197,7 @@ aws iam get-role --profile dev \
 
 [혼동된 대리인 문제(confused deputy)](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html)는 어떤 행동을 할 권한이 없는 주체가, 권한이 더 많은 주체(대리인)를 시켜서 그 행동을 하게 만드는 보안 문제입니다. 문서는 두 갈래로 설명합니다.
 
-- **교차 계정형**: 외부 업체에 내 계정의 역할 ARN을 알려 줬는데, 그 업체의 다른 고객이 같은 ARN을 업체에 넣어서 업체가 내 계정을 건드리게 만드는 경우입니다. 역할 ARN은 비밀이 아니라 추측하거나 알아낼 수 있습니다. 해결은 신뢰 정책에 `sts:ExternalId` 조건을 거는 것입니다.
+- **교차 계정형**: 외부 업체에 내 계정의 역할 ARN을 알려 줬는데, 그 업체의 다른 고객이 같은 ARN을 업체에 넣어서 업체가 내 계정을 건드리게 만드는 경우입니다. 역할 ARN은 비밀이 아니라 추측하거나 알아낼 수 있습니다. 해결은 신뢰 정책에 `sts:ExternalId` 조건을 거는 것입니다. 이 값은 고객이 지어내는 것이 아니라 외부 업체가 고객마다 **겹치지 않게** 만들어 관리하고, 역할을 맡는 요청에 늘 그 고객의 값을 넣어 보냅니다. 다른 고객은 업체가 요청에 넣는 값을 바꿀 수 없으니 내 역할을 맡을 수 없습니다.
 - **교차 서비스형**: 이 글의 중심입니다. 정책이 `"Principal": {"Service": "x.amazonaws.com"}`만 믿으면, 그 서비스를 **누가, 어느 계정의 어느 자원에서** 설정했는지는 확인하지 않습니다. 문서 예시는 조건 없이 CloudTrail 서비스 주체를 믿는 S3 버킷입니다. 이 버킷은 내가 설정한 CloudTrail 로그뿐 아니라, 버킷 이름만 아는 다른 사람이 설정한 CloudTrail 로그까지 받게 됩니다.
 
 서비스 주체는 모든 고객이 함께 쓰는 이름입니다. `bedrock-agentcore.amazonaws.com`은 내 Gateway를 위해 일할 때도, 남의 Gateway를 위해 일할 때도 같은 이름입니다. 그래서 `Principal`만으로는 "이 서비스라면 누구를 위해 일하든 맡아도 된다"는 뜻이 됩니다.
@@ -245,7 +250,7 @@ aws iam get-role --profile dev \
 
 Gateway 서비스 역할의 `aws:SourceArn`에는 Gateway ARN이 들어가야 합니다. 그런데 Gateway를 만들 때 이 역할을 넘겨야 하고, Gateway ARN(정확히는 끝의 ID)은 만들기 전에는 모릅니다. [Gateway 문서](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-prerequisites-permissions.html#gateway-service-role-permissions-trust)는 이 순서를 직접 안내합니다. 처음 역할을 만들 때는 `Condition`을 빼도 되고, Gateway를 만든 뒤 계정 ID와 **Gateway ARN**으로 `Condition`을 다시 넣으라는 것입니다.
 
-두 번째 장면에서 에이전트가 한 순서가 이것이었습니다. 처음에는 `gateway/*`로 넓게 두고, Gateway가 생긴 뒤 그 ID 하나로 좁혔습니다. 좁힐 때 신뢰 정책의 `SourceArn`과 권한 정책의 `Resource`를 함께 바꿨습니다.
+두 번째 장면에서 에이전트가 한 순서가 이것이었습니다. 처음에는 `gateway/*`로 넓게 두고, Gateway가 생긴 뒤 그 ID 하나로 좁혔습니다. 이때 두 정책을 함께 손봤지만 좁히는 대상은 다릅니다. 신뢰 정책의 `SourceArn`은 **역할을 맡기는 쪽**, 즉 방금 만든 Gateway의 ARN으로 좁힙니다. 권한 정책의 `Resource`는 **역할로 부를 쪽**, 즉 Gateway가 호출할 도구로 좁힙니다. 1절 예시라면 Lambda 함수 ARN입니다. 여기에 Gateway ARN을 넣으면 함수 호출이 허용되지 않습니다. 아래 두 파일은 1절의 신뢰 정책과 권한 정책 JSON을 저장한 것입니다.
 
 ```sh
 # 좁힌 신뢰 정책 적용
@@ -276,7 +281,7 @@ aws accessanalyzer validate-policy --profile dev \
 
 이번 작업에서 에이전트는 "역할이 퍼지는 데 10초쯤", "권한이 퍼질 때까지 30초쯤", 다시 만들기 전 `sleep 60` 같은 숫자를 썼습니다. 이 숫자들은 **에이전트의 경험치이지 문서 값이 아닙니다.** 기다리는 것 자체는 맞지만, 몇 초면 충분하다는 보장은 없습니다.
 
-반대 경우도 있었습니다. 정책을 고친 뒤 15초, 1분, 2분을 기다려도 똑같은 권한 거부가 나왔는데, 원인은 전파가 아니라 정책 구성(태그 액션이 평가되는 자원)이었습니다. 그 이야기는 [관리자 권한 없이 CDK 배포하기 2편]({% post_url 2026-11-05-cdk-least-privilege-first-deploy %})에 있습니다. **몇 분을 기다려도 같은 거부라면 전파 문제가 아닙니다.** 정책을 다시 봅니다.
+반대 경우도 있었습니다. 정책을 고친 뒤 15초, 1분, 2분을 기다려도 똑같은 권한 거부가 나왔는데, 원인은 전파가 아니라 정책 구성(태그 액션이 평가되는 자원)이었습니다. 그 이야기는 [관리자 권한 없이 CDK 배포하기 2편]({% post_url 2026-11-05-cdk-least-privilege-first-deploy %})에 있습니다. 그렇다고 문서에 전파 시간의 상한이 있는 것은 아니니, "몇 분이 지났으니 전파 문제는 아니다"라고 단정할 수는 없습니다. 그래도 몇 분 뒤에도 같은 거부가 되풀이된다면, 기다리기만 하지 말고 정책 내용, 오류 메시지가 가리키는 액션과 자원, 실제로 호출한 주체를 함께 확인하는 편이 빠릅니다.
 
 ## 그때 왜 그렇게 했나
 
@@ -300,9 +305,9 @@ aws accessanalyzer validate-policy --profile dev \
 Gateway는 서비스 역할이 없는데도 READY가 됐습니다. 왜 만들 때 역할이 있는지 확인하지 않는지는 문서에서 찾지 못했습니다. **관찰한 사실은 "만들기 성공이 역할 확인을 뜻하지 않았다"는 것까지입니다.** 그래서 순서를 이렇게 잡는 편이 안전합니다.
 
 1. 서비스 역할을 만든다 (신뢰 정책 + 권한 정책).
-2. 전파를 기다리고, `get-role`로 역할이 보이는지 확인한다.
+2. 잠시 기다린 뒤 `get-role`로 역할이 조회되는지 확인한다. 조회된다고 모든 서비스 엔드포인트에 전파됐다는 증명은 아니므로, 마지막 확인은 5번의 실제 호출로 한다.
 3. 그 역할을 쓰는 자원(Gateway)을 만든다.
-4. 자원 ARN이 생기면 신뢰 정책의 `SourceArn`과 권한 정책의 `Resource`를 그 자원으로 좁힌다.
+4. 자원 ARN이 생기면 신뢰 정책의 `SourceArn`을 그 자원(Gateway) ARN으로 좁힌다. 권한 정책의 `Resource`는 그 자원이 호출할 대상(예: Lambda 함수 ARN)으로 제한한다.
 5. 실제 호출(도구 목록, 검색 한 건)로 역할이 쓰이는지 확인한다.
 
 이번에는 역할을 만든 뒤 신뢰 정책을 그 Gateway 하나로 좁혔고, 좁힌 뒤에도 검색은 정상이었습니다.
@@ -316,16 +321,16 @@ Gateway는 서비스 역할이 없는데도 READY가 됐습니다. 왜 만들 �
 
 ## 다음에 조심할 것
 
-1. 서비스가 맡을 역할이면 신뢰 정책에 서비스 주체와 함께 `aws:SourceAccount`·`aws:SourceArn`을 붙였나. 그 서비스 문서 예시와 같은 형태인가.
-2. `SourceArn`에 넣을 ARN이 자원을 만든 뒤에야 생긴다면, 만든 뒤 좁히는 단계를 계획에 넣었나.
+1. 서비스가 맡을 역할이라면, 먼저 그 서비스 문서가 `aws:SourceAccount`·`aws:SourceArn` 조건을 쓰는 예시를 주는지 확인했나. 준다면 신뢰 정책에 문서 예시와 같은 형태로 붙였나.
+2. `SourceArn`에 넣을 ARN이 자원을 만든 뒤에야 생긴다면, 만든 뒤 좁히는 단계를 계획에 넣었나. 그때 권한 정책의 `Resource`는 출처 자원이 아니라 호출 대상으로 좁히나.
 3. 최소 권한 사용자로 서비스 자원을 처음 만든다면, 필요한 SLR이 이미 있는지 `get-role`로 확인했나. 없다면 관리자가 미리 만들지, `iam:CreateServiceLinkedRole`(+`iam:AWSServiceName` 조건)을 줄지 정했나.
-4. 되돌리기에 SLR 삭제를 넣었다면, 그 SLR을 쓰는 자원이 **쓰던 리전 전부에서** 0개인지 먼저 확인하나. 삭제는 비동기이니 상태까지 확인하나.
+4. 되돌리기에 SLR 삭제를 넣었다면, 그 SLR을 쓰는 자원이 **쓰던 리전 전부에서** 0개인지 먼저 확인하나. 삭제는 비동기이니 상태까지 확인하고, `FAILED`면 이유를 보고 정리한 뒤 다시 요청하나.
 5. 자원 만들기 성공을 역할 확인으로 여기지 않고, 역할 존재와 실제 호출을 따로 확인하나.
-6. "잠시 기다리기"는 IAM 변경 직후 한 번만. 몇 분 뒤에도 같은 거부면 정책을 다시 본다.
+6. (제 작업 원칙) IAM 변경 직후에는 잠시 기다리되 기다림만 늘리지 않는다. 몇 분 뒤에도 같은 거부면 정책·오류 메시지·호출 주체를 다시 본다.
 
 ## 정리
 
 - 역할에는 정책이 둘 붙습니다. **신뢰 정책**은 누가 맡을 수 있는지, **권한 정책**은 맡은 뒤 무엇을 할 수 있는지를 정합니다.
 - **서비스 역할**은 내가 쓰고 고치는 역할이고, **서비스 연결 역할**은 서비스가 정의하고 소유하는 역할입니다. SLR을 서비스가 "자동으로" 만들어도, 그 요청을 한 주체에게 `iam:CreateServiceLinkedRole`이 있어야 합니다.
 - 서비스 주체는 모든 고객이 함께 쓰는 이름이라 `Principal`만으로는 "누구를 위해 일하는 요청인지"를 가리지 못합니다. **`aws:SourceAccount`·`aws:SourceArn`**이 그 빈자리를 메웁니다. 같은 조건이 역할의 신뢰 정책에도, 자원 기반 정책에도 쓰입니다.
-- IAM 변경은 바로 보이지 않을 수 있지만, 몇 초를 기다리라는 문서 값은 없습니다. 기다려도 그대로면 정책을 의심합니다.
+- IAM 변경은 바로 보이지 않을 수 있지만, 몇 초를 기다리라는 문서 값은 없습니다. 기다려도 그대로면 기다림만 늘리지 말고 정책과 호출 주체를 함께 봅니다.

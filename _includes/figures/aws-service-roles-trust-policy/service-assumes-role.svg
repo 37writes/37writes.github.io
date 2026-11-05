@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 744" role="img" aria-labelledby="svcrole-flow-title svcrole-flow-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="svcrole-flow-title">AWS 서비스가 서비스 역할을 맡는 흐름</title>
-  <desc id="svcrole-flow-desc">사람이나 CI 같은 호출자가 Gateway를 만들고 호출한다. 그러면 서비스 주체 bedrock-agentcore.amazonaws.com이 sts:AssumeRole로 역할을 요청하고, 이 요청에는 AWS가 붙이는 출처 꼬리표 aws:SourceAccount(내 계정)와 aws:SourceArn(그 Gateway의 ARN)이 들어 있다. 역할 상자는 두 칸이다. 위 칸 신뢰 정책은 누가 맡을 수 있는지를 정하며, Principal에 서비스 주체를 적고 Condition으로 계정과 Gateway가 일치하는지 본다. 다른 계정이나 다른 Gateway를 위한 같은 서비스의 요청은 여기서 거부된다. 아래 칸 권한 정책은 맡은 뒤 할 수 있는 Action과 Resource를 정하고 Principal이 없다. 역할을 맡으면 임시 자격 증명으로 도구, 모델, 로그 같은 대상 자원을 호출한다. 서비스 연결 역할(SLR)은 이 역할 상자 전체를 AWS 서비스가 정의하고 잠근 것이라 권한을 고칠 수 없다.</desc>
+  <desc id="svcrole-flow-desc">사람이나 CI 같은 호출자가 Gateway를 만들고 호출한다. 그러면 서비스 주체 bedrock-agentcore.amazonaws.com이 sts:AssumeRole로 역할을 요청하고, 이 요청에는 AWS가 붙이는 출처 꼬리표 aws:SourceAccount(내 계정)와 aws:SourceArn(그 Gateway의 ARN)이 들어 있다. 역할 상자는 두 칸이다. 위 칸 신뢰 정책은 누가 맡을 수 있는지를 정하며, Principal에 서비스 주체를 적고 Condition에서 aws:SourceAccount와 aws:SourceArn이 내 계정·그 Gateway와 일치하는지 본다. 다른 계정이나 다른 Gateway를 위한 같은 서비스의 요청은 여기서 거부된다. 아래 칸 권한 정책은 맡은 뒤 할 수 있는 Action과 Resource를 정하고 Principal이 없다. 역할을 맡으면 임시 자격 증명으로 대상 자원, 예를 들어 Gateway가 부를 Lambda 도구를 호출한다. 서비스 연결 역할(SLR)은 이 역할 상자 전체를 AWS 서비스가 정의하고 잠근 것이라 권한을 고칠 수 없다.</desc>
   <rect class="d-box" x="20" y="12" width="320" height="76"/>
   <text class="d-strong" x="180" y="42" text-anchor="middle">호출자 (사람·CI)</text>
   <text class="d-muted" x="180" y="70" text-anchor="middle">Gateway를 만들고 호출</text>
@@ -20,7 +20,7 @@
   <rect class="d-box" x="24" y="332" width="312" height="128"/>
   <text class="d-strong" x="180" y="360" text-anchor="middle">신뢰 정책 · 누가 맡나</text>
   <text class="d-muted" x="180" y="386" text-anchor="middle">Principal: 서비스 주체</text>
-  <text class="d-muted" x="180" y="410" text-anchor="middle">Condition: 계정·Gateway 일치</text>
+  <text class="d-muted" x="180" y="410" text-anchor="middle">Condition: SourceAccount·SourceArn</text>
   <text class="d-strong d-accent" x="180" y="442" text-anchor="middle">✗ 다른 계정·Gateway 요청은 거부</text>
   <rect class="d-box" x="24" y="472" width="312" height="88"/>
   <text class="d-strong" x="180" y="500" text-anchor="middle">권한 정책 · 맡은 뒤 무엇을</text>
@@ -31,7 +31,7 @@
   <text class="d-muted" x="192" y="593">임시 자격 증명</text>
   <rect class="d-box" x="20" y="602" width="320" height="76"/>
   <text class="d-strong" x="180" y="632" text-anchor="middle">대상 자원</text>
-  <text class="d-muted" x="180" y="660" text-anchor="middle">도구 · 모델 · 로그</text>
+  <text class="d-muted" x="180" y="660" text-anchor="middle">예: Gateway가 부를 Lambda 도구</text>
   <text class="d-muted" x="180" y="708" text-anchor="middle">SLR = 이 역할 상자 전체를 AWS 서비스가</text>
   <text class="d-muted" x="180" y="732" text-anchor="middle">정의하고 잠근 것 (권한 수정 불가)</text>
 </svg>
