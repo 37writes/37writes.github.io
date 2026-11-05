@@ -204,7 +204,7 @@ struct MessageRow: View {
 
 ### 대비 기준
 
-여기서 대비는 글자·아이콘 같은 전경색과 그 뒤 배경색이 얼마나 다르게 보이는지를 비율로 나타낸 값입니다. 비율이 클수록 읽기 쉽습니다. Accessibility 페이지는 WCAG Level AA 값을 가져와 아래 표를 기준으로 제시합니다. 단위는 Apple의 pt입니다.
+여기서 대비(대비비)는 글자·아이콘 같은 전경과 그 뒤 배경의 상대적인 밝기, 곧 상대 휘도(relative luminance)가 얼마나 다른지를 비율로 나타낸 값입니다. 비율이 클수록 읽기 쉽습니다. 색상이 서로 달라도 밝기가 비슷하면 대비비는 낮게 나옵니다([WCAG 2.2 Contrast (Minimum)](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)). Accessibility 페이지는 WCAG Level AA 값을 가져와 아래 표를 기준으로 제시합니다. 단위는 Apple의 pt입니다.
 
 | 글자 크기 | 글자 굵기 | 최소 대비 |
 |---|---|---|
