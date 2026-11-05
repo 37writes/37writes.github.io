@@ -51,7 +51,7 @@ Anthropic 문서는 도구 사용(tool use, function calling이라고도 합니�
 
 내가 정의한 도구라면 한 번의 왕복은 이렇습니다.
 
-1. 요청에 도구 목록(이름, 설명, 입력 스키마)을 같이 보냅니다.
+1. 요청에 도구 목록(이름, 설명, 입력 스키마)을 같이 보냅니다. 입력 스키마는 도구가 받는 인자의 이름, 자료형, 필수 여부를 적은 규칙입니다.
 2. 모델이 도구가 필요하다고 판단하면 `stop_reason: "tool_use"`와 함께 `tool_use` 블록을 돌려줍니다. 블록에는 어느 도구를, 어떤 입력으로 부를지가 적혀 있습니다. **아직 아무것도 실행되지 않았습니다.**
 3. 내 코드가 그 도구를 실행합니다.
 4. 실행 결과를 `tool_result` 블록에 담아 다음 요청으로 보냅니다.
@@ -68,7 +68,7 @@ while True:
     messages.append({"role": "assistant", "content": response.content})
 
     if response.stop_reason != "tool_use":
-        break  # 도구가 더 필요 없으면 답이 나온 것
+        break  # 보통은 답이 끝난 것. max_tokens 같은 중간 종료는 따로 처리해야 한다
 
     results = []
     for block in response.content:
@@ -89,11 +89,13 @@ Anthropic 문서의 정의는 한 문장으로 시작합니다. "Tools differ pr
 
 | | 클라이언트 도구 | 서버 도구 |
 |---|---|---|
-| 실행 위치 | 내 애플리케이션 (Claude Code라면 내 컴퓨터) | Anthropic 인프라 |
+| 실행 위치 | 모델 API 바깥의 내 애플리케이션 (Claude Code라면 Claude Code) | 모델 API 쪽 Anthropic 인프라 |
 | 예 | 내가 정의한 도구, 그리고 `bash`, `text_editor`, memory, computer use처럼 Anthropic이 스키마를 정한 도구 | `web_search`, `web_fetch`, `code_execution`, `tool_search`, advisor, MCP connector |
-| 응답에 오는 것 | `tool_use` 블록. 내가 실행하고 `tool_result`를 보냄 | `server_tool_use`와 결과 블록(예: `web_search_tool_result`)이 같은 응답 안에 함께 옴 |
+| 응답에 오는 것 | `tool_use` 블록. 내가 실행하고 `tool_result`를 보냄 | `server_tool_use`와 결과 블록(예: `web_search_tool_result`). 정상 완료되면 보통 같은 응답에 함께 옴 |
 | 결과를 모델에 넣는 쪽 | 나 (하네스) | Anthropic 서버 |
-| 요금 | 일반 토큰 요금 | 토큰 요금 + 사용량 요금 (웹 검색은 1,000건당 $10) |
+| Anthropic API 요금 | 모델 토큰 요금. 도구를 돌리는 환경이나 외부 서비스 비용은 따로 듭니다 | 모델 토큰 요금에 도구별 추가 요금이 붙을 수 있음 (웹 검색은 1,000건당 $10) |
+
+여기서 "실행 위치"는 내 컴퓨터냐 원격이냐를 가리는 말이 아닙니다. **도구 호출을 모델 API 바깥의 애플리케이션이 처리하느냐, 모델 API가 처리하느냐**의 경계입니다. 뒤에서 보겠지만 클라이언트 도구도 원격 서비스를 부를 수 있습니다.
 
 헷갈리기 쉬운 점이 하나 있습니다. `bash`나 `text_editor`는 Anthropic이 이름과 스키마를 정하고 모델도 그 형식으로 학습시켰습니다. 그래도 **실행은 내 애플리케이션이 하므로 클라이언트 도구**입니다. 누가 만들었느냐가 아니라 누가 실행하느냐가 기준입니다.
 
@@ -108,7 +110,7 @@ Anthropic 문서의 정의는 한 문장으로 시작합니다. "Tools differ pr
 }
 ```
 
-`web_search_20250305`는 기본 검색이고, 결과를 코드로 걸러 주는 동적 필터링이 붙은 `web_search_20260209`, `web_search_20260318` 버전도 있습니다. 어느 버전이든 처리 방식은 같습니다. 문서의 표현대로 "The API runs the searches", 즉 검색은 API가 실행합니다. 응답 하나에 검색 결정, 검색어, 결과, 인용이 붙은 답이 모두 들어 있습니다.
+`web_search_20250305`는 기본 검색이고, 결과를 코드로 걸러 주는 동적 필터링이 붙은 `web_search_20260209`, `web_search_20260318` 버전도 있습니다. 어느 버전이든 공통점은 하나입니다. 문서의 표현대로 "The API runs the searches", 즉 검색은 API가 실행합니다. 아래는 기본 검색이 한 요청 안에서 정상으로 끝났을 때의 응답을 줄인 예시입니다. 검색 결정, 검색어, 결과, 인용이 붙은 답이 한 응답에 들어 있습니다.
 
 ```text
 content:
@@ -119,26 +121,32 @@ content:
 stop_reason: end_turn
 ```
 
-내 코드는 검색을 실행하지도, `tool_result`를 만들지도 않았습니다. 앞의 비유로 말하면 서버 도구는 **머리 쪽에 따로 달린 손**입니다. 머리를 다른 곳에서 빌려 오면, 그 머리에 붙어 있던 손도 같이 바뀌거나 빠집니다.
+응답 모양이 언제나 이렇지는 않습니다. 웹 검색 문서에는 예외가 적혀 있습니다.
 
-Claude Code의 `WebSearch`는 이 점에서 조금 미묘합니다. 화면에서는 `Read`나 `Bash`와 나란히 Claude Code 도구 목록에 있습니다. 그런데 [Tools reference](https://code.claude.com/docs/en/tools-reference)에 따르면 이 도구는 **Anthropic의 웹 검색 백엔드**에 질의합니다. 그러니까 Claude Code의 WebSearch는 Anthropic 서버 도구에 기대는 도구라고 보는 것이 정확합니다. 반대로 `WebFetch`는 페이지를 내 컴퓨터에서 받아 Markdown으로 바꾸고, 별도 모델 호출로 필요한 내용을 추려 Claude에게 넘깁니다. 문서는 이 방식을 "lossy by design"이라고 적어 둡니다. 원문을 그대로 넘기는 것이 아니라 추린 결과만 넘긴다는 뜻입니다.
+- 검색이 길어지면 API가 턴을 멈추고 `stop_reason: "pause_turn"`을 돌려줄 수 있습니다. 이어 가려면 받은 assistant 메시지를 고치지 않고 다음 요청에 그대로 넣어 보냅니다.
+- 웹 검색과 클라이언트 도구가 같은 병렬 호출 묶음에 들어가면, API는 검색을 아직 실행하지 않고 `stop_reason: "tool_use"`로 돌려줍니다. 클라이언트 도구 결과를 보낸 다음 요청에서 검색이 실행됩니다.
+- `web_search_20260318`부터는 `response_inclusion` 설정이 있습니다. `"excluded"`로 두면, 끝까지 실행된 코드 실행 안에서 쓰인 검색 호출과 결과 블록이 응답에서 빠집니다. 기본값은 `"full"`입니다.
+
+그래도 검색을 실행하는 쪽이 API라는 점은 바뀌지 않습니다. 내 코드는 검색을 실행하지도, `tool_result`를 만들지도 않았습니다. 앞의 비유로 말하면 서버 도구는 **머리 쪽에 따로 달린 손**입니다. 머리를 다른 곳에서 빌려 오면, 그 머리에 붙어 있던 손도 같이 바뀌거나 빠집니다.
+
+Claude Code의 `WebSearch`는 이 점에서 조금 미묘합니다. 화면에서는 `Read`나 `Bash`와 나란히 Claude Code 도구 목록에 있습니다. 그런데 [Tools reference](https://code.claude.com/docs/en/tools-reference)에 따르면 이 도구는 **Anthropic의 웹 검색 백엔드**에 질의합니다. 그러니까 Claude Code의 WebSearch는 Anthropic 서버 도구에 기대는 도구라고 보는 것이 정확합니다. 반대로 `WebFetch`는 페이지를 내 컴퓨터에서 받아 Markdown으로 바꿉니다. 문서에 따르면 대부분의 경우 별도 모델 호출로 필요한 내용을 추려 Claude에게 넘깁니다. 문서는 이 방식을 "lossy by design"이라고 적어 둡니다. 원문을 그대로 넘기기보다 추린 결과를 넘긴다는 뜻입니다.
 
 ## Bedrock에서는 왜 빠지나: 공식 문서로 확인
 
-그림 한 장으로 먼저 보겠습니다. 왼쪽이 Anthropic API에 연결했을 때, 오른쪽이 Bedrock에 연결하고 검색을 다시 달았을 때입니다.
+그림 한 장으로 먼저 보겠습니다. 그림의 Anthropic API 쪽은 Anthropic API에 연결했을 때, Bedrock 쪽은 Bedrock에 연결하고 검색을 다시 달았을 때입니다. 넓은 화면에서는 좌우로, 좁은 화면에서는 위아래로 놓입니다.
 
 <figure class="diagram">
 {% include figures/server-tools-vs-client-tools/where-tools-run.svg %}
-<figcaption>서버 도구는 모델 제공자 쪽에 붙어 있어 Bedrock에선 빠지고, 클라이언트 도구는 내 PC에 있어 그대로 남는다</figcaption>
+<figcaption>이 Bedrock 연결에서는 Anthropic의 웹 검색 서버 도구를 쓸 수 없지만, Claude Code가 호출과 결과 전달을 맡는 MCP 도구로 원격 검색을 다시 붙일 수 있다</figcaption>
 </figure>
 
 이것은 추측이 아니라 문서에 적혀 있는 내용입니다.
 
-- **Anthropic의 [Claude in Amazon Bedrock](https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock) 문서**의 "Features not supported" 목록에 "Server-side tools (code execution, web search, web fetch, advisor)"와 "Agent infrastructure (Agent Skills, MCP connector, programmatic tool calling)"가 들어 있습니다. 반대로 지원 목록에는 tool use가 있습니다. Bash, browser use, computer use, memory, text editor 도구도 포함됩니다. 모두 **클라이언트 쪽에서 실행되는 도구**입니다.
+- **Anthropic의 [Claude in Amazon Bedrock](https://platform.claude.com/docs/en/build-with-claude/claude-in-amazon-bedrock) 문서**의 "Features not supported" 목록에 "Server-side tools (code execution, web search, web fetch, advisor)"와 "Agent infrastructure (Agent Skills, MCP connector, programmatic tool calling)"가 들어 있습니다. 반대로 지원 목록에는 tool use가 있습니다. Bash, browser use, computer use, memory, text editor 도구도 포함됩니다. 모두 **클라이언트 쪽에서 실행되는 도구**입니다. 이 문서는 Bedrock 서비스 전체가 아니라 Bedrock에서 Claude를 Messages API(`/anthropic/v1/messages`)로 쓰는 경로의 기능 표입니다. 제목에 "Opus 4.7 and later"가 붙어 있고, 그 이전 모델의 InvokeModel·Converse 경로는 별도 페이지에서 다룹니다. 그 페이지의 지원하지 않는 기능 목록에도 같은 서버 도구가 들어 있습니다.
 - **Claude Code의 Bedrock 설정 문서**: "The WebSearch tool is not available on Amazon Bedrock."
 - **Claude Code의 Tools reference**: "Amazon Bedrock doesn't expose the server-side web search tool." 같은 절에 대안도 적혀 있습니다. 검색 백엔드는 설정으로 바꿀 수 없고, 다른 제공자로 검색하려면 검색 도구를 노출하는 MCP 서버를 추가하라고 합니다.
 
-정리하면 Bedrock이 주는 것은 **모델 추론**입니다. Anthropic 인프라에서 돌던 서버 도구는 그 범위 밖입니다. 그때 세션에서 쓰던 `Bash`, `Read`, `WebFetch`, MCP 도구는 모두 클라이언트 도구였기 때문에, 머리를 Bedrock으로 바꿔도 그대로 동작했습니다.
+정리하면 이 Claude Code 연결에서 Bedrock이 맡는 것은 **모델 추론**이고, Anthropic의 웹 검색 서버 도구는 제공되지 않습니다. Anthropic 인프라에서 돌던 서버 도구는 그 범위 밖입니다. 그때 세션에서 쓰던 `Bash`, `Read`, `WebFetch`, MCP 도구는 모두 클라이언트 도구였기 때문에, 머리를 Bedrock으로 바꿔도 그대로 동작했습니다.
 
 "AWS에서 쓰면 안 된다"로 기억하면 틀립니다. 웹 검색 문서의 지원 플랫폼 목록에는 **Claude Platform on AWS**가 들어 있고 Amazon Bedrock은 없습니다. Claude Platform on AWS는 결제만 AWS Marketplace로 하고 운영은 Anthropic이 하는 경로입니다. 기준은 결제 창구가 아니라 **누가 모델 옆의 인프라를 운영하느냐**입니다.
 
@@ -146,20 +154,26 @@ Claude Code의 `WebSearch`는 이 점에서 조금 미묘합니다. 화면에서
 
 빠진 손을 다시 달려면, 그 손을 머리 쪽이 아니라 몸 쪽(클라이언트)에 붙이면 됩니다. Claude Code 문서도 그 방법으로 MCP를 안내합니다.
 
-**MCP(Model Context Protocol)**는 도구를 제공하는 프로그램(MCP 서버)과 그 도구를 쓰는 애플리케이션(MCP 클라이언트) 사이의 표준 규약입니다. 클라이언트는 `tools/list`로 도구 목록을 받고 `tools/call`로 도구를 부릅니다. Claude Code는 MCP 클라이언트이기도 해서, 서버를 등록하면 그 서버의 도구가 모델에게 보이는 도구 목록에 들어갑니다. 모델이 그 도구를 고르면 Claude Code가 서버에 호출을 전달하고, 받은 결과를 `tool_result`로 모델에게 넣습니다. **MCP 도구는 클라이언트 도구**입니다.
+**MCP(Model Context Protocol)**는 도구를 제공하는 프로그램(MCP 서버)과 그 도구를 쓰는 애플리케이션(MCP 클라이언트) 사이의 표준 규약입니다. 클라이언트는 `tools/list`로 도구 목록을 받고 `tools/call`로 도구를 부릅니다. Claude Code는 MCP 클라이언트이기도 해서, 서버를 등록하면 그 서버의 도구가 모델에게 보이는 도구 목록에 들어갑니다. 모델이 그 도구를 고르면 Claude Code가 서버에 호출을 전달하고, 받은 결과를 `tool_result`로 모델에게 넣습니다. 그래서 **이 글처럼 Claude Code가 MCP 서버를 부르고 결과를 돌려주는 연결에서는 MCP 도구가 클라이언트 도구**입니다.
 
-Claude Code가 MCP 서버에 붙는 방식은 크게 둘입니다 ([Claude Code MCP 문서](https://code.claude.com/docs/en/mcp)).
+MCP라는 이름만으로 클라이언트 도구라고 정해지지는 않습니다. 앞의 표에서 서버 도구로 분류한 Anthropic의 MCP connector는, 별도 MCP 클라이언트 없이 Messages API가 원격 MCP 서버에 직접 붙는 기능입니다 ([MCP connector](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector)). 같은 MCP 서버라도 호출을 하네스가 처리하면 클라이언트 도구, 모델 API가 처리하면 서버 도구입니다. 그리고 이 MCP connector도 Bedrock의 지원하지 않는 기능 목록에 들어 있습니다.
+
+Claude Code가 MCP 서버에 붙는 방식은 크게 둘입니다 ([Claude Code MCP 문서](https://code.claude.com/docs/en/mcp)). 표의 "서버가 있는 곳"은 흔히 쓰는 배치입니다. HTTP는 전송 방식일 뿐이라 내 컴퓨터에서 도는 서버에도 쓸 수 있습니다.
 
 | 방식 | 서버가 있는 곳 | 특징 |
 |---|---|---|
-| stdio | 내 컴퓨터의 로컬 프로세스 | Claude Code가 프로세스를 띄우고 표준 입출력으로 주고받습니다. 내 자격 증명과 파일에 바로 접근할 수 있습니다 |
-| HTTP | 원격 서버 | URL로 붙습니다. 원격 서비스용으로 문서가 권장하는 방식입니다 |
+| stdio | 내 컴퓨터의 로컬 프로세스 | Claude Code가 서버 프로세스를 띄우고 그 프로세스의 표준 입력·출력 통로(stdio)로 메시지를 주고받습니다. 내 자격 증명과 파일에 바로 접근할 수 있습니다 |
+| HTTP | 주로 원격 서버 | URL로 붙습니다. 원격 서버에 연결할 때 문서가 권장하는 방식입니다 |
 
 등록할 때는 범위(scope)도 고릅니다. `local`(기본, 이 프로젝트에서 나만), `project`(`.mcp.json`으로 팀과 공유), `user`(내 모든 프로젝트)입니다. 검색처럼 어디서나 쓰는 도구는 `user`가 맞습니다. stdio 서버는 이런 형태로 등록합니다. `--` 뒤에는 서버를 실행하는 명령이 그대로 들어갑니다.
 
 ```sh
-claude mcp add --scope user --env AWS_PROFILE=<프로필 이름> web-search -- <python 실행 파일> <서버 스크립트 경로>
+# <...> 부분을 실제 값으로 바꾼 뒤 실행합니다.
+claude mcp add --scope user --env 'AWS_PROFILE=<프로필 이름>' \
+  --transport stdio web-search -- '<python 실행 파일>' '<서버 스크립트 경로>'
 ```
+
+`--env`와 서버 이름 `web-search` 사이에 `--transport stdio`를 둔 데는 이유가 있습니다. `--env`는 `KEY=value`를 여러 개 받기 때문에, 바로 뒤에 서버 이름이 오면 그것도 환경 변수 항목으로 읽고 거절합니다. 문서도 이럴 때는 둘 사이에 다른 옵션을 넣으라고 안내합니다. 자리표시자를 따옴표로 감싼 것은 셸이 `<`, `>`를 리다이렉션으로 읽지 않게 하려는 것입니다.
 
 "클라이언트 도구는 자동으로 설치된 건가, 내가 깐 건가?"라는 질문도 여기서 풀립니다. 그때 세션의 도구는 세 갈래였습니다.
 
@@ -169,7 +183,7 @@ claude mcp add --scope user --env AWS_PROFILE=<프로필 이름> web-search -- <
 
 ## 다시 만든 웹 검색의 구조
 
-그때 고른 구조는 그림의 오른쪽과 같습니다.
+그때 고른 구조는 그림의 Bedrock 쪽과 같습니다.
 
 1. 내 Mac에서 작은 Python MCP 서버가 stdio로 돕니다. 이 서버가 `web_search` 도구를 노출합니다.
 2. 모델이 `web_search`를 고르면 Claude Code가 이 서버를 부릅니다. 모델이 보기에는 `Read`나 `Bash`와 다를 것 없는 클라이언트 도구입니다. 그래서 머리를 Bedrock에서 빌려도 동작합니다.
@@ -190,15 +204,16 @@ claude mcp add --scope user --env AWS_PROFILE=<프로필 이름> web-search -- <
 |---|---|
 | 정체 | MCP 호환 관리형 커넥터. Amazon이 직접 만들고 운영하는 웹 인덱스를 씁니다 |
 | 검색어가 가는 곳 | AWS 안에서만 처리되고, 외부 검색 엔진으로 가지 않는다고 적혀 있습니다 |
-| 입력 | `query` 200자 이하, `maxResults` 1~25 (기본 10), 도메인·게시일 필터 |
+| 입력 | `query` 200자 이하, `maxResults` 1~25 (기본 10). 요청마다 주는 도메인·게시일 필터는 커넥터 1.2.0 이상에서만 됩니다 |
+| 결과 | 결과마다 본문 `text`는 꼭 있고, `url`, `title`, 게시일은 없을 수도 있는 선택 항목입니다 |
 | 리전 | 미국, 아일랜드, 시드니, 도쿄, GovCloud. **서울은 없습니다** |
 | 이용 조건 | 결과를 쓴 출력에는 출처 인용과 링크를 남겨야 하고, 결과를 대량으로 추출·저장할 수 없습니다 |
-| 요금 ([AgentCore 요금](https://aws.amazon.com/bedrock/agentcore/pricing/)) | 검색 1,000건당 $7, Gateway 호출 1,000건당 $0.005 |
+| 요금 ([AgentCore 요금](https://aws.amazon.com/bedrock/agentcore/pricing/)) | 검색 1,000건당 $7, Gateway 호출 1,000건당 $0.005. Gateway에는 도구 검색(Search API) 호출과 월별 도구 인덱싱 요금 항목도 따로 있습니다 |
 
 두 가지를 이렇게 정했습니다.
 
 - **리전은 도쿄**: 서울에 커넥터가 없고, 아시아에서는 도쿄가 가장 가까운 지원 리전이었습니다. 도쿄로 가는 것은 검색어뿐이고, 모델 호출은 원래 쓰던 리전에 그대로 둡니다.
-- **인증은 IAM(SigV4)**: 에이전트가 이미 쓰던 AWS 자격 증명을 그대로 쓸 수 있어서 토큰 발급과 갱신이 필요 없습니다. claude.ai에 커스텀 커넥터로 붙일 때는 JWT 인증이 필요하다고 AWS 문서에 적혀 있습니다. 그래서 JWT는 로그인 기반 서비스로 넓힐 때를 위해 미뤘습니다.
+- **인증은 IAM(SigV4)**: 에이전트가 이미 쓰던 AWS 자격 증명을 그대로 쓸 수 있어서, OAuth나 JWT 토큰을 따로 발급하고 갱신하는 흐름을 만들 필요가 없었습니다. 다만 AWS 임시 자격 증명에도 만료가 있으니 그 갱신은 따로 챙겨야 합니다. Claude Code의 `awsAuthRefresh` 같은 설정은 Claude Code 자신의 Bedrock 자격 증명을 위한 것이라, 별도로 도는 MCP 서버 프로세스까지 갱신해 준다고 기대하면 안 됩니다. claude.ai에 커스텀 커넥터로 붙일 때는 JWT 인증이 필요하다고 AWS 문서에 적혀 있습니다. 그래서 JWT는 로그인 기반 서비스로 넓힐 때를 위해 미뤘습니다.
 
 이 구조의 로컬 MCP 서버를 아주 짧게 줄이면 다음과 같습니다. 공식 Python SDK의 `FastMCP`를 쓴 예시이고, 원격 검색 부분은 `search_backend`로 비워 두었습니다.
 
@@ -212,7 +227,7 @@ def web_search(query: str, max_results: int = 5) -> str:
     """웹을 검색합니다. 답의 근거로 쓴 결과는 반드시 URL을 함께 인용하세요."""
     hits = search_backend(query[:200], max_results)  # Gateway 호출 (SigV4 서명은 여기서)
     return "\n".join(
-        f"[{i}] {h['title']}\n{h['url']}\n{h['text'][:300]}"
+        f"[{i}] {h.get('title', '(제목 없음)')}\n{h.get('url', '(URL 없음)')}\n{h['text'][:300]}"
         for i, h in enumerate(hits, 1)
     )
 
@@ -220,7 +235,9 @@ if __name__ == "__main__":
     mcp.run()  # 기본 전송 방식은 stdio
 ```
 
-함수의 docstring은 모델이 보는 **도구 설명**이 됩니다. 인용을 강제하는 문장을 여기에 넣은 것은 커넥터 이용 조건 때문이기도 합니다. 실제로 만든 도구에는 이 밖에 다음 장치를 더했습니다.
+그대로 실행되는 서버는 아닙니다. 비워 둔 `search_backend`가 맡을 일을 적으면 이렇습니다. 먼저 `max_results`가 1~25 범위인지 확인하고 AWS 쪽 이름인 `maxResults`로 바꿔 보냅니다. Gateway의 응답은 MCP 형식이라, 텍스트 블록 안에 든 JSON 문자열을 풀어 `results` 목록을 꺼냅니다. `title`과 `url`은 빠질 수 있는 항목이라 위 코드처럼 없을 때를 대비합니다.
+
+함수의 docstring은 모델이 보는 **도구 설명**이 됩니다. 여기에 인용을 명시적으로 요구하는 문장을 넣은 것은 커넥터 이용 조건 때문이기도 합니다. 다만 이것은 모델에게 하는 부탁입니다. 최종 답에 출처가 반드시 남도록 보장하려면, 답을 내보내기 전에 인용을 검사하거나 출처를 따로 함께 보여 주는 장치가 필요합니다. 실제로 만든 도구에는 이 밖에 다음 장치를 더했습니다.
 
 - **출력 압축**: 결과 5건의 원본 JSON은 6천~1만2천 자였습니다. 이것을 번호 붙인 짧은 형식으로 바꿔 평균 약 3천 자로 줄였습니다. 검색 요금보다 모델 입력 토큰 비용이 더 커질 수 있어서 기본 결과 수도 5로 정했습니다.
 - **메모리 캐시만**: 10분 동안만 메모리에 두고 디스크에는 저장하지 않습니다. 대량 저장 금지 조건 때문입니다. `fresh=true`를 주면 캐시를 건너뜁니다.
@@ -230,7 +247,7 @@ if __name__ == "__main__":
 
 그때 잰 값은 이랬습니다. **작은 표본으로 그 시점에 한 번 잰 값**이라 일반적인 성능으로 읽으면 안 됩니다.
 
-- 웜 상태 지연 p50 0.48초, p95 0.60초. 40건에서 오류와 재시도는 0건이었습니다.
+- 웜 상태 지연 p50 0.48초, p95 0.60초. 40건에서 오류와 재시도는 0건이었습니다. 웜 상태는 첫 호출 때의 준비 시간(프로세스 시작, 자격 증명 읽기 같은 것)을 빼고, 이미 준비된 상태에서 잰 값이라는 뜻입니다. p50은 중앙값이고, p95는 측정값의 95%가 이 값 이하라는 뜻입니다.
 - 검색 1건 비용은 공개 요금 기준 약 $0.007입니다. Gateway 호출료는 무시할 만한 수준입니다.
 - 영어 질문 20개는 자동 판정으로 20/20이었습니다. 자동 판정의 한계는 뒤에서 다룹니다.
 - 한국어 질문 10개를 한국어로 검색하니 사람이 읽고 판정했을 때 7/10, 같은 질문을 영어 질의로 바꾸니 10/10이었습니다. 표본이 10문항이고 실행할 때마다 결과가 바뀝니다. 그래서 "영어가 더 정확하다"는 법칙으로 쓰지 않았습니다. 도구 설명에만 이렇게 적었습니다. "한국어 질문도 뜻을 옮겨 먼저 영어로 검색하고, 국내 전용 정보이거나 결과가 부족하면 한국어로도 검색한다."
@@ -244,24 +261,29 @@ if __name__ == "__main__":
 
 가장 무거운 결함이었습니다. 분당 30건 상한을 **도구 호출마다 한 번** 확인했더니, 재시도까지 합쳐 실제 원격 요청은 분당 60건까지 나갈 수 있었습니다. 비용을 막으려고 둔 상한이 비용을 막지 못한 것입니다. 개념만 남겨 다시 쓰면 차이는 확인하는 위치 하나입니다.
 
+아래 예산 장치는 여러 스레드가 함께 써도 되도록 잠금(lock)을 걸었습니다. 잠금은 한 번에 한 쪽만 들어가게 막는 장치입니다. 잠금 없이 "남은 수 확인"과 "기록"을 따로 하면, 두 호출이 동시에 확인을 통과해 상한을 넘을 수 있습니다. 비동기 코드라면 `asyncio.Lock`을 씁니다. 서버 프로세스가 여러 개라면 이 예산은 프로세스마다 따로 생기므로, 공유하는 방법을 따로 정해야 합니다.
+
 ```python
+import threading
 import time
 from collections import deque
 
 class AttemptBudget:
-    """최근 60초 동안 실제로 보낸 원격 요청 수를 센다."""
+    """최근 60초 동안 허용한 원격 시도 수를 센다."""
     def __init__(self, per_minute: int):
         self.per_minute = per_minute
-        self.sent = deque()
+        self.allowed = deque()
+        self.lock = threading.Lock()
 
     def take(self) -> bool:
-        now = time.monotonic()
-        while self.sent and now - self.sent[0] >= 60:
-            self.sent.popleft()
-        if len(self.sent) >= self.per_minute:
-            return False
-        self.sent.append(now)
-        return True
+        with self.lock:  # 확인과 기록을 한 번에 처리한다
+            now = time.monotonic()
+            while self.allowed and now - self.allowed[0] >= 60:
+                self.allowed.popleft()
+            if len(self.allowed) >= self.per_minute:
+                return False
+            self.allowed.append(now)
+            return True
 
 budget = AttemptBudget(per_minute=30)
 MAX_ATTEMPTS = 2  # 첫 시도 + 재시도 1회
@@ -301,7 +323,7 @@ def search_right(query):
 
 ### 3. 마감 시간은 호출이 시작될 때부터 잽니다
 
-12초 상한의 시계가 자격 증명을 읽은 **뒤에** 시작되고 있었습니다. 그래서 로딩이 느리면 전체가 13초를 넘겼습니다. 로딩이 동기 방식이라 그동안 이벤트 루프도 멈췄습니다. 고친 뒤 다시 검증하니, 재시도 전에 세션을 정리하는 시간과 backoff 대기도 마감 밖에 있었습니다. 최종적으로는 자격 증명 로딩, 시도, 세션 정리, 대기, lock 대기를 모두 **마감 하나**로 묶었습니다.
+12초 상한의 시계가 자격 증명을 읽은 **뒤에** 시작되고 있었습니다. 그래서 로딩이 느리면 전체가 13초를 넘겼습니다. 로딩이 동기 방식이라 그동안 이벤트 루프도 멈췄습니다. 이벤트 루프는 비동기 프로그램에서 할 일을 차례로 돌리는 반복 장치인데, 한 작업이 붙잡고 있으면 다른 일도 함께 멈춥니다. 고친 뒤 다시 검증하니, 재시도 전에 세션을 정리하는 시간과 backoff 대기도 마감 밖에 있었습니다. backoff는 실패한 뒤 바로 다시 보내지 않고 잠깐 기다렸다가 재시도하는 방식입니다. 최종적으로는 자격 증명 로딩, 시도, 세션 정리, 대기, 잠금(lock)을 얻으려고 기다리는 시간까지 모두 **마감 하나**로 묶었습니다.
 
 ### 4. 캐시는 늦게 도착한 옛 결과에 덮어써질 수 있습니다
 
@@ -321,7 +343,7 @@ def search_right(query):
 
 | 서버 도구를 쓸 때 Anthropic이 맡던 것 | 클라이언트 도구로 다시 만들면 |
 |---|---|
-| 검색 실행, 결과 형식, 인용 | 직접 정하고, 도구 설명으로 인용을 강제해야 합니다 |
+| 검색 실행, 결과 형식, 인용 | 직접 정해야 합니다. 도구 설명으로 인용을 요구할 수는 있지만, 최종 답에 출처가 남는지 보장하려면 별도 검사나 출력 장치가 필요합니다 |
 | 사용량 제한, 재시도, 오류 표현 | 상한, 재시도, 마감, 오류 분류를 직접 만들어야 합니다 |
 | 결과 처리 | 캐시와 그 이용 조건을 직접 지켜야 합니다 |
 
@@ -336,7 +358,7 @@ def search_right(query):
 | 범용 SigV4 MCP 프록시로 Gateway에 바로 연결 | 코드 없이 붙지만 원본 JSON이 그대로 모델에 들어가 토큰이 많이 들고, 캐시와 측정이 없습니다. 연결 확인용으로만 썼습니다 |
 | 외부 검색 API(Tavily, Brave, Exa 등) | API 키와 별도 계약이 필요하고 검색어가 AWS 밖으로 나갑니다. 같은 벤치로 비교할 후보로 남겼습니다 |
 | JWT 인증 Gateway | claude.ai 커넥터나 로그인 서비스에 필요합니다. 지금은 한 사람이 로컬에서만 써서 IAM이 더 간단했습니다 |
-| 같은 계정에 있던 다른 팀의 Gateway 재사용 | 다른 서비스의 인프라라 건드리지 않았습니다. Gateway는 고정비가 없어 새로 만들었습니다 |
+| 같은 계정에 있던 다른 팀의 Gateway 재사용 | 다른 서비스의 인프라라 건드리지 않았습니다. 이 구성에는 상시 켜 둬야 하는 서버 같은 고정비가 없어서, 사용량 요금만 내는 Gateway를 새로 만들었습니다 |
 
 ### 남은 일
 
@@ -347,10 +369,10 @@ def search_right(query):
 | 질문 | 답 |
 |---|---|
 | Claude Code는 모델인가? | 아닙니다. 모델(머리)은 빌려 오고, Claude Code는 도구를 실행하고 결과를 돌려주는 하네스(몸통과 신경)입니다 |
-| 서버 도구와 클라이언트 도구는 무엇으로 나뉘나? | 도구 종류가 아니라 **실행 위치**입니다. 결과를 누가 모델에 넣어 주느냐를 보면 됩니다 |
+| 서버 도구와 클라이언트 도구는 무엇으로 나뉘나? | 도구 종류가 아니라 **실행 위치**입니다. 로컬이냐 원격이냐가 아니라, 도구 호출을 모델 API 바깥의 애플리케이션이 처리해 결과를 넣느냐, 모델 API가 처리하느냐를 보면 됩니다 |
 | `bash`, `text_editor`는? | Anthropic이 스키마를 정했지만 내 쪽에서 실행하므로 클라이언트 도구입니다 |
-| Bedrock에서 웹 검색이 빠지는 이유는? | 웹 검색은 Anthropic 인프라에서 도는 서버 도구이고, Bedrock은 서버 도구를 지원하지 않기 때문입니다 (공식 문서 명시) |
-| 다시 다는 방법은? | 검색 도구를 노출하는 MCP 서버를 클라이언트 쪽에 붙입니다. 실제 검색이 원격이어도 클라이언트 도구입니다 |
+| Bedrock에서 웹 검색이 빠지는 이유는? | 웹 검색은 Anthropic 인프라에서 도는 서버 도구이고, Claude in Amazon Bedrock의 기능 표에 서버 도구가 지원하지 않는 기능으로 적혀 있기 때문입니다. 이 연결에서 Bedrock은 모델 추론을 맡습니다 |
+| 다시 다는 방법은? | 검색 도구를 노출하는 MCP 서버를 Claude Code에 붙입니다. Claude Code가 호출하고 결과를 넣으므로, 실제 검색이 원격이어도 클라이언트 도구입니다 |
 
 다른 클라우드나 다른 하네스에서 "이 기능만 안 된다"를 만나면 이 순서로 확인하면 됩니다.
 
