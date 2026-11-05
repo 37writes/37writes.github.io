@@ -1,0 +1,88 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 400" role="img" aria-labelledby="hig-layers-title hig-layers-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hig-layers-title">화면의 콘텐츠 층, 컨트롤·탐색 층, safe area의 관계</title>
+  <desc id="hig-layers-desc">추상적인 세로 화면 하나를 그렸다. 화면 전체를 채운 바탕이 콘텐츠 층이고, 앱 배경은 툴바와 탭 바 아래까지 화면 끝까지 깔린다. 위쪽의 툴바와 아래쪽의 탭 바는 콘텐츠 위에 떠 있는 컨트롤·탐색 층이며 Liquid Glass 재질을 쓴다. 시스템 막대는 이 재질을 자동으로 받는다. 상태 바와 툴바 아래, 탭 바 위 사이의 점선 영역이 safe area로, 막대·상태 바·하드웨어에 가리지 않는 영역이다. 글자와 버튼은 이 안에 둔다. 콘텐츠 층의 목록 행에는 Liquid Glass를 쓰지 않고 표준 재질을 쓴다.</desc>
+
+  <rect class="d-box" x="4" y="4" width="196" height="392" rx="20"/>
+  <rect class="d-line" x="4" y="4" width="196" height="392" rx="20"/>
+  <text class="d-muted d-small" x="102" y="28" text-anchor="middle">상태 바 · 카메라 영역</text>
+
+  <rect class="d-line" x="16" y="40" width="172" height="40" rx="20"/>
+  <text x="102" y="65" text-anchor="middle">툴바</text>
+
+  <rect class="d-line" x="16" y="92" width="172" height="228" stroke-dasharray="6 4"/>
+  <text class="d-mono d-muted" x="28" y="116">safe area</text>
+  <rect class="d-line" x="28" y="130" width="148" height="44" rx="8"/>
+  <text x="42" y="157">목록 행</text>
+  <rect class="d-line" x="28" y="182" width="148" height="44" rx="8"/>
+  <text x="42" y="209">목록 행</text>
+  <rect class="d-line" x="28" y="234" width="148" height="44" rx="8"/>
+  <text x="42" y="261">목록 행</text>
+
+  <rect class="d-line" x="16" y="332" width="172" height="44" rx="22"/>
+  <text x="102" y="359" text-anchor="middle">탭 바</text>
+
+  <path class="d-line" d="M188 60 H220"/>
+  <text class="d-strong" x="228" y="58">컨트롤·탐색 층</text>
+  <text class="d-muted" x="228" y="82">툴바·탭 바 = Liquid Glass</text>
+  <text class="d-muted" x="228" y="104">시스템 막대는 자동 적용</text>
+
+  <path class="d-line" d="M188 156 H220"/>
+  <text class="d-strong" x="228" y="152">safe area</text>
+  <text class="d-muted" x="228" y="176">막대·상태 바·하드웨어가</text>
+  <text class="d-muted" x="228" y="198">가리지 않는 영역</text>
+  <text x="228" y="222">→ 글자·버튼은 이 안에</text>
+
+  <path class="d-line" d="M176 256 H220"/>
+  <text class="d-strong" x="228" y="254">콘텐츠 층</text>
+  <text class="d-muted" x="228" y="278">표준 재질 사용</text>
+  <text class="d-muted" x="228" y="300">✗ Liquid Glass 쓰지 않음</text>
+  <text x="228" y="324">배경은 막대 아래 끝까지</text>
+
+  <path class="d-line" d="M188 354 H220"/>
+  <text class="d-muted" x="228" y="359">탭 바도 컨트롤·탐색 층</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 690" role="img" aria-labelledby="hig-layers-title-n hig-layers-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="hig-layers-title-n">화면의 콘텐츠 층, 컨트롤·탐색 층, safe area의 관계</title>
+  <desc id="hig-layers-desc-n">추상적인 세로 화면 하나와 그 아래 번호 설명 세 개를 그렸다. 1번 컨트롤·탐색 층은 위쪽 툴바와 아래쪽 탭 바로, 콘텐츠 위에 떠 있고 Liquid Glass를 쓰며 시스템 막대는 이를 자동으로 받는다. 2번 safe area는 툴바 아래와 탭 바 위 사이의 점선 영역으로, 막대·상태 바·하드웨어에 가리지 않는 영역이며 글자와 버튼은 이 안에 둔다. 3번 콘텐츠 층은 화면 전체 바탕과 목록 행으로, 표준 재질을 쓰고 Liquid Glass는 쓰지 않으며 배경은 막대 아래 화면 끝까지 깔린다.</desc>
+
+  <rect class="d-box" x="64" y="4" width="196" height="392" rx="20"/>
+  <rect class="d-line" x="64" y="4" width="196" height="392" rx="20"/>
+  <text class="d-muted d-small" x="162" y="28" text-anchor="middle">상태 바 · 카메라 영역</text>
+
+  <rect class="d-line" x="76" y="40" width="172" height="40" rx="20"/>
+  <text x="162" y="65" text-anchor="middle">툴바</text>
+
+  <rect class="d-line" x="76" y="92" width="172" height="228" stroke-dasharray="6 4"/>
+  <text class="d-mono d-muted" x="88" y="116">safe area</text>
+  <rect class="d-line" x="88" y="130" width="148" height="44" rx="8"/>
+  <text x="102" y="157">목록 행</text>
+  <rect class="d-line" x="88" y="182" width="148" height="44" rx="8"/>
+  <text x="102" y="209">목록 행</text>
+  <rect class="d-line" x="88" y="234" width="148" height="44" rx="8"/>
+  <text x="102" y="261">목록 행</text>
+
+  <rect class="d-line" x="76" y="332" width="172" height="44" rx="22"/>
+  <text x="162" y="359" text-anchor="middle">탭 바</text>
+
+  <path class="d-line" d="M248 60 H284 M248 354 H284 M284 60 V354"/>
+  <circle class="d-line" cx="300" cy="207" r="14"/>
+  <text class="d-strong" x="300" y="213" text-anchor="middle">1</text>
+  <circle class="d-line" cx="32" cy="116" r="14"/>
+  <text class="d-strong" x="32" y="122" text-anchor="middle">2</text>
+  <path class="d-line" d="M46 116 H76"/>
+  <circle class="d-line" cx="32" cy="256" r="14"/>
+  <text class="d-strong" x="32" y="262" text-anchor="middle">3</text>
+  <path class="d-line" d="M46 256 H88"/>
+
+  <text class="d-strong" x="0" y="432">1 컨트롤·탐색 층</text>
+  <text class="d-muted" x="0" y="456">툴바·탭 바 = Liquid Glass</text>
+  <text class="d-muted" x="0" y="478">시스템 막대는 자동 적용</text>
+
+  <text class="d-strong" x="0" y="518">2 safe area</text>
+  <text class="d-muted" x="0" y="542">막대·상태 바·하드웨어가 가리지 않는 영역</text>
+  <text x="0" y="566">→ 글자·버튼은 이 안에</text>
+
+  <text class="d-strong" x="0" y="606">3 콘텐츠 층</text>
+  <text class="d-muted" x="0" y="630">표준 재질 사용 · ✗ Liquid Glass 쓰지 않음</text>
+  <text x="0" y="654">배경은 막대 아래 화면 끝까지</text>
+</svg>

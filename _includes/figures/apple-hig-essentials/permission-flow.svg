@@ -1,0 +1,33 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 500" role="img" aria-labelledby="hig-perm-title hig-perm-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hig-perm-title">권한 요청이 일어나는 순서</title>
+  <desc id="hig-perm-desc">맨 위에는 따로 떨어진 주의 상자가 있다. 앱을 실행하자마자 묻지 않으며, 그 자원이 없으면 앱이 동작할 수 없을 때만 예외다. 그 아래 흐름은 네 단계다. 첫째, 사람이 기능을 쓰려는 순간, 예를 들어 음성 입력 버튼을 누른다. 둘째, 필요하면 앱의 안내 화면을 보여 주는데, 버튼은 계속이나 다음 하나만 두고 허용이라는 이름, 닫기, 보상은 넣지 않는다. 셋째, 시스템 알림이 앱 이름과 purpose string을 보여 주고 허용과 거부 버튼은 시스템이 그린다. 넷째, 사람이 고른 대로 진행하며, 이 선택은 설정의 개인정보 보호에서 다시 바꿀 수 있다.</desc>
+
+  <rect class="d-box" x="0" y="4" width="360" height="64"/>
+  <text class="d-accent" x="16" y="30">✗ 앱 실행 직후에는 묻지 않기</text>
+  <text class="d-muted" x="16" y="54">그 자원 없이 앱이 동작할 수 없을 때만 예외</text>
+
+  <rect class="d-box" x="0" y="92" width="360" height="64"/>
+  <text class="d-strong" x="16" y="118">① 기능을 쓰려는 순간</text>
+  <text class="d-muted" x="16" y="142">예: 음성 입력 버튼을 누름</text>
+
+  <path class="d-line" d="M180 156 V178 M175 172 L180 178 L185 172"/>
+
+  <rect class="d-box" x="0" y="180" width="360" height="92"/>
+  <text class="d-strong" x="16" y="206">② (선택) 앱의 안내 화면</text>
+  <text x="16" y="232">버튼은 하나: “계속” 또는 “다음”</text>
+  <text class="d-accent" x="16" y="258">✗ “허용”이라는 이름 · 닫기 · 보상</text>
+
+  <path class="d-line" d="M180 272 V294 M175 288 L180 294 L185 288"/>
+
+  <rect class="d-box" x="0" y="296" width="360" height="92"/>
+  <text class="d-strong" x="16" y="322">③ 시스템 알림</text>
+  <text x="16" y="348">앱 이름 + <tspan class="d-mono">purpose string</tspan></text>
+  <text class="d-muted" x="16" y="374">허용·거부 버튼은 시스템이 그림</text>
+
+  <path class="d-line" d="M180 388 V410 M175 404 L180 410 L185 404"/>
+
+  <rect class="d-box" x="0" y="412" width="360" height="84"/>
+  <text class="d-strong" x="16" y="438">④ 사람이 고른 대로 진행</text>
+  <text class="d-muted" x="16" y="462">설정 › 개인정보 보호에서</text>
+  <text class="d-muted" x="16" y="484">설명을 보고 선택을 바꿀 수 있음</text>
+</svg>
