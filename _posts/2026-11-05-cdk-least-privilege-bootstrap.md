@@ -286,7 +286,7 @@ jq -r '.Resources[] | select(.Type=="AWS::Lambda::Function")
 }
 ```
 
-앱 역할이 역할별 정책(identity-based policy)으로 얻는 권한은 이 경계와 그 정책의 교집합입니다. 경계는 "역할별 정책을 아무리 넓혀도 여기까지"라는 상한이고, 역할마다 어떤 데이터에 닿는지는 역할별 정책이 정합니다. 자원 정책이 역할에 직접 주는 권한은 이 상한 밖이라, 버킷·큐 정책을 둘 때는 따로 봅니다.
+앱 역할이 역할별 정책(identity-based policy)으로 얻는 권한은 이 경계와 그 정책의 교집합입니다. 경계는 "역할별 정책을 아무리 넓혀도 여기까지"라는 상한이고, 역할마다 어떤 데이터에 닿는지는 역할별 정책이 정합니다. 같은 계정의 자원 정책이 역할 ARN에 주는 권한은 이 경계의 제한을 받지만, 역할 세션 ARN에 직접 주는 권한은 경계의 implicit deny만으로는 막히지 않을 수 있습니다(명시적 Deny는 그래도 이깁니다). 그래서 버킷·큐 정책을 둘 때는 따로 봅니다.
 
 ### 앱 코드: 인라인 정책 대신 이름 고정 역할 + 관리형 정책
 
@@ -296,7 +296,7 @@ jq -r '.Resources[] | select(.Type=="AWS::Lambda::Function")
 - `lambda.Function`에 역할을 넘기지 않으면 CDK가 기본 역할을 만들고 AWS 관리형 정책 `AWSLambdaBasicExecutionRole`을 붙입니다. `AttachRolePolicy`는 `policy/MyProj*`인 고객 관리형 정책일 때만 허용하므로 막힙니다.
 - 자동 생성 역할 이름은 PassRole의 고정 ARN 목록과 맞는다는 보장이 없습니다.
 
-그래서 역할 이름을 고정하고, `MyProj*` 고객 관리형 정책을 명시적으로 만들어 붙이고, Lambda에는 그 역할을 직접 넘깁니다. 로그 쓰기 권한도 그 정책에 넣습니다.
+그래서 역할 이름을 고정하고, `MyProj*` 고객 관리형 정책을 명시적으로 만들어 붙이고, Lambda에는 그 역할을 직접 넘깁니다. 로그 쓰기 권한도 그 정책에 넣습니다. 이 예시는 로그 그룹 `/aws/lambda/MyProjApiFn`을 CDK 자원으로 먼저 만든다는 전제라서, 앱 역할에는 `logs:CreateLogGroup` 없이 스트림 만들기와 로그 쓰기만 줍니다. 로그 그룹을 만들지 않으면 첫 호출에서 Lambda가 로그 그룹을 만들려다 거부되어 로그가 남지 않을 수 있습니다.
 
 ```ts
 // lib/app-stack.ts (예시: 역할 1개 + 관리형 정책 1개)
@@ -320,30 +320,44 @@ new iam.ManagedPolicy(this, 'ApiFnPolicy', {
   ],
 });
 
+// 로그 그룹은 CDK가 만든다 (역할에 CreateLogGroup을 주지 않으려고)
+const logGroup = new logs.LogGroup(this, 'ApiFnLogs', {
+  logGroupName: '/aws/lambda/MyProjApiFn',
+  retention: logs.RetentionDays.ONE_MONTH,
+});
+
 new lambda.Function(this, 'ApiFn', {
   functionName: 'MyProjApiFn',
   role,                                   // 기본 역할(AWS 관리형 정책 부착)을 만들지 않게 직접 넘긴다
+  logGroup,                               // 위 로그 그룹으로 보낸다. grant 호출은 없다
   runtime: lambda.Runtime.PYTHON_3_13,
   handler: 'handler.handler',
   code: lambda.Code.fromAsset('lambda/api'),
 });
-// bucket.grantRead(fn), fn.addToRolePolicy(...)는 쓰지 않는다 (인라인 정책이 생긴다)
+// bucket.grantRead(fn), logGroup.grantWrite(role), fn.addToRolePolicy(...)는 쓰지 않는다 (인라인 정책이 생긴다)
 ```
 
-실제로는 역할과 정책을 IAM 전용 스택에 모으고, Lambda 스택에서는 `iam.Role.fromRoleName(this, 'ApiFnRole', 'MyProjApiFnRole', { mutable: false })`로 가져왔습니다. `mutable: false`면 Lambda 쪽 스택이 그 역할에 정책을 덧붙이지 않습니다. `PermissionsBoundary.of()`는 경계를 붙여 줄 뿐이고, 이 작성법을 대신해 주지 않습니다.
+실제로는 역할과 정책을 IAM 전용 스택에 모으고, Lambda 스택에서는 `iam.Role.fromRoleName(this, 'ApiFnRole', 'MyProjApiFnRole', { mutable: false })`로 가져왔습니다. `mutable: false`면 Lambda 쪽 스택이 그 역할에 정책을 덧붙이지 않습니다. 다만 `grant*()`를 오류로 잡아 주는 것이 아니라 조용히 무시합니다(`addGrantsToResources` 기본값 `false`). 그래서 필요한 권한은 처음부터 IAM 스택의 관리형 정책에 넣어야 합니다. 또 이름으로 가져오기만 하면 두 스택 사이의 의존 관계가 자동으로 생기지 않으므로, IAM 스택을 먼저 배포하거나 `lambdaStack.addDependency(iamStack)`로 순서를 적어 둡니다. `PermissionsBoundary.of()`는 경계를 붙여 줄 뿐이고, 이 작성법을 대신해 주지 않습니다.
 
 이것도 합성 결과로 확인합니다. 앞의 `cdk.out` 검사에 아래를 더했습니다.
 
 ```sh
-T='cdk.out/*.template.json'
-# 4. 인라인 정책 0건 (별도 Policy 자원과 역할의 Policies 속성 둘 다)
-jq '[.Resources[] | select(.Type=="AWS::IAM::Policy" or (.Type=="AWS::IAM::Role" and .Properties.Policies))] | length' $T
-# 5. 역할 이름과 관리형 정책 이름이 모두 MyProj*, 역할에 직접 붙은 AWS 관리형 정책(ManagedPolicyArns) 없음
-jq -r '.Resources[] | select(.Type=="AWS::IAM::Role") | [.Properties.RoleName, (.Properties.ManagedPolicyArns // [] | length)] | @tsv' $T
-jq -r '.Resources[] | select(.Type=="AWS::IAM::ManagedPolicy") | .Properties.ManagedPolicyName' $T
+# 4. 인라인 정책 0건 (별도 인라인 정책 자원 네 유형과 Role/User/Group의 Policies 속성)
+jq '[.Resources[] | select(
+  .Type == "AWS::IAM::Policy" or
+  .Type == "AWS::IAM::RolePolicy" or
+  .Type == "AWS::IAM::UserPolicy" or
+  .Type == "AWS::IAM::GroupPolicy" or
+  ((.Type == "AWS::IAM::Role" or .Type == "AWS::IAM::User" or .Type == "AWS::IAM::Group")
+   and ((.Properties.Policies // []) | length) > 0)
+)] | length' cdk.out/*.template.json
+# 5. 역할 이름과 관리형 정책 이름이 모두 MyProj*, 역할에 직접 붙은 관리형 정책(ManagedPolicyArns) 없음
+#    이 예시의 부착 방식에서는 Role.ManagedPolicyArns가 비어 있고, 연결은 ManagedPolicy.Roles에 있다
+jq -r '.Resources[] | select(.Type == "AWS::IAM::Role") | [.Properties.RoleName, ((.Properties.ManagedPolicyArns // []) | length)] | @tsv' cdk.out/*.template.json
+jq -r '.Resources[] | select(.Type == "AWS::IAM::ManagedPolicy") | .Properties.ManagedPolicyName' cdk.out/*.template.json
 ```
 
-4는 템플릿마다 `0`, 5는 이름이 모두 `MyProj*`이고 둘째 칸이 `0`이면 통과입니다. 관리형 정책 이름이 보호 정책·사용자 정책 이름과 겹치지 않는지도 같이 봅니다.
+glob은 변수에 담지 않고 명령마다 직접 씁니다. macOS 기본 셸인 zsh에서는 `T='cdk.out/*.template.json'`처럼 변수에 담은 별표가 파일 이름으로 펼쳐지지 않습니다. 4는 템플릿마다 `0`, 5는 이름이 모두 `MyProj*`이고 둘째 칸이 `0`이면 통과입니다. 관리형 정책 이름이 보호 정책·사용자 정책 이름과 겹치지 않는지도 같이 봅니다.
 
 ## 3. 확인: 정책과 경계를 함께 넣은 시뮬레이션
 
