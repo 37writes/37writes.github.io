@@ -79,14 +79,46 @@ CLI나 SDK로 켤 때는 세 단계를 직접 합니다. 절차 원문은 CloudW
 
 먼저 지금 값을 읽어 **파일로 저장**해 둡니다. 나중에 되돌릴 기준값입니다. 화면에만 출력하면 남지 않습니다. 표본 규칙은 `--query`로 줄이지 말고 전체를 저장하세요. 이름·비율이 같아도 reservoir, 우선순위, 매칭 조건이 다를 수 있어서, 전체가 있어야 나중에 "그대로인지"를 비교할 수 있습니다.
 
+저장할 때 조심할 점이 두 가지 있습니다.
+
+- **기준값 파일은 한 번만 만들고 다시 덮어쓰지 않습니다.** 셸의 `>`는 [기존 파일을 비운 뒤 씁니다](https://www.gnu.org/software/bash/manual/html_node/Redirections.html). 같은 명령을 다시 돌리면 원래 기준값이 지금 값으로 바뀌고, 명령이 실패해도 파일이 먼저 비워질 수 있습니다. 그래서 아래 스크립트는 파일이 이미 있으면 멈추고, 명령이 실패하면(종료 코드가 0이 아니면) 덜 써진 파일을 지우고 멈춥니다. 나중에 다시 읽을 때는 `before` 대신 다른 접두어(`after`, `recheck` 등)로 저장합니다.
+- **출력 형식을 `--output json`으로 정해 둡니다.** JSON이 AWS CLI 기본값이지만 설정 파일이나 환경 변수로 바뀌어 있을 수 있고, 파일 이름이 `.json`이라고 형식이 바뀌지는 않습니다. 명령줄의 `--output`은 [설정·환경 변수보다 먼저 적용](https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-output-format.html)됩니다.
+
 ```bash
-# 0. 지금 설정 읽기 (되돌리기 기준값을 파일로 저장)
-aws xray get-trace-segment-destination --region <region> > before-destination.json
-aws xray get-indexing-rules --region <region> > before-indexing-rules.json
-aws xray get-sampling-rules --region <region> > before-sampling-rules.json
-aws logs describe-resource-policies --region <region> > before-logs-resource-policies.json
-aws logs describe-log-groups --log-group-name-prefix aws/spans --region <region> > before-spans-log-group.json
+#!/usr/bin/env bash
+# save-settings.sh: 지금 설정을 <접두어>-*.json으로 저장한다
+#   0단계 기준값:    bash save-settings.sh before
+#   되돌린 뒤 재확인: bash save-settings.sh after
+set -uo pipefail
+REGION=us-east-1                 # 본인 리전으로 바꾼다
+prefix=${1:?"접두어(before 또는 after)를 넘긴다"}
+set -o noclobber                 # 이미 있는 파일에는 > 로 쓰지 않는다
+
+save() {                         # save <이름> <aws 명령...>
+  local out="$prefix-$1.json"
+  shift
+  if [ -e "$out" ]; then
+    echo "$out 이 이미 있다. 덮어쓰지 않고 멈춘다." >&2
+    exit 1
+  fi
+  "$@" --region "$REGION" --output json > "$out"
+  local rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "실패(종료 코드 $rc): $*. 덜 써진 $out 을 지우고 멈춘다." >&2
+    rm -f -- "$out"
+    exit 1
+  fi
+  echo "저장: $out"
+}
+
+save destination     aws xray get-trace-segment-destination
+save indexing-rules  aws xray get-indexing-rules
+save sampling-rules  aws xray get-sampling-rules
+save logs-policies   aws logs describe-resource-policies
+save spans-log-group aws logs describe-log-groups --log-group-name-prefix aws/spans
 ```
+
+다섯 줄 모두 `저장:`이 나와야 기준값이 갖춰진 것입니다. 켜기 직전에 다시 확인할 때도 `bash save-settings.sh recheck`처럼 다른 접두어로 저장해 `before-*.json`과 비교합니다.
 
 ### ① 리소스 정책: X-Ray가 내 로그 그룹에 쓰도록 허락
 
@@ -258,8 +290,14 @@ fi
 # 4) 전환이 끝난 것을 확인한 뒤에만 정책을 지운다
 aws logs delete-resource-policy --policy-name TransactionSearchXRayAccess --region "$REGION"
 
-# 5) 0단계 명령을 다시 실행해 저장한 기준값 파일과 비교한다
+# 5) 재확인은 before-*.json을 덮어쓰지 않고 다른 파일에 저장해 비교한다
+#    bash save-settings.sh after   (다섯 줄 모두 "저장:"이 나왔는지 먼저 본다)
+#    for f in destination indexing-rules sampling-rules logs-policies spans-log-group; do
+#      diff -u "before-$f.json" "after-$f.json" && echo "같음: $f"
+#    done
 ```
+
+마지막 비교에서 차이가 나오면 그것이 예상한 차이인지 사람이 봅니다. 예를 들어 남겨 두기로 한 `aws/spans` 로그 그룹이나 시각 필드(`ModifiedAt` 등)는 달라질 수 있습니다. 비교 전에 `after` 저장이 다섯 줄 모두 성공했는지부터 확인하세요. 실패한 조회의 빈 파일과 비교하면 "다르다"는 결과가 의미가 없습니다.
 
 켤 때의 반대 순서입니다. 요약을 멈추고(색인), 길을 되돌리고(목적지), 마지막에 문을 닫습니다(정책).
 
@@ -272,7 +310,7 @@ aws logs delete-resource-policy --policy-name TransactionSearchXRayAccess --regi
 ## 주의할 점
 
 - **계정 공용 설정입니다.** 켜기 전에 같은 계정·리전을 쓰는 다른 팀이 있는지 확인하세요. 되돌릴 때도 직전에 "그 사이 누가 바꿨나"를 먼저 묻고, 바뀌었으면 덮어쓰지 않습니다. 남이 켜 둔 것을 내 기준값으로 꺼 버릴 수 있기 때문입니다.
-- **"기본값으로"가 아니라 "기록한 값으로" 되돌립니다.** 처음 읽은 값이 `XRay`·0%가 아닐 수도 있습니다. 되돌리기 명령의 값은 0단계에서 저장한 표에서 가져옵니다.
+- **"기본값으로"가 아니라 "기록한 값으로" 되돌립니다.** 처음 읽은 값이 `XRay`·0%가 아닐 수도 있습니다. 되돌리기 명령의 값은 0단계에서 저장한 `before-*.json`에서 가져옵니다.
 - **문서 예시의 `aws:SourceArn`을 확인하고 복사하세요.** AgentCore observability 문서의 한 줄짜리 CLI 예시는 `aws:SourceArn`을 `arn:partition:logs:...`로 적었지만, 같은 페이지의 펼친 JSON과 CloudWatch 문서는 `arn:aws:xray:<region>:<account>:*`입니다. 요청을 보내는 주체가 X-Ray이므로 X-Ray ARN이 맞습니다.
 - **`ModifiedAt` 하나만 보고 판단하지 마세요.** [API 문서](https://docs.aws.amazon.com/xray/latest/api/API_IndexingRule.html)상 `ModifiedAt`은 색인 규칙을 마지막으로 수정한 시각입니다. 그런데 제 조회에서는 바꾼 기억이 없는데도 조회할 때마다 조회 시각으로 나와서, "누가 색인 규칙을 바꿨나" 하고 의심했습니다. 제가 확인한 CloudTrail 범위에서는 X-Ray `Update*` 변경 이벤트를 찾지 못했고, 원인은 확인하지 못했습니다. 그러니 변경 여부는 이 값 하나가 아니라 실제 규칙 값(비율), CloudTrail 이벤트, 문서상의 의미를 함께 놓고 판단하세요.
 - **span에 본문이 실릴 수 있습니다.** AgentCore 문서의 `AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT` 설명("Keeps model payloads and tool request/response data on spans")처럼, span 속성에는 모델 입력·출력과 도구 요청·응답이 남을 수 있습니다. 민감한 데이터를 다루는 에이전트라면 `aws/spans`(또는 에이전트 로그 그룹)의 보관 기간과 접근 권한, 마스킹을 미리 정해 두세요.
@@ -282,7 +320,7 @@ aws logs delete-resource-policy --policy-name TransactionSearchXRayAccess --regi
 ## 체크리스트
 
 **켜기 전**
-- [ ] 목적지, 색인 규칙, 표본 규칙(줄이지 않은 전체), 그 리전의 Logs 리소스 정책, `aws/spans` 존재 여부를 읽어 파일로 저장한다
+- [ ] 목적지, 색인 규칙, 표본 규칙(줄이지 않은 전체), 그 리전의 Logs 리소스 정책, `aws/spans` 존재 여부를 `--output json`으로 읽어 `before-*.json`에 한 번만 저장한다 (이미 있으면 덮어쓰지 않는다, 명령마다 성공했는지 종료 코드로 확인한다)
 - [ ] 같은 계정·리전을 쓰는 다른 팀·프로젝트가 있는지 확인한다
 
 **켜기**
@@ -299,7 +337,7 @@ aws logs delete-resource-policy --policy-name TransactionSearchXRayAccess --regi
 - [ ] 그다음에만 리소스 정책을 지운다
 - [ ] 표본 규칙이 그대로인지 본다
 - [ ] `aws/spans` 로그 그룹을 남길지 지울지 정한다
-- [ ] 처음 읽기 명령을 다시 돌려 기준값과 비교한다
+- [ ] 같은 조회를 `after-*.json`에 저장하고, 모든 조회가 성공했는지 확인한 뒤 `before-*.json`과 `diff`로 비교한다
 
 ## 정리
 
