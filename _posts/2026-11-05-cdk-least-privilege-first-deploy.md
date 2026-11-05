@@ -7,12 +7,12 @@ description: "실행 역할을 좁힌 CDK 첫 배포가 simulate를 통과하고
 ---
 
 > **시리즈: 관리자 권한 없이 CDK 배포하기**
-> 1. CDK 배포 역할에서 AdministratorAccess 빼기: 전용 bootstrap, 실행 정책, 권한 경계 두 개 (예정)
+> 1. [CDK 배포 역할에서 AdministratorAccess 빼기: 전용 bootstrap, 실행 정책, 권한 경계 두 개]({% post_url 2026-11-05-cdk-least-privilege-bootstrap %})
 > 2. **최소 권한 CDK 첫 배포에서 막힌 곳: 태그 액션 함정과 CloudTrail로 권한 좁히기** ← 지금 글
 
 ## simulate는 통과했는데 배포가 거부됐다
 
-이 배포에서는 CDK가 쓰는 CloudFormation 실행 역할에서 `AdministratorAccess`를 뺐습니다. 계정에 이미 있던 공유 `CDKToolkit`의 실행 역할이 관리자 권한이라, 이 프로젝트만 쓰는 전용 준비(bootstrap) 스택을 따로 만들고 권한을 세 겹으로 묶었습니다. 전용 bootstrap과 두 권한 경계를 어떻게 구성했는지는 별도 글(1편, 예정)에서 다룹니다. 이 글에 필요한 것은 아래 세 가지뿐입니다.
+이 배포에서는 CDK가 쓰는 CloudFormation 실행 역할에서 `AdministratorAccess`를 뺐습니다. 계정에 이미 있던 공유 `CDKToolkit`의 실행 역할이 관리자 권한이라, 이 프로젝트만 쓰는 전용 준비(bootstrap) 스택을 따로 만들고 권한을 세 겹으로 묶었습니다. 전용 bootstrap과 두 권한 경계를 어떻게 구성했는지는 1편 [CDK 배포 역할에서 AdministratorAccess 빼기: 전용 bootstrap, 실행 정책, 권한 경계 두 개]({% post_url 2026-11-05-cdk-least-privilege-bootstrap %})에서 다뤘습니다. 이 글에 필요한 것은 아래 세 가지뿐입니다.
 
 - **실행 정책**: CloudFormation 실행 역할이 할 수 있는 일
 - **실행 역할 경계**: 실행 정책을 넓혀도 넘을 수 없는 선
@@ -106,7 +106,7 @@ apiKey.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
 `RETAIN`은 롤백 때도 지켜집니다. 시크릿 셋은 `DELETE_SKIPPED`로 남았고, 다음 배포는 **같은 이름의 시크릿을 다시 만들려다** 실패하게 됩니다. 예약 삭제(`--recovery-window-in-days`)도 답이 아닙니다. 복구 기간 동안은 이름이 계속 묶여 있어서 그 사이에는 다시 배포할 수 없습니다.
 
-복구 기간 없는 삭제는 되돌릴 수 없습니다. 그래서 확인을 먼저 하고, 쓰기는 마지막에 했습니다. 시크릿 값은 어느 단계에서도 읽지 않습니다.
+복구 기간 없는 삭제는 되돌릴 수 없습니다. 그래서 확인을 먼저 하고, 쓰기는 마지막에 했습니다. 다음은 당시 정리 과정을 바탕으로 버전 조회와 삭제 완료 확인을 보완한 권장 절차입니다. 시크릿 값은 어느 단계에서도 읽지 않습니다.
 
 1. **실패 스택이 남긴 것을 확인합니다(읽기).** 스택 이벤트에서 `DELETE_SKIPPED`로 남은 시크릿의 ARN을 적어 둡니다. 정리할 대상은 이 목록뿐입니다.
 
@@ -123,10 +123,10 @@ apiKey.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
    aws secretsmanager list-secret-version-ids \
      --secret-id arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:myproj/api-key-a-AbCdEf \
      --include-deprecated --region ap-northeast-2 --profile ops --output json
-   # "Versions": [] 여야 한다
+   # "Versions": [] 이고 응답에 "NextToken"이 없어야 한다
    ```
 
-   CLI의 자동 페이지 처리는 끄지 않습니다(`--no-paginate`를 쓰지 않음). 명령이 실패하면 빈 목록으로 보지 않고 멈춥니다. 이 조회에는 `secretsmanager:ListSecretVersionIds` 권한이 따로 필요합니다. 그리고 "지금 버전이 0개"는 과거에 값이 없었다는 증명이 아니므로, 1번 목록과 대조해 **이번 실패에서 만들어진 미사용 시크릿**인지도 함께 봅니다.
+   이 명령은 페이지를 직접 이어 조회해야 합니다. 응답에 `NextToken`이 있으면 같은 시크릿 ARN과 `--include-deprecated`를 유지한 채 `--next-token '<응답의 NextToken>'`으로 다음 페이지를 확인하거나, 끝까지 확인하기 전에는 여기서 삭제하지 않고 멈춥니다. 빈 페이지에도 `NextToken`이 올 수 있으므로 `Versions: []` 하나만 보고 판단하지 않습니다. 모든 조회가 성공하고, 모든 페이지의 `Versions`가 비어 있고, 마지막 응답에 `NextToken`이 없을 때만 현재 버전 0개로 봅니다. 버전이 하나라도 있거나 조회가 실패하면 삭제하지 않습니다. 이 조회에는 `secretsmanager:ListSecretVersionIds` 권한이 따로 필요합니다. 그리고 "지금 버전이 0개"는 과거에 값이 없었다는 증명이 아니므로, 1번 목록과 대조해 **이번 실패에서 만들어진 미사용 시크릿**인지도 함께 봅니다.
 
 3. **실패 스택 기록을 지웁니다(쓰기).** `ROLLBACK_COMPLETE` 스택은 그대로 다시 배포할 수 없습니다. 지우고, 삭제가 끝날 때까지 기다립니다.
 
@@ -134,6 +134,8 @@ apiKey.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
    aws cloudformation delete-stack --stack-name MyProjData --region ap-northeast-2 --profile ops
    aws cloudformation wait stack-delete-complete --stack-name MyProjData --region ap-northeast-2 --profile ops
    ```
+
+   기다리기가 실패하면(삭제 실패나 시간 초과) 다음 단계로 넘어가지 않고 스택 이벤트부터 다시 봅니다.
 
 4. **2번에서 버전 0개를 확인한 시크릿만 복구 기간 없이 지웁니다(쓰기).** 값이 하나라도 있으면 지우지 않고, `cdk import`로 스택에 다시 넣는 쪽을 검토합니다.
 
@@ -151,7 +153,7 @@ apiKey.applyRemovalPolicy(cdk.RemovalPolicy.RETAIN);
 
 | 실패 상태 | 남는 것 | 읽기 전용 확인 | 정리 (별도 운영 주체) |
 |---|---|---|---|
-| 데이터 스택 첫 배포 실패(`ROLLBACK_COMPLETE`), `RETAIN` 시크릿이 `DELETE_SKIPPED` | 스택 기록, 값 없는 시크릿. 같은 이름으로 다시 만들 수 없다 | 스택 이벤트의 `DELETE_SKIPPED` ARN, `list-secret-version-ids --include-deprecated`(전체 페이지)로 버전 0개인지. 값은 읽지 않음 | `delete-stack` 후 삭제 완료 대기. 이번 실패에서 만든 버전 0개 시크릿만 `--force-delete-without-recovery`, 이름이 풀린 뒤 재배포. 값이 있으면 `cdk import` 검토 |
+| 데이터 스택 첫 배포 실패(`ROLLBACK_COMPLETE`), `RETAIN` 시크릿이 `DELETE_SKIPPED` | 스택 기록, 값 없는 시크릿. 같은 이름으로 다시 만들 수 없다 | 스택 이벤트의 `DELETE_SKIPPED` ARN, `list-secret-version-ids --include-deprecated`로 모든 페이지의 `Versions`가 비고 마지막 응답에 `NextToken`이 없는지. 조회 실패면 멈춤. 값은 읽지 않음 | `delete-stack` 후 삭제 완료 대기. 이번 실패에서 만든 버전 0개 시크릿만 `--force-delete-without-recovery`, 이름이 풀린 뒤 재배포. 값이 있으면 `cdk import` 검토 |
 
 ## 두 번째 실패: CreateGateway의 태그 권한 검사에서 막혔다
 
@@ -336,7 +338,7 @@ IAM 관리 이벤트는 서울이 아니라 `us-east-1`에 기록됩니다. IAM 
 1. **런타임 만들기 요청에 우리 태그가 실려 있었다.** AgentCore의 다른 자원이 런타임(`CreateAgentRuntime`)을 대신 만들 때, 요청에 `project`·`phase` 태그가 함께 실렸습니다. 처음에는 태그가 실릴지 몰라 이 액션을 리전 조건만으로 허용했었습니다. 서비스 권한 참조에서 `CreateAgentRuntime`도 요청 태그 조건을 지원하는 것을 확인하고, 태그 조건이 있는 만들기 문장으로 옮겼습니다.
 2. **`CreateAgentRuntimeEndpoint`는 한 번도 불리지 않았다.** 이번 구성에서는 엔드포인트를 따로 만들 일이 없어서 정책에서 뺐습니다. **실제로 뺀 권한은 이것 하나입니다.** 나중에 필요해지면 런타임 ARN 범위로 다시 넣기로 기록해 두었습니다.
 3. **끄기로 한 Memory 기능은 호출 0건이었다.** 실행 정책과 경계에서 Memory 액션을 무조건 거부하고 있었는데, 우리 역할이 Memory 액션을 부른 적이 없으니 이 거부가 배포를 막지 않는다는 것이 확인됐습니다.
-4. **시크릿의 CloudFormation 핸들러는 `CreateSecret`·`DescribeSecret`만 불렀다.** `GetSecretValue`·`UpdateSecret`은 0건이었습니다. 실행 역할에 값을 읽는 권한 없이도 시크릿을 만들 수 있다는 뜻입니다. 다만 태그나 설명을 바꾸는 **갱신** 때 `UpdateSecret`이 필요한지는 아직 모릅니다. 그래서 이 권한은 빼지 않았고, 첫 갱신 때 확인할 남은 일로 두었습니다.
+4. **시크릿의 CloudFormation 핸들러는 `CreateSecret`·`DescribeSecret`만 불렀다.** `GetSecretValue`·`UpdateSecret`은 0건이었습니다. 실행 역할에 값을 읽는 권한 없이도 시크릿을 만들 수 있다는 뜻입니다. 현재 실행 정책과 경계에는 `UpdateSecret`·`GetSecretValue` 허용이 없습니다. 태그나 설명을 바꾸는 **갱신** 때 `UpdateSecret`이 필요한지는 아직 확인하지 않았으므로, 첫 갱신에서 필요한 액션을 확인하고 필요하면 범위를 정해 추가할 일로 남겼습니다.
 
 3번과 4번에서 배운 점이 있습니다. CloudFormation 자원 스키마에는 핸들러(create·read·update·delete·list)별 권한 목록이 있습니다([자원 유형 스키마](https://docs.aws.amazon.com/cloudformation-cli/latest/userguide/resource-type-schema.html)). 이 목록은 핸들러가 필요로 할 수 있는 권한이라 출발점으로 쓰기 좋지만, 모든 설정에서 각 권한을 항상 쓴다는 뜻은 아닙니다. 시크릿 create 핸들러의 목록에는 `GetSecretValue`가 있지만 이번 생성에서는 부르지 않았고, Memory를 끈 자원의 스키마에도 Memory 액션이 있습니다.
 
@@ -372,6 +374,22 @@ aws iam simulate-principal-policy \
 
 두 번째 방식도 역할을 실제로 맡아 API를 부르는 것은 아닙니다. 계정에 붙은 정책을 평가할 뿐이고, 요청 문맥은 직접 넣어야 합니다. 이 SQS 예시에는 조건이 없지만, AgentCore `TagResource`를 검사할 때는 `aws:RequestedRegion`, `aws:RequestTag/project`, `aws:RequestTag/phase`를 `--context-entries`로 함께 넣고, 결과의 `MissingContextValues`도 확인합니다. 문맥을 빠뜨리면 조건 문장이 맞지 않아 허용돼야 할 행이 거부로 나옵니다.
 
+CLI로 쓰면 이런 모양입니다. 검사 스크립트는 같은 문맥을 SDK로 넣었고, 아래는 그 행을 CLI 형식으로 옮긴 예시입니다.
+
+```sh
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::123456789012:role/cdk-myproj1-cfn-exec-role-123456789012-ap-northeast-2 \
+  --action-names bedrock-agentcore:TagResource \
+  --resource-arns 'arn:aws:bedrock-agentcore:ap-northeast-2:123456789012:gateway/*' \
+  --context-entries \
+    ContextKeyName=aws:RequestedRegion,ContextKeyValues=ap-northeast-2,ContextKeyType=string \
+    ContextKeyName=aws:RequestTag/project,ContextKeyValues=myproj,ContextKeyType=string \
+    ContextKeyName=aws:RequestTag/phase,ContextKeyValues=pilot,ContextKeyType=string \
+  --query 'EvaluationResults[].[EvalDecision,MissingContextValues]'
+```
+
+`gateway/*`는 셸이 펼치지 않게 따옴표로 감쌉니다. `--query`에 `MissingContextValues`를 넣어야 빠진 문맥 키가 함께 보입니다.
+
 검사 스크립트에 환경 변수 하나로 두 번째 방식을 고르는 모드를 추가해, 같은 기대표를 실제 실행 역할 ARN으로 돌릴 수 있게 했습니다. 이 역할 모드는 전체 기대표 중 **실행 역할 행 130개만** 검사합니다. 원문 모드는 앱 역할·사용자 정책 표까지 포함해 176행입니다.
 
 | 시점 | 방식 | 결과 |
@@ -395,7 +413,7 @@ aws iam simulate-principal-policy \
 ## 남은 일
 
 - 앱 런타임 역할의 `logs:PutResourcePolicy` 거부: 로그가 실제로 쌓이는지 다음 단계에서 확인
-- 시크릿 갱신 때 `UpdateSecret`이 필요한지: 첫 갱신 때 CloudTrail로 확인
+- 시크릿 갱신 때 `UpdateSecret`이 필요한지: 지금은 허용하지 않음. 첫 갱신 때 확인하고 필요하면 범위를 정해 추가
 - 첫 생성에서 0건이었던 다른 권한들: 갱신·삭제·롤백을 한 번씩 겪은 뒤 제거 후보를 다시 검토
 
 이전에 [에이전트 하네스 첫 실전: 배포 환경에서만 실패하던 기능, 원인은 IAM 권한 누락]({% post_url 2026-10-28-dev-harness-first-bugfix-iam %})에서도 비슷한 결론을 냈습니다. 로컬과 배포 환경의 권한은 다르고, 그 차이는 실제 환경에서만 드러납니다. 스택이 실패한 뒤 고착되는 다른 사례는 [Amplify Hosting + Fargate 배포에서 실제로 부딪힌 함정 12가지와 해결]({% post_url 2026-10-29-solo-dev-aws-deploy-pitfalls %})에 정리했습니다.
@@ -407,6 +425,6 @@ aws iam simulate-principal-policy \
 - **정책과 경계는 함께 고칩니다.** 실제 권한은 교집합이고, 이번 두 실패 모두 두 정책에 같은 누락이 있었습니다. "no identity-based policy allows" 문구만으로 경계·SCP를 배제할 수는 없습니다.
 - **이번 Gateway 생성에서는 `TagResource`가 `gateway/*`로 평가됐습니다.** Gateway에는 CloudFormation 스택 태그도 실려 내 태그만 빼서는 피할 수 없었습니다. 조건이 걸린 만들기 문장에 `TagResource`를 넣었습니다. 다른 서비스는 권한 참조와 실제 오류로 따로 확인합니다.
 - **같은 태그 거부가 서비스마다 다르게 나타났습니다.** SQS·AgentCore는 롤백됐고, 이번 S3 버킷은 조용히 우회됐습니다.
-- **`RETAIN` 자원은 롤백 뒤에도 남습니다.** 실패 스택 기록을 지우고, `list-secret-version-ids --include-deprecated`로 버전 0개와 이번 실패에서 만든 시크릿인지 확인한 뒤에만 별도 운영 주체가 즉시 삭제합니다. 이름이 풀린 뒤 재배포합니다.
+- **`RETAIN` 자원은 롤백 뒤에도 남습니다.** 실패 스택 기록을 지우고, `list-secret-version-ids --include-deprecated`의 모든 페이지에서 버전 0개(마지막 응답에 `NextToken` 없음)와 이번 실패에서 만든 시크릿인지 확인한 뒤에만 별도 운영 주체가 즉시 삭제합니다. 이름이 풀린 뒤 재배포합니다.
 - **배포 뒤 CloudTrail은 권한을 좁히는 재료입니다.** 다만 첫 생성에서 부르지 않은 권한은 제거 후보일 뿐이고, 갱신·삭제·롤백까지 확인한 뒤 뺍니다. 스키마의 핸들러 권한 목록은 출발점이지 "항상 부른다"는 뜻이 아닙니다.
 - **첫 배포는 실패를 전제로 준비합니다.** 스택을 작게 나누고, 상태별 실패 정리표를 미리 써 두고, 정책 판과 크기 한도를 매번 확인합니다.
