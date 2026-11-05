@@ -246,9 +246,11 @@ CloudTrail은 "누가 언제 어떤 API를 불렀는가"를 남기는 AWS의 API
 
 CloudWatch와 관련해 하나 구분할 것이 있습니다. 요청과 응답 본문까지 남기는 **모델 호출 로그(model invocation logging)는 기본으로 꺼져 있습니다.** 켜려면 리전마다 따로 설정하고, 로그를 보낼 CloudWatch Logs나 S3도 같은 계정·같은 리전에 있어야 합니다([Model invocation logging](https://docs.aws.amazon.com/bedrock/latest/userguide/model-invocation-logging.html)). 그러니 "CloudWatch에 기록이 남는다"는 말을 프롬프트와 응답이 자동으로 쌓인다는 뜻으로 읽으면 안 됩니다.
 
-### 스트리밍 호출이면 이벤트가 두 개입니다
+### 스트리밍 호출은 API 호출과 완료 이벤트를 구분합니다
 
-`ConverseStream`이나 `InvokeModelWithResponseStream`을 부르면 CloudTrail에 이벤트가 두 개 생깁니다. 하나는 API 호출 자체(`eventType`이 `AwsApiCall`)이고, 다른 하나는 응답 스트림이 끝난 뒤 토큰 수를 담아 남는 완료 이벤트(`eventType`이 `AwsServiceEvent`)입니다. 둘은 `eventName`이 같아서 `eventType`으로만 구분됩니다.
+`ConverseStream`이나 `InvokeModelWithResponseStream`을 부르면 CloudTrail에는 API 호출 자체를 남기는 이벤트(`eventType`이 `AwsApiCall`) 말고도, 응답 스트림이 끝난 뒤 토큰 수를 담아 남는 완료 이벤트(`eventType`이 `AwsServiceEvent`)가 생깁니다. 둘은 `eventName`이 같아서 `eventType`으로만 구분됩니다.
+
+몇 건이 남는지는 trail이 어떤 이벤트를 수집하느냐에 따라 다릅니다. 관리 이벤트만 기록하는 trail에서는 호출 이벤트와 완료 이벤트가 한 건씩 남습니다. Bedrock 데이터 이벤트도 수집하는 trail이라면 각 이벤트의 데이터 이벤트 사본이 더 남으므로, 건수를 셀 때는 `eventType`과 함께 이벤트 범주(관리/데이터)도 구분합니다.
 
 완료 이벤트에서는 처리 리전이 다른 경로에 들어 있습니다.
 
