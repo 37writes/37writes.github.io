@@ -1,0 +1,25 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 464" role="img" aria-labelledby="cdklp-layers-title cdklp-layers-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="cdklp-layers-title">전용 CDK 준비 스택의 권한 구조: 실행 역할과 앱 역할을 각각 다른 경계로 묶는다</title>
+  <desc id="cdklp-layers-desc">맨 위는 관리자로, 보호 정책 셋(실행 정책, 실행 역할 경계, 앱 역할 경계)을 원문 JSON으로 만든다. CDK는 이 정책을 만들지 않는다. 관리자가 cdk bootstrap을 실행하면 준비 스택의 실행 역할 cdk-myproj1-cfn-exec-role이 생기고, 이 역할의 권한은 실행 정책 MyProjCdkExec와 실행 역할 경계 MyProjCdkBoundary의 교집합이며 보호 정책 변경과 사용자 정책 부착은 거부된다. 실행 역할은 앱 경계를 붙인 역할만 만들 수 있다. 앱 역할의 권한은 역할별 정책과 앱 역할 경계 MyProjAppBoundary의 교집합이고 IAM 액션은 모두 거부된다.</desc>
+  <rect class="d-box" x="20" y="12" width="320" height="84"/>
+  <text class="d-strong" x="180" y="40" text-anchor="middle">관리자</text>
+  <text x="180" y="64" text-anchor="middle">보호 정책 셋을 원문으로 만든다</text>
+  <text class="d-muted" x="180" y="86" text-anchor="middle">CDK가 만들지 않음</text>
+  <path class="d-line" d="M180 96 V120"/>
+  <path class="d-line" d="M175 114 L180 120 L185 114"/>
+  <text class="d-mono" x="192" y="113">cdk bootstrap</text>
+  <rect class="d-box" x="20" y="120" width="320" height="164"/>
+  <text class="d-strong" x="180" y="148" text-anchor="middle">실행 역할</text>
+  <text class="d-mono" x="180" y="172" text-anchor="middle">cdk-myproj1-cfn-exec-role</text>
+  <text x="180" y="204" text-anchor="middle">실행 정책 <tspan class="d-mono">MyProjCdkExec</tspan></text>
+  <text x="180" y="228" text-anchor="middle">∩ 경계 <tspan class="d-mono">MyProjCdkBoundary</tspan></text>
+  <text class="d-strong d-accent" x="180" y="264" text-anchor="middle">✗ 보호 정책 변경 거부</text>
+  <path class="d-line" d="M180 284 V316"/>
+  <path class="d-line" d="M175 310 L180 316 L185 310"/>
+  <text class="d-muted" x="192" y="306">앱 경계 붙인 역할만</text>
+  <rect class="d-box" x="20" y="316" width="320" height="136"/>
+  <text class="d-strong" x="180" y="344" text-anchor="middle">앱 역할 (Lambda 등)</text>
+  <text x="180" y="372" text-anchor="middle">역할별 정책</text>
+  <text x="180" y="396" text-anchor="middle">∩ 경계 <tspan class="d-mono">MyProjAppBoundary</tspan></text>
+  <text class="d-strong d-accent" x="180" y="432" text-anchor="middle">✗ IAM 액션 전부 거부</text>
+</svg>

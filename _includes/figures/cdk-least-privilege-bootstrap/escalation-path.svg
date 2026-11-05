@@ -1,0 +1,28 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 540" role="img" aria-labelledby="cdklp-esc-title cdklp-esc-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="cdklp-esc-title">사용자 정책을 거치는 권한 상승 경로와 고친 방법</title>
+  <desc id="cdklp-esc-desc">권한 경계가 있는 실행 역할이 개발자 사용자에게 붙은 정책의 새 버전을 Action 별표 내용으로 만든다. 실행 역할 경계는 실행 역할 자신의 호출만 제한하고 정책 문서의 내용은 보지 않는다. 그 정책이 붙은 개발자 IAM 사용자에게는 권한 경계가 없으므로 사용자가 관리자 수준 권한을 얻는다. 고친 뒤에는 사용자 정책을 관리자가 원문으로 만들어 붙이고, 실행 역할은 모든 사용자와 그룹에 대한 정책 부착과 그 정책들의 만들기, 버전, 삭제를 거부당한다.</desc>
+  <rect class="d-box" x="20" y="12" width="320" height="76"/>
+  <text class="d-strong" x="180" y="42" text-anchor="middle">실행 역할</text>
+  <text class="d-muted" x="180" y="70" text-anchor="middle">경계 있음: 자기 호출만 제한</text>
+  <path class="d-line" d="M180 88 V112"/>
+  <path class="d-line" d="M175 106 L180 112 L185 106"/>
+  <rect class="d-box" x="20" y="112" width="320" height="96"/>
+  <text class="d-strong" x="180" y="140" text-anchor="middle">사용자 정책 새 버전</text>
+  <text class="d-mono" x="180" y="166" text-anchor="middle">"Action": "*"</text>
+  <text class="d-muted" x="180" y="192" text-anchor="middle">경계는 정책 내용을 안 본다</text>
+  <path class="d-line" d="M180 208 V232"/>
+  <path class="d-line" d="M175 226 L180 232 L185 226"/>
+  <text class="d-muted" x="192" y="226">붙어 있음</text>
+  <rect class="d-box" x="20" y="232" width="320" height="76"/>
+  <text class="d-strong" x="180" y="262" text-anchor="middle">개발자 IAM 사용자</text>
+  <text class="d-muted" x="180" y="290" text-anchor="middle">권한 경계 없음</text>
+  <path class="d-line" d="M180 308 V332"/>
+  <path class="d-line" d="M175 326 L180 332 L185 326"/>
+  <rect class="d-box" x="20" y="332" width="320" height="56"/>
+  <text class="d-strong d-accent" x="180" y="366" text-anchor="middle">✗ 관리자 수준 권한</text>
+  <rect class="d-box" x="20" y="412" width="320" height="116"/>
+  <text class="d-strong" x="180" y="440" text-anchor="middle">고친 뒤</text>
+  <text x="36" y="468">✓ 사용자 정책은 관리자가 원문으로</text>
+  <text x="36" y="492">✓ 사용자·그룹 정책 부착 거부</text>
+  <text x="36" y="516">✓ 그 정책의 버전·삭제 거부</text>
+</svg>
