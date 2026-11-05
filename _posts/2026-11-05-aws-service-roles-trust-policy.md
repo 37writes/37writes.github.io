@@ -139,7 +139,7 @@ AgentCore의 [Runtime Identity SLR](https://docs.aws.amazon.com/bedrock-agentcor
 > **이름이 비슷한 다른 SLR.** AgentCore에는 `AWSServiceRoleForBedrockAgentCoreGatewayNetwork`라는 Gateway용 SLR도 있습니다. 이것은 Gateway 타깃을 관리형 사설 엔드포인트(VPC Lattice)로 연결할 때 쓰는 역할입니다. 두 번째 장면의 "Gateway 서비스 역할"(내가 만들고 Gateway가 도구를 부를 때 맡는 역할)과는 다른 것입니다.
 {: .prompt-info }
 
-### SLR 권한은 좁게 정의되는 이유
+### SLR의 간접 권한도 확인하기
 
 [IAM 문서](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create-service-linked-role.html#create-service-linked-role-permissions-transfer)는 SLR의 **간접 권한**을 설명합니다. SLR을 쓰는 서비스를 호출할 수 있는 사용자는, 그 서비스를 거쳐 SLR의 권한을 간접적으로 쓰게 됩니다. 그래서 SLR을 볼 때는 그 역할 자체의 권한뿐 아니라, **그 서비스를 호출할 수 있는 주체가 누구이고 어디까지인지**도 함께 확인해야 합니다. 참고로 Runtime Identity SLR의 [현재 정책](https://docs.aws.amazon.com/aws-managed-policy/latest/reference/BedrockAgentCoreRuntimeIdentityServiceRolePolicy.html)이 허용하는 것은 앞서 본 토큰 세 액션입니다.
 
