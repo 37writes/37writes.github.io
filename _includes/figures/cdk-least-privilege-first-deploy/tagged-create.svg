@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 520" role="img" aria-labelledby="clp-tag-title clp-tag-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="clp-tag-title">태그를 단 CreateGateway 요청 하나가 확인받는 두 권한</title>
-  <desc id="clp-tag-desc">CloudFormation이 CreateGateway 요청을 보낸다. 요청에는 내가 정한 태그 project와 phase, 그리고 CloudFormation이 스스로 넣는 aws:cloudformation 스택 태그 셋이 실린다. 이 요청 하나로 두 권한을 확인받는다. CreateGateway는 자원 * 에 대해 확인받고, 리전과 요청 태그 조건이 있는 만들기 문장이 허용해 통과했다. TagResource는 아직 ID가 없는 gateway/* 자원에 대해 확인받는데, 허용이 이름 ARN 문장에만 있어 거부됐다. 만들기 문장에 TagResource를 더해 재배포가 성공했다.</desc>
+  <title id="clp-tag-title">태그를 단 CreateGateway 요청에서 이 문제와 관련된 두 권한</title>
+  <desc id="clp-tag-desc">CloudFormation이 CreateGateway 요청을 보낸다. 요청에는 내가 정한 태그 project와 phase, 그리고 CloudFormation이 스스로 넣는 aws:cloudformation 스택 태그 셋이 실린다. 이 요청에서 이번 문제와 관련된 권한은 둘이다(PassRole 같은 다른 필요한 권한은 생략). CreateGateway는 자원 * 에 대해 확인받고, 리전과 요청 태그 조건이 있는 만들기 문장이 허용해 통과했다. TagResource는 아직 ID가 없는 gateway/* 자원에 대해 확인받는데, 허용이 이름 ARN 문장에만 있어 거부됐다. 실행 정책과 실행 역할 경계의 만들기 문장에 TagResource를 더해 재배포가 성공했다.</desc>
   <rect class="d-box" x="20" y="8" width="320" height="120"/>
   <text class="d-strong" x="180" y="36" text-anchor="middle">CloudFormation</text>
   <text class="d-mono" x="180" y="62" text-anchor="middle">CreateGateway 요청</text>
@@ -8,7 +8,7 @@
   <text class="d-muted" x="180" y="112" text-anchor="middle">+ <tspan class="d-mono">aws:cloudformation:*</tspan> 셋 (자동)</text>
 
   <path class="d-line" d="M180 128 V150"/>
-  <text class="d-strong" x="180" y="174" text-anchor="middle">한 요청, 두 권한 확인</text>
+  <text class="d-strong" x="180" y="174" text-anchor="middle">이 문제와 관련된 두 권한</text>
   <path class="d-line" d="M90 184 V204 M270 184 V204 M90 184 H270"/>
   <path class="d-line" d="M85 198 L90 204 L95 198 M265 198 L270 204 L275 198"/>
 
@@ -29,7 +29,7 @@
   <path class="d-line" d="M265 374 L270 380 L275 374"/>
   <rect class="d-box" x="20" y="380" width="320" height="132"/>
   <text class="d-strong" x="180" y="408" text-anchor="middle">고침</text>
-  <text x="180" y="434" text-anchor="middle">만들기 문장에 <tspan class="d-mono">TagResource</tspan> 추가</text>
+  <text x="180" y="434" text-anchor="middle">정책·경계 만들기 문장에 <tspan class="d-mono">TagResource</tspan></text>
   <text class="d-muted" x="180" y="460" text-anchor="middle">조건: 리전 · 요청 태그 <tspan class="d-mono">project</tspan> · <tspan class="d-mono">phase</tspan></text>
   <text x="180" y="494" text-anchor="middle">✓ 재배포 성공</text>
 </svg>
