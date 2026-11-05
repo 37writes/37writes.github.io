@@ -1,0 +1,57 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 400" role="img" aria-labelledby="clp-sim-title clp-sim-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="clp-sim-title">배포 전 simulate 기대표와 실제 첫 배포가 부른 액션 비교</title>
+  <desc id="clp-sim-desc">배포 전 simulate 기대표에는 CreateQueue, CreateGateway, CreateBucket 행이 있었고 셋 다 허용으로 통과했다. 하지만 표에는 TagQueue와 TagResource 행이 없었다. 실제 첫 배포에서 CloudFormation은 만들기와 함께 태그 액션을 불렀다. 큐에서는 TagQueue가 거부돼 ROLLBACK_COMPLETE, Gateway에서는 ID가 아직 없는 gateway/* 자원에 대한 TagResource가 거부돼 ROLLBACK_COMPLETE가 됐다. S3 버킷은 태그를 실은 만들기가 s3:TagResource로 거부되자 태그 없이 만든 뒤 PutBucketTagging으로 태그를 달아 성공했다.</desc>
+  <text class="d-strong" x="90" y="26" text-anchor="middle">simulate 기대표</text>
+  <text class="d-muted" x="90" y="50" text-anchor="middle">배포 전 검사</text>
+  <text class="d-strong" x="338" y="26" text-anchor="middle">실제 첫 배포</text>
+  <text class="d-muted" x="338" y="50" text-anchor="middle">CloudFormation이 부른 것</text>
+
+  <rect class="d-box" x="0" y="68" width="180" height="96"/>
+  <text class="d-mono" x="14" y="94">CreateQueue</text>
+  <text x="14" y="120">✓ 허용</text>
+  <text class="d-muted" x="14" y="146"><tspan class="d-mono">TagQueue</tspan> 행 없음</text>
+  <rect class="d-box" x="196" y="68" width="284" height="96"/>
+  <text class="d-mono" x="212" y="94">CreateQueue ✓</text>
+  <text class="d-accent" x="212" y="120"><tspan class="d-mono">TagQueue</tspan> ✗ 거부</text>
+  <text class="d-mono d-accent" x="212" y="146">→ ROLLBACK_COMPLETE</text>
+
+  <rect class="d-box" x="0" y="176" width="180" height="96"/>
+  <text class="d-mono" x="14" y="202">CreateGateway</text>
+  <text x="14" y="228">✓ 허용</text>
+  <text class="d-muted" x="14" y="254"><tspan class="d-mono">TagResource</tspan> 행 없음</text>
+  <rect class="d-box" x="196" y="176" width="284" height="96"/>
+  <text class="d-mono" x="212" y="202">CreateGateway</text>
+  <text class="d-accent" x="212" y="228"><tspan class="d-mono">TagResource gateway/*</tspan> ✗ 거부</text>
+  <text class="d-mono d-accent" x="212" y="254">→ ROLLBACK_COMPLETE</text>
+
+  <rect class="d-box" x="0" y="284" width="180" height="96"/>
+  <text class="d-mono" x="14" y="310">CreateBucket</text>
+  <text x="14" y="336">✓ 허용</text>
+  <text class="d-muted" x="14" y="362"><tspan class="d-mono">TagResource</tspan> 행 없음</text>
+  <rect class="d-box" x="196" y="284" width="284" height="96"/>
+  <text class="d-accent" x="212" y="310"><tspan class="d-mono">s3:TagResource</tspan> ✗ 거부</text>
+  <text x="212" y="336">→ 태그 없이 다시 만들고</text>
+  <text x="212" y="362"><tspan class="d-mono">PutBucketTagging</tspan> ✓ 성공</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 448" role="img" aria-labelledby="clp-sim-title-n clp-sim-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="clp-sim-title-n">배포 전 simulate 기대표와 실제 첫 배포가 부른 액션 비교</title>
+  <desc id="clp-sim-desc-n">CreateQueue, CreateGateway, CreateBucket은 배포 전 simulate 기대표에서 모두 허용으로 통과했지만 표에 태그 액션 행이 없었다. 실제 첫 배포에서 큐는 TagQueue 거부로, Gateway는 gateway/* 자원에 대한 TagResource 거부로 ROLLBACK_COMPLETE가 됐다. S3 버킷은 s3:TagResource가 거부되자 태그 없이 만든 뒤 PutBucketTagging으로 태그를 달아 성공했다.</desc>
+  <rect class="d-box" x="0" y="4" width="360" height="132"/>
+  <text class="d-mono d-strong" x="16" y="32">CreateQueue</text>
+  <text x="16" y="60">simulate ✓ 허용<tspan class="d-muted"> · <tspan class="d-mono">TagQueue</tspan> 행 없음</tspan></text>
+  <text class="d-accent" x="16" y="88">실제 배포 <tspan class="d-mono">TagQueue</tspan> ✗ 거부</text>
+  <text class="d-mono d-accent" x="16" y="116">→ ROLLBACK_COMPLETE</text>
+
+  <rect class="d-box" x="0" y="152" width="360" height="132"/>
+  <text class="d-mono d-strong" x="16" y="180">CreateGateway</text>
+  <text x="16" y="208">simulate ✓ 허용<tspan class="d-muted"> · <tspan class="d-mono">TagResource</tspan> 행 없음</tspan></text>
+  <text class="d-accent" x="16" y="236">실제 배포 <tspan class="d-mono">TagResource</tspan> ✗ 거부</text>
+  <text class="d-accent" x="16" y="264"><tspan class="d-mono">gateway/*</tspan> 대상 → <tspan class="d-mono">ROLLBACK_COMPLETE</tspan></text>
+
+  <rect class="d-box" x="0" y="300" width="360" height="144"/>
+  <text class="d-mono d-strong" x="16" y="328">CreateBucket</text>
+  <text x="16" y="356">simulate ✓ 허용<tspan class="d-muted"> · <tspan class="d-mono">TagResource</tspan> 행 없음</tspan></text>
+  <text class="d-accent" x="16" y="384">실제 배포 <tspan class="d-mono">s3:TagResource</tspan> ✗ 거부</text>
+  <text x="16" y="412">→ 태그 없이 다시 만들고</text>
+  <text x="16" y="434"><tspan class="d-mono">PutBucketTagging</tspan> ✓ 성공</text>
+</svg>
