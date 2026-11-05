@@ -1,0 +1,93 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 560" role="img" aria-labelledby="wtr-fig-title wtr-fig-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="wtr-fig-title">Anthropic API 연결과 Bedrock 연결에서 각 도구가 실행되는 위치</title>
+  <desc id="wtr-fig-desc">왼쪽은 Claude Code를 Anthropic API에 연결한 경우다. Anthropic 서버에는 모델(머리)과 서버 도구 web_search가 함께 있어, 검색은 Anthropic 서버가 실행하고 결과를 모델에게 바로 넣는다. 내 PC의 Claude Code(몸통과 신경)는 Bash, Read, WebFetch 같은 클라이언트 도구를 실행하고 tool_result로 모델에 돌려준다. 오른쪽은 Bedrock에 연결한 경우다. Bedrock에는 모델만 있고 서버 도구 자리는 비어 있다. 내 PC에는 Bash, Read, WebFetch와 함께 로컬 MCP 서버의 web_search 도구가 있고, 이 MCP 서버가 HTTPS와 SigV4 서명으로 AWS 도쿄 리전의 AgentCore Gateway를 불러 Web Search 커넥터에 검색을 맡긴다. 서울 리전에는 커넥터가 없다. 이 web_search는 실제 검색이 원격에서 일어나도 Claude Code가 결과를 모델에 넣으므로 클라이언트 도구다.</desc>
+  <text class="d-strong" x="121" y="24" text-anchor="middle">Anthropic API로 연결</text>
+  <text class="d-strong" x="359" y="24" text-anchor="middle">Bedrock으로 연결</text>
+  <rect class="d-line" x="10" y="40" width="222" height="112" rx="4"/>
+  <text class="d-strong" x="26" y="66">Anthropic 서버</text>
+  <text class="d-muted" x="26" y="88">모델 · 머리</text>
+  <rect class="d-line" x="26" y="100" width="190" height="40" rx="4" stroke-dasharray="6 4"/>
+  <text class="d-mono" x="40" y="125">web_search</text>
+  <text x="202" y="125" text-anchor="end">✓ 있음</text>
+  <rect class="d-line" x="248" y="40" width="222" height="112" rx="4"/>
+  <text class="d-strong" x="264" y="66">Bedrock</text>
+  <text class="d-muted" x="264" y="88">모델 · 머리</text>
+  <rect class="d-line" x="264" y="100" width="190" height="40" rx="4" stroke-dasharray="6 4"/>
+  <text class="d-accent" x="278" y="125">✗ 서버 도구 없음</text>
+  <path class="d-line" d="M50 158 V198 M45 192 L50 198 L55 192 M45 164 L50 158 L55 164"/>
+  <text class="d-mono d-muted" x="64" y="174">tool_use ↓</text>
+  <text class="d-mono d-muted" x="64" y="194">tool_result ↑</text>
+  <path class="d-line" d="M288 158 V198 M283 192 L288 198 L293 192 M283 164 L288 158 L293 164"/>
+  <text class="d-mono d-muted" x="302" y="174">tool_use ↓</text>
+  <text class="d-mono d-muted" x="302" y="194">tool_result ↑</text>
+  <rect class="d-line" x="10" y="204" width="222" height="116" rx="4"/>
+  <text class="d-strong" x="26" y="230">내 PC</text>
+  <text class="d-muted" x="26" y="252">Claude Code · 몸통과 신경</text>
+  <rect class="d-box" x="26" y="266" width="190" height="40" rx="4"/>
+  <text x="38" y="291">Bash · Read · WebFetch</text>
+  <rect class="d-line" x="248" y="204" width="222" height="166" rx="4"/>
+  <text class="d-strong" x="264" y="230">내 PC</text>
+  <text class="d-muted" x="264" y="252">Claude Code · 몸통과 신경</text>
+  <rect class="d-box" x="264" y="266" width="190" height="40" rx="4"/>
+  <text x="276" y="291">Bash · Read · WebFetch</text>
+  <rect class="d-box" x="264" y="316" width="190" height="40" rx="4"/>
+  <text x="276" y="341">MCP 서버</text>
+  <text class="d-mono" x="444" y="341" text-anchor="end">web_search</text>
+  <path class="d-line" d="M300 356 V413 M295 407 L300 413 L305 407"/>
+  <text class="d-mono" x="314" y="384">HTTPS</text>
+  <text class="d-mono" x="314" y="404">+ SigV4</text>
+  <rect class="d-line" x="248" y="414" width="222" height="86" rx="4"/>
+  <text class="d-strong" x="264" y="440">AWS 도쿄 리전</text>
+  <text class="d-muted" x="264" y="464">Gateway → Web Search</text>
+  <text class="d-muted d-small" x="264" y="486">서울 리전엔 커넥터 없음</text>
+  <rect class="d-line" x="10" y="514" width="28" height="16" rx="3" stroke-dasharray="6 4"/>
+  <text class="d-muted" x="46" y="527">서버 도구: 제공자가 실행해 결과를 넣음</text>
+  <rect class="d-box" x="10" y="538" width="28" height="16" rx="3"/>
+  <text class="d-muted" x="46" y="551">클라이언트 도구: Claude Code가 실행해 넣음</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 860" role="img" aria-labelledby="wtr-fig-title-n wtr-fig-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="wtr-fig-title-n">Anthropic API 연결과 Bedrock 연결에서 각 도구가 실행되는 위치</title>
+  <desc id="wtr-fig-desc-n">위쪽은 Claude Code를 Anthropic API에 연결한 경우다. Anthropic 서버에는 모델(머리)과 서버 도구 web_search가 함께 있어, 검색은 Anthropic 서버가 실행하고 결과를 모델에게 바로 넣는다. 내 PC의 Claude Code(몸통과 신경)는 Bash, Read, WebFetch 같은 클라이언트 도구를 실행하고 tool_result로 모델에 돌려준다. 아래쪽은 Bedrock에 연결한 경우다. Bedrock에는 모델만 있고 서버 도구 자리는 비어 있다. 내 PC에는 Bash, Read, WebFetch와 함께 로컬 MCP 서버의 web_search 도구가 있고, 이 MCP 서버가 HTTPS와 SigV4 서명으로 AWS 도쿄 리전의 AgentCore Gateway를 불러 Web Search 커넥터에 검색을 맡긴다. 서울 리전에는 커넥터가 없다. 이 web_search는 실제 검색이 원격에서 일어나도 Claude Code가 결과를 모델에 넣으므로 클라이언트 도구다.</desc>
+  <text class="d-strong" x="12" y="24">Anthropic API로 연결</text>
+  <rect class="d-line" x="12" y="38" width="296" height="100" rx="4"/>
+  <text class="d-strong" x="28" y="64">Anthropic 서버</text>
+  <text class="d-muted" x="292" y="64" text-anchor="end">모델 · 머리</text>
+  <rect class="d-line" x="28" y="80" width="264" height="42" rx="4" stroke-dasharray="6 4"/>
+  <text class="d-mono" x="42" y="106">web_search</text>
+  <text x="278" y="106" text-anchor="end">✓ 있음</text>
+  <path class="d-line" d="M52 144 V186 M47 180 L52 186 L57 180 M47 150 L52 144 L57 150"/>
+  <text class="d-mono d-muted" x="66" y="162">tool_use ↓</text>
+  <text class="d-mono d-muted" x="66" y="182">tool_result ↑</text>
+  <rect class="d-line" x="12" y="192" width="296" height="100" rx="4"/>
+  <text class="d-strong" x="28" y="218">내 PC</text>
+  <text class="d-muted" x="292" y="218" text-anchor="end">Claude Code · 몸통과 신경</text>
+  <rect class="d-box" x="28" y="234" width="264" height="42" rx="4"/>
+  <text x="42" y="260">Bash · Read · WebFetch</text>
+  <text class="d-strong" x="12" y="336">Bedrock으로 연결</text>
+  <rect class="d-line" x="12" y="350" width="296" height="100" rx="4"/>
+  <text class="d-strong" x="28" y="376">Bedrock</text>
+  <text class="d-muted" x="292" y="376" text-anchor="end">모델 · 머리</text>
+  <rect class="d-line" x="28" y="392" width="264" height="42" rx="4" stroke-dasharray="6 4"/>
+  <text class="d-accent" x="42" y="418">✗ 서버 도구 없음</text>
+  <path class="d-line" d="M52 456 V498 M47 492 L52 498 L57 492 M47 462 L52 456 L57 462"/>
+  <text class="d-mono d-muted" x="66" y="474">tool_use ↓</text>
+  <text class="d-mono d-muted" x="66" y="494">tool_result ↑</text>
+  <rect class="d-line" x="12" y="504" width="296" height="156" rx="4"/>
+  <text class="d-strong" x="28" y="530">내 PC</text>
+  <text class="d-muted" x="292" y="530" text-anchor="end">Claude Code · 몸통과 신경</text>
+  <rect class="d-box" x="28" y="546" width="264" height="42" rx="4"/>
+  <text x="42" y="572">Bash · Read · WebFetch</text>
+  <rect class="d-box" x="28" y="598" width="264" height="42" rx="4"/>
+  <text x="42" y="624">MCP 서버</text>
+  <text class="d-mono" x="278" y="624" text-anchor="end">web_search</text>
+  <path class="d-line" d="M64 640 V701 M59 695 L64 701 L69 695"/>
+  <text class="d-mono" x="78" y="676">HTTPS + SigV4</text>
+  <rect class="d-line" x="12" y="702" width="296" height="86" rx="4"/>
+  <text class="d-strong" x="28" y="728">AWS 도쿄 리전</text>
+  <text class="d-muted" x="28" y="752">Gateway → Web Search 커넥터</text>
+  <text class="d-muted d-small" x="28" y="774">서울 리전엔 커넥터 없음</text>
+  <rect class="d-line" x="12" y="808" width="26" height="16" rx="3" stroke-dasharray="6 4"/>
+  <text class="d-muted" x="46" y="821">서버 도구: 제공자가 실행해 넣음</text>
+  <rect class="d-box" x="12" y="834" width="26" height="16" rx="3"/>
+  <text class="d-muted" x="46" y="847">클라이언트 도구: Claude Code가 실행</text>
+</svg>
