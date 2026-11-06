@@ -1,0 +1,56 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 404" role="img" aria-labelledby="sam-gen2-layers-title sam-gen2-layers-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="sam-gen2-layers-title">CloudFormation, SAM, CDK, Amplify Gen 2의 층</title>
+  <desc id="sam-gen2-layers-desc">맨 아래에 CloudFormation 스택이 있다. 그 바로 위에 AWS SAM(YAML 템플릿과 Transform)과 AWS CDK(코드를 cdk synth로 템플릿으로 합성)가 나란히 있다. Amplify Gen 2는 CDK 위에 얹힌 프레임워크로, 안에 define* 기능(로그인, 데이터, 저장소)이 있고, +CDK 묶음으로 createStack()으로 새 리소스를 더하는 갈래와 cfnResources로 L1 설정을 고치는 갈래가 있다.</desc>
+  <rect class="d-line" x="168" y="12" width="300" height="212"/>
+  <text class="d-strong" x="184" y="38">Amplify Gen 2</text>
+  <text class="d-muted d-small" x="452" y="38" text-anchor="end">CDK 위의 프레임워크</text>
+  <rect class="d-box" x="184" y="52" width="268" height="36"/>
+  <text class="d-mono" x="200" y="75">define*</text>
+  <text class="d-muted d-small" x="436" y="75" text-anchor="end">로그인 · 데이터 · 저장소</text>
+  <rect class="d-line" x="184" y="98" width="268" height="114"/>
+  <text class="d-strong" x="200" y="122">+CDK</text>
+  <text class="d-muted d-small" x="436" y="122" text-anchor="end">define*가 주지 않는 것</text>
+  <rect class="d-box" x="200" y="134" width="236" height="32"/>
+  <text class="d-mono" x="214" y="155">createStack()</text>
+  <text class="d-muted d-small" x="424" y="155" text-anchor="end">새 리소스</text>
+  <rect class="d-box" x="200" y="172" width="236" height="32"/>
+  <text class="d-mono" x="214" y="193">cfnResources</text>
+  <text class="d-muted d-small" x="424" y="193" text-anchor="end">L1 설정 고치기</text>
+  <rect class="d-box" x="12" y="236" width="144" height="84"/>
+  <text class="d-strong" x="28" y="264">AWS SAM</text>
+  <text class="d-muted d-small" x="28" y="286">YAML 템플릿</text>
+  <text class="d-muted d-small" x="28" y="306">+ Transform</text>
+  <rect class="d-box" x="168" y="236" width="300" height="84"/>
+  <text class="d-strong" x="184" y="264">AWS CDK</text>
+  <text class="d-muted d-small" x="184" y="286">TypeScript 등 코드</text>
+  <text class="d-muted d-small" x="184" y="306">cdk synth로 템플릿 합성</text>
+  <rect class="d-box" x="12" y="332" width="456" height="60"/>
+  <text class="d-strong" x="28" y="358">CloudFormation</text>
+  <text class="d-muted d-small" x="28" y="379">스택 · 실제 리소스를 만드는 층</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 432" role="img" aria-labelledby="sam-gen2-layers-title-n sam-gen2-layers-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="sam-gen2-layers-title-n">CloudFormation, SAM, CDK, Amplify Gen 2의 층</title>
+  <desc id="sam-gen2-layers-desc-n">맨 아래에 CloudFormation 스택이 있다. 그 바로 위에 SAM(YAML 템플릿과 Transform)과 CDK(코드를 cdk synth로 합성)가 나란히 있다. Amplify Gen 2는 CDK 위에 얹힌 프레임워크로, 안에 define* 기능이 있고, +CDK 묶음으로 createStack()으로 새 리소스를 더하는 갈래와 cfnResources로 L1 설정을 고치는 갈래가 있다.</desc>
+  <rect class="d-line" x="118" y="12" width="190" height="240"/>
+  <text class="d-strong" x="132" y="38">Amplify Gen 2</text>
+  <text class="d-muted d-small" x="132" y="58">CDK 위의 프레임워크</text>
+  <rect class="d-box" x="132" y="70" width="162" height="34"/>
+  <text class="d-mono" x="146" y="92">define*</text>
+  <rect class="d-line" x="132" y="114" width="162" height="126"/>
+  <text class="d-strong" x="146" y="138">+CDK</text>
+  <rect class="d-box" x="142" y="150" width="142" height="34"/>
+  <text class="d-mono" x="152" y="172">createStack()</text>
+  <rect class="d-box" x="142" y="194" width="142" height="34"/>
+  <text class="d-mono" x="152" y="216">cfnResources</text>
+  <rect class="d-box" x="12" y="264" width="94" height="84"/>
+  <text class="d-strong" x="24" y="292">SAM</text>
+  <text class="d-muted d-small" x="24" y="314">YAML</text>
+  <text class="d-muted d-small" x="24" y="334">+ Transform</text>
+  <rect class="d-box" x="118" y="264" width="190" height="84"/>
+  <text class="d-strong" x="132" y="292">CDK</text>
+  <text class="d-muted d-small" x="132" y="314">코드</text>
+  <text class="d-muted d-small" x="132" y="334">cdk synth로 합성</text>
+  <rect class="d-box" x="12" y="360" width="296" height="60"/>
+  <text class="d-strong" x="28" y="386">CloudFormation</text>
+  <text class="d-muted d-small" x="28" y="407">스택 · 실제 리소스</text>
+</svg>
