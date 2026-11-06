@@ -1,0 +1,41 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 836" role="img" aria-labelledby="cognito-gates-title cognito-gates-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="cognito-gates-title">로그인한 브라우저가 Cognito 두 풀을 거쳐 AWS IoT Core에 붙는 흐름</title>
+  <desc id="cognito-gates-desc">브라우저가 이메일과 비밀번호로 로그인하면 사용자 풀이 누구인지 확인하고 sub와 cognito:groups가 든 ID 토큰을 준다. 브라우저는 이 ID 토큰을 자격 증명 풀에 건네고, 자격 증명 풀은 자격 증명 ID를 정하고 역할을 고른 뒤 STS 임시 자격 증명을 내준다. 브라우저는 그 자격 증명으로 서명해 정책 맞추기 함수를 부르고, 함수는 사용자의 그룹을 보고 그 자격 증명 ID에 IoT 정책을 붙이거나 뗀다. 그다음 브라우저가 MQTT over WebSocket으로 IoT Core에 붙으면, IoT Core는 모든 로그인 사용자가 같이 쓰는 상한선인 IAM 역할의 허용과, 자격 증명 ID마다 다른 IoT 정책의 허용을 둘 다 확인한다. 둘 다 허용할 때만 통과하고 하나라도 없으면 거부된다.</desc>
+  <rect class="d-box" x="20" y="12" width="320" height="64"/>
+  <text class="d-strong" x="180" y="40" text-anchor="middle">브라우저</text>
+  <text class="d-muted" x="180" y="64" text-anchor="middle">이메일·비밀번호로 로그인</text>
+  <path class="d-line" d="M180 76 V104"/>
+  <path class="d-line" d="M175 98 L180 104 L185 98"/>
+  <rect class="d-box" x="20" y="104" width="320" height="100"/>
+  <text class="d-strong" x="180" y="132" text-anchor="middle">사용자 풀 · 누구인가</text>
+  <text class="d-muted" x="180" y="158" text-anchor="middle">로그인을 확인하고 토큰 발급</text>
+  <text class="d-mono" x="180" y="186" text-anchor="middle">ID 토큰: sub, cognito:groups</text>
+  <path class="d-line" d="M180 204 V240"/>
+  <path class="d-line" d="M175 234 L180 240 L185 234"/>
+  <text class="d-muted" x="192" y="228">ID 토큰을 건넨다</text>
+  <rect class="d-box" x="20" y="240" width="320" height="100"/>
+  <text class="d-strong" x="180" y="268" text-anchor="middle">자격 증명 풀 · AWS 권한</text>
+  <text class="d-muted" x="180" y="294" text-anchor="middle">자격 증명 ID + 역할 선택</text>
+  <text class="d-muted" x="180" y="322" text-anchor="middle">STS 임시 자격 증명 (1시간)</text>
+  <path class="d-line" d="M180 340 V376"/>
+  <path class="d-line" d="M175 370 L180 376 L185 370"/>
+  <text class="d-mono" x="192" y="364">SigV4</text>
+  <rect class="d-box" x="20" y="376" width="320" height="100"/>
+  <text class="d-strong" x="180" y="404" text-anchor="middle">정책 맞추기 함수</text>
+  <text class="d-muted" x="180" y="430" text-anchor="middle">그룹을 보고 그 자격 증명 ID에</text>
+  <text class="d-muted" x="180" y="454" text-anchor="middle">IoT 정책을 붙이고 뗀다</text>
+  <path class="d-line" d="M180 476 V512"/>
+  <path class="d-line" d="M175 506 L180 512 L185 506"/>
+  <text class="d-mono" x="192" y="500">MQTT · SigV4</text>
+  <rect class="d-line" x="12" y="512" width="336" height="310" rx="6"/>
+  <text class="d-strong" x="180" y="540" text-anchor="middle">IoT Core: 두 문을 모두 확인</text>
+  <rect class="d-box" x="24" y="556" width="312" height="76"/>
+  <text class="d-strong" x="180" y="584" text-anchor="middle">① IAM 역할이 허용?</text>
+  <text class="d-muted" x="180" y="612" text-anchor="middle">로그인 사용자 공통 · 상한선</text>
+  <text class="d-muted" x="180" y="656" text-anchor="middle">그리고</text>
+  <rect class="d-box" x="24" y="672" width="312" height="76"/>
+  <text class="d-strong" x="180" y="700" text-anchor="middle">② IoT 정책이 허용?</text>
+  <text class="d-muted" x="180" y="728" text-anchor="middle">자격 증명 ID마다 · 보기/명령</text>
+  <text class="d-strong" x="180" y="778" text-anchor="middle">✓ 둘 다 허용하면 통과</text>
+  <text class="d-strong d-accent" x="180" y="806" text-anchor="middle">✗ 하나라도 없으면 거부</text>
+</svg>
