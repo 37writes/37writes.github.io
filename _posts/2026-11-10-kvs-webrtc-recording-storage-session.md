@@ -103,7 +103,7 @@ STREAM_ARN=$(aws kinesisvideo create-stream \
 : "${STREAM_ARN:?스트림 ARN을 받지 못함}"
 
 # 2) 스트림이 ACTIVE가 될 때까지 확인 (만드는 중이면 연결이 거절된다)
-#    조회 자체가 실패하면 바로 끝내고, CREATING은 최대 30회 × 2초만 기다린다
+#    조회 자체가 실패하면 바로 끝내고, CREATING은 최대 30회 조회하며 조회 사이에 2초 대기
 tries=0
 while :; do
   stream_status=$(aws kinesisvideo describe-stream \
@@ -114,7 +114,7 @@ while :; do
     ACTIVE) break ;;
     CREATING)
       tries=$((tries + 1))
-      [ "$tries" -lt 30 ] || { echo "60초 안에 ACTIVE가 되지 않음" >&2; exit 1; }
+      [ "$tries" -lt 30 ] || { echo "30회 조회 후에도 ACTIVE가 되지 않음" >&2; exit 1; }
       sleep 2 ;;
     *) echo "예상하지 못한 상태: $stream_status" >&2; exit 1 ;;
   esac
