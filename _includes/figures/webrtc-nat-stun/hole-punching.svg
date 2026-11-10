@@ -1,0 +1,64 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 404" role="img" aria-labelledby="hole-title hole-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hole-title">홀 펀칭이 끝점 독립 매핑 NAT에서는 성공하고 주소·포트 의존 매핑 NAT에서는 실패하는 이유</title>
+  <desc id="hole-desc">두 칸은 같은 순서로 A의 NAT를 보여 준다. 1, A가 STUN 서버에 물어 바깥 포트 40001을 알아낸다. 2, A가 B에게 먼저 보내 NAT 표에 B와의 줄을 만든다. 3, B는 STUN이 알려 준 A의 40001로 보낸다. 왼쪽 끝점 독립 매핑(예전 이름 콘 NAT)은 B에게 보낼 때도 같은 40001을 쓰므로 B의 패킷이 표의 줄과 맞아 들어간다. 오른쪽 주소·포트 의존 매핑(예전 이름 대칭 NAT)은 B에게 보낼 때 새 포트 40777을 쓰므로, 40001로 온 B의 패킷은 B와의 줄이 없어 버려진다. 상대 B 쪽 NAT도 주소와 포트까지 따지는 필터링이라고 가정한 그림이다.</desc>
+  <rect class="d-line" x="12" y="12" width="222" height="380" rx="6"/>
+  <text class="d-strong" x="123.0" y="42" text-anchor="middle">✓ 끝점 독립 매핑</text>
+  <text class="d-muted" x="123.0" y="66" text-anchor="middle">예전 이름: 콘 NAT</text>
+  <rect class="d-box" x="24" y="82" width="198" height="72"/>
+  <text class="d-muted" x="123.0" y="108" text-anchor="middle">1. A → STUN 서버</text>
+  <text class="d-mono" x="123.0" y="136" text-anchor="middle">:40001 <tspan class="d-small">STUN이 알려 준 주소</tspan></text>
+  <rect class="d-box" x="24" y="164" width="198" height="72"/>
+  <text class="d-muted" x="123.0" y="190" text-anchor="middle">2. A → B (구멍 뚫기)</text>
+  <text class="d-mono" x="123.0" y="218" text-anchor="middle">:40001 <tspan class="d-small">같은 바깥 포트</tspan></text>
+  <rect class="d-box" x="24" y="246" width="198" height="72"/>
+  <text class="d-muted" x="123.0" y="272" text-anchor="middle">3. B → A의 :40001</text>
+  <text class="d-small" x="123.0" y="300" text-anchor="middle">B는 STUN 주소로 보낸다</text>
+  <text class="d-strong" x="123.0" y="346" text-anchor="middle">✓ 들어간다</text>
+  <text class="d-muted" x="123.0" y="370" text-anchor="middle">2에서 B에게 연 그 포트</text>
+  <rect class="d-line" x="246" y="12" width="222" height="380" rx="6"/>
+  <text class="d-strong d-accent" x="357.0" y="42" text-anchor="middle">✗ 주소·포트 의존 매핑</text>
+  <text class="d-muted" x="357.0" y="66" text-anchor="middle">예전 이름: 대칭 NAT</text>
+  <rect class="d-box" x="258" y="82" width="198" height="72"/>
+  <text class="d-muted" x="357.0" y="108" text-anchor="middle">1. A → STUN 서버</text>
+  <text class="d-mono" x="357.0" y="136" text-anchor="middle">:40001 <tspan class="d-small">STUN이 알려 준 주소</tspan></text>
+  <rect class="d-box" x="258" y="164" width="198" height="72"/>
+  <text class="d-muted" x="357.0" y="190" text-anchor="middle">2. A → B (구멍 뚫기)</text>
+  <text class="d-mono" x="357.0" y="218" text-anchor="middle">:40777 <tspan class="d-small">상대마다 새 포트</tspan></text>
+  <rect class="d-box" x="258" y="246" width="198" height="72"/>
+  <text class="d-muted" x="357.0" y="272" text-anchor="middle">3. B → A의 :40001</text>
+  <text class="d-small" x="357.0" y="300" text-anchor="middle">B는 STUN 주소로 보낸다</text>
+  <text class="d-strong d-accent" x="357.0" y="346" text-anchor="middle">✗ 버려진다</text>
+  <text class="d-muted" x="357.0" y="370" text-anchor="middle">B에게 연 포트는 :40777</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 796" role="img" aria-labelledby="hole-n-title hole-n-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hole-n-title">홀 펀칭이 끝점 독립 매핑 NAT에서는 성공하고 주소·포트 의존 매핑 NAT에서는 실패하는 이유</title>
+  <desc id="hole-n-desc">두 칸은 같은 순서로 A의 NAT를 보여 준다. 1, A가 STUN 서버에 물어 바깥 포트 40001을 알아낸다. 2, A가 B에게 먼저 보내 NAT 표에 B와의 줄을 만든다. 3, B는 STUN이 알려 준 A의 40001로 보낸다. 왼쪽 끝점 독립 매핑(예전 이름 콘 NAT)은 B에게 보낼 때도 같은 40001을 쓰므로 B의 패킷이 표의 줄과 맞아 들어간다. 오른쪽 주소·포트 의존 매핑(예전 이름 대칭 NAT)은 B에게 보낼 때 새 포트 40777을 쓰므로, 40001로 온 B의 패킷은 B와의 줄이 없어 버려진다. 상대 B 쪽 NAT도 주소와 포트까지 따지는 필터링이라고 가정한 그림이다.</desc>
+  <rect class="d-line" x="12" y="12" width="336" height="380" rx="6"/>
+  <text class="d-strong" x="180.0" y="42" text-anchor="middle">✓ 끝점 독립 매핑</text>
+  <text class="d-muted" x="180.0" y="66" text-anchor="middle">예전 이름: 콘 NAT</text>
+  <rect class="d-box" x="24" y="82" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="108" text-anchor="middle">1. A → STUN 서버</text>
+  <text class="d-mono" x="180.0" y="136" text-anchor="middle">:40001 <tspan class="d-small">STUN이 알려 준 주소</tspan></text>
+  <rect class="d-box" x="24" y="164" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="190" text-anchor="middle">2. A → B (구멍 뚫기)</text>
+  <text class="d-mono" x="180.0" y="218" text-anchor="middle">:40001 <tspan class="d-small">같은 바깥 포트</tspan></text>
+  <rect class="d-box" x="24" y="246" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="272" text-anchor="middle">3. B → A의 :40001</text>
+  <text class="d-small" x="180.0" y="300" text-anchor="middle">B는 STUN 주소로 보낸다</text>
+  <text class="d-strong" x="180.0" y="346" text-anchor="middle">✓ 들어간다</text>
+  <text class="d-muted" x="180.0" y="370" text-anchor="middle">2에서 B에게 연 그 포트</text>
+  <rect class="d-line" x="12" y="404" width="336" height="380" rx="6"/>
+  <text class="d-strong d-accent" x="180.0" y="434" text-anchor="middle">✗ 주소·포트 의존 매핑</text>
+  <text class="d-muted" x="180.0" y="458" text-anchor="middle">예전 이름: 대칭 NAT</text>
+  <rect class="d-box" x="24" y="474" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="500" text-anchor="middle">1. A → STUN 서버</text>
+  <text class="d-mono" x="180.0" y="528" text-anchor="middle">:40001 <tspan class="d-small">STUN이 알려 준 주소</tspan></text>
+  <rect class="d-box" x="24" y="556" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="582" text-anchor="middle">2. A → B (구멍 뚫기)</text>
+  <text class="d-mono" x="180.0" y="610" text-anchor="middle">:40777 <tspan class="d-small">상대마다 새 포트</tspan></text>
+  <rect class="d-box" x="24" y="638" width="312" height="72"/>
+  <text class="d-muted" x="180.0" y="664" text-anchor="middle">3. B → A의 :40001</text>
+  <text class="d-small" x="180.0" y="692" text-anchor="middle">B는 STUN 주소로 보낸다</text>
+  <text class="d-strong d-accent" x="180.0" y="738" text-anchor="middle">✗ 버려진다</text>
+  <text class="d-muted" x="180.0" y="762" text-anchor="middle">B에게 연 포트는 :40777</text>
+</svg>
