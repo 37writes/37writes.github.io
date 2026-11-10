@@ -7,13 +7,13 @@ description: "중계를 강제하자 첫 화면이 몇 배 늦어진 측정에�
 ---
 
 > **시리즈: AWS KVS로 실시간 영상 보내기**
-> 1. KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다
-> 2. 시그널링: SDP offer/answer와 KVS 신호 채널
-> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나
+> 1. [KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다]({% post_url 2026-11-10-kvs-webrtc-big-picture %})
+> 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
+> 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
 > 4. **TURN과 ICE: 끝내 못 붙으면 중계한다** ← 지금 글
-> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP
-> 6. 녹화: KVS WebRTC 수집과 저장 세션
-> 7. 다시 보기: HLS 원리와 KVS 재생
+> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
+> 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
+> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
 
 현장 장비의 카메라 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 영상은 Amazon Kinesis Video Streams(KVS)의 WebRTC 기능으로 보냅니다. 장비가 **마스터**(영상을 보내는 쪽)로 KVS 시그널링 채널에 먼저 접속해 기다리고, 브라우저가 **뷰어**(보는 쪽)로 찾아가 연결을 맺는 구조입니다.
 

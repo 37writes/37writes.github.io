@@ -10,7 +10,7 @@ description: "현장 장비 카메라를 브라우저에서 실시간으로 보�
 > 1. **KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다** ← 지금 글
 > 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
 > 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
-> 4. TURN과 ICE: 끝내 못 붙으면 중계한다 (예정)
+> 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
 > 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
 > 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
 > 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
@@ -108,9 +108,9 @@ WebRTC 연결은 세 층으로 나눠 보면 이해가 쉽습니다. 각 층은 
 
 KVS 동작 원리 문서는 이 과정을 후보를 모두 모은 뒤 한 번에 보내는 **단순화한 흐름**으로 설명합니다. A는 STUN 서버에 요청을 보내 자신의 공인 주소를 알아내고 후보 목록에 넣은 뒤 offer를 만듭니다. offer는 신호 채널을 통해 B에게 갑니다. B도 같은 방식으로 후보를 모아 answer를 돌려줍니다. 그다음 양쪽의 ICE는 상대가 알려 준 후보 주소마다 **STUN 요청을 직접 보내 보고**(연결 검사), 응답이 돌아온 짝을 쓸 수 있는 길로 표시합니다. 그중 한 짝을 골라 미디어를 흘립니다.
 
-실제 브라우저와 KVS SDK 예제는 이보다 겹쳐서 움직입니다. offer를 먼저 보내고 후보는 찾는 대로 하나씩 따로 보내는 **trickle ICE**([RFC 8838](https://www.rfc-editor.org/rfc/rfc8838))라서, 후보 수집과 교환과 연결 검사가 동시에 진행됩니다. TURN 중계 주소(relay 후보)도 직접 경로가 실패한 뒤에야 구하는 것이 아니라, 수집 단계에서 다른 후보와 함께 미리 확보해 상대에게 알립니다. 또 모든 짝의 시험이 끝나기를 기다리지 않습니다. 연결을 주도하는 쪽(controlling agent)이 검사를 통과한 짝을 지명(nomination)하면 그 짝으로 전송이 시작됩니다([RFC 8445](https://www.rfc-editor.org/rfc/rfc8445) §2.3, §8.1). 직접 통하는 짝이 있으면 보통 그쪽이, 통하는 짝이 relay뿐이면 TURN 경로가 쓰입니다. 후보의 종류와 우선순위, 지명 과정은 4편에서 자세히 다룹니다.
+실제 브라우저와 KVS SDK 예제는 이보다 겹쳐서 움직입니다. offer를 먼저 보내고 후보는 찾는 대로 하나씩 따로 보내는 **trickle ICE**([RFC 8838](https://www.rfc-editor.org/rfc/rfc8838))라서, 후보 수집과 교환과 연결 검사가 동시에 진행됩니다. TURN 중계 주소(relay 후보)도 직접 경로가 실패한 뒤에야 구하는 것이 아니라, 수집 단계에서 다른 후보와 함께 미리 확보해 상대에게 알립니다. 또 모든 짝의 시험이 끝나기를 기다리지 않습니다. 연결을 주도하는 쪽(controlling agent)이 검사를 통과한 짝을 지명(nomination)하면 그 짝으로 전송이 시작됩니다([RFC 8445](https://www.rfc-editor.org/rfc/rfc8445) §2.3, §8.1). 직접 통하는 짝이 있으면 보통 그쪽이, 통하는 짝이 relay뿐이면 TURN 경로가 쓰입니다. 후보의 종류와 우선순위, 지명 과정은 [4편]({% post_url 2026-11-10-webrtc-turn-ice %})에서 자세히 다룹니다.
 
-KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TURN의 접속 정보(주소, 사용자 이름, 비밀번호)는 [`GetIceServerConfig`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_signaling_GetIceServerConfig.html) API가 내주고, 이 자격은 **5분짜리**입니다(할당량 표의 "Credential Lifecycle"). STUN 주소는 리전마다 정해진 이름이라 [KVS WebRTC JavaScript SDK의 예제](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-js)는 `stun:stun.kinesisvideo.<리전>.amazonaws.com:443` 형식으로 직접 만들어 넣습니다. 왜 두 기기가 바로 못 붙는지는 [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), TURN과 ICE의 후보 고르기는 4편에서 단계별 그림으로 다룹니다.
+KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TURN의 접속 정보(주소, 사용자 이름, 비밀번호)는 [`GetIceServerConfig`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_signaling_GetIceServerConfig.html) API가 내주고, 이 자격은 **5분짜리**입니다(할당량 표의 "Credential Lifecycle"). STUN 주소는 리전마다 정해진 이름이라 [KVS WebRTC JavaScript SDK의 예제](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-js)는 `stun:stun.kinesisvideo.<리전>.amazonaws.com:443` 형식으로 직접 만들어 넣습니다. 왜 두 기기가 바로 못 붙는지는 [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), TURN과 ICE의 후보 고르기는 [4편]({% post_url 2026-11-10-webrtc-turn-ice %})에서 단계별 그림으로 다룹니다.
 
 ### 3층, 미디어: 고른 길로 암호화된 영상이 흐른다
 
@@ -121,7 +121,7 @@ KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TU
 | 층 | 무엇이 오가나 | KVS가 주는 것 | 다루는 편 |
 |---|---|---|---|
 | 시그널링 | SDP offer/answer, ICE 후보 (몇 KB) | 신호 채널, 서명한 WebSocket 주소 | [2편]({% post_url 2026-11-10-kvs-webrtc-signaling %}) |
-| 길 찾기 | STUN 요청·응답, 연결 시험 | 리전별 STUN, TURN(`GetIceServerConfig`) | [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), 4편 |
+| 길 찾기 | STUN 요청·응답, 연결 시험 | 리전별 STUN, TURN(`GetIceServerConfig`) | [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), [4편]({% post_url 2026-11-10-webrtc-turn-ice %}) |
 | 미디어 | DTLS 핸드셰이크, SRTP 영상·소리 | TURN 중계(직접 길이 없을 때) | 5편 |
 | 녹화·다시 보기 | 저장 세션 → 스트림, HLS 조각 | WebRTC 수집, 비디오 스트림, HLS | 6편, 7편 |
 
