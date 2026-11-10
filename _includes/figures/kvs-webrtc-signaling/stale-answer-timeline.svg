@@ -1,0 +1,88 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 386" role="img" aria-labelledby="kvs-stale-title kvs-stale-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="kvs-stale-title">같은 ClientId로 다시 시도할 때와 시도마다 새 ClientId를 쓸 때의 복구 과정 비교</title>
+  <desc id="kvs-stale-desc">고치기 전과 고친 뒤를 다섯 단계씩 비교한다. 두 경우 모두 마스터가 없을 때 뷰어가 ID-1로 offer를 보내고, 15초 동안 답이 없어 포기하지만 offer는 신호 채널에 남는다. 이어서 마스터가 돌아온다. 고치기 전에는 마스터가 남은 옛 offer에 answer를 만들고 그 answer가 채널에 보관된다. 다음 시도도 같은 ID-1을 쓰므로 옛 answer를 받아 ICE가 실패하고, 그다음 시도에서야 마스터 복귀 70초 뒤에 연결된다. 고친 뒤에는 옛 answer가 ID-1 앞으로 가지만 다음 시도는 새 ID-2를 쓰므로 옛 answer가 오지 않고, 첫 시도에서 마스터 복귀 14초 뒤에 연결된다.</desc>
+  <text class="d-strong" x="120" y="18" text-anchor="middle">고치기 전 · 같은 ClientId</text>
+  <rect class="d-box" x="6" y="36" width="228" height="56" rx="6"/>
+  <text x="18" y="60">offer 보냄 (ID-1)</text>
+  <text class="d-muted" x="18" y="82">마스터 없음 → 무응답</text>
+  <path class="d-line" d="M115 97 L120 103 L125 97"/>
+  <rect class="d-box" x="6" y="108" width="228" height="56" rx="6"/>
+  <text x="18" y="132">15초 뒤 포기</text>
+  <text class="d-muted" x="18" y="154">offer는 채널에 남음</text>
+  <path class="d-line" d="M115 169 L120 175 L125 169"/>
+  <rect class="d-box" x="6" y="180" width="228" height="56" rx="6"/>
+  <text x="18" y="204">마스터 복귀</text>
+  <text class="d-muted" x="18" y="226">옛 offer에 answer, 보관됨</text>
+  <path class="d-line" d="M115 241 L120 247 L125 241"/>
+  <rect class="d-box" x="6" y="252" width="228" height="56" rx="6"/>
+  <text class="d-strong" x="18" y="276">✗ 다음 시도도 ID-1</text>
+  <text class="d-muted" x="18" y="298">옛 answer → ICE 실패</text>
+  <path class="d-line" d="M115 313 L120 319 L125 313"/>
+  <rect class="d-box" x="6" y="324" width="228" height="56" rx="6"/>
+  <text class="d-strong" x="18" y="348">✓ 그다음 시도에서 연결</text>
+  <text class="d-muted" x="18" y="370">마스터 복귀 70초 뒤</text>
+  <text class="d-strong" x="360" y="18" text-anchor="middle">고친 뒤 · 시도마다 새 ID</text>
+  <rect class="d-box" x="246" y="36" width="228" height="56" rx="6"/>
+  <text x="258" y="60">offer 보냄 (ID-1)</text>
+  <text class="d-muted" x="258" y="82">마스터 없음 → 무응답</text>
+  <path class="d-line" d="M355 97 L360 103 L365 97"/>
+  <rect class="d-box" x="246" y="108" width="228" height="56" rx="6"/>
+  <text x="258" y="132">15초 뒤 포기</text>
+  <text class="d-muted" x="258" y="154">offer는 채널에 남음</text>
+  <path class="d-line" d="M355 169 L360 175 L365 169"/>
+  <rect class="d-box" x="246" y="180" width="228" height="56" rx="6"/>
+  <text x="258" y="204">마스터 복귀</text>
+  <text class="d-muted" x="258" y="226">옛 answer는 ID-1 앞으로</text>
+  <path class="d-line" d="M355 241 L360 247 L365 241"/>
+  <rect class="d-box" x="246" y="252" width="228" height="56" rx="6"/>
+  <text class="d-strong" x="258" y="276">✓ 다음 시도는 ID-2</text>
+  <text class="d-muted" x="258" y="298">옛 answer가 오지 않음</text>
+  <path class="d-line" d="M355 313 L360 319 L365 313"/>
+  <rect class="d-box" x="246" y="324" width="228" height="56" rx="6"/>
+  <text class="d-strong" x="258" y="348">✓ 첫 시도에서 연결</text>
+  <text class="d-muted" x="258" y="370">마스터 복귀 14초 뒤</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 786" role="img" aria-labelledby="kvs-stale-title-n kvs-stale-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="kvs-stale-title-n">같은 ClientId로 다시 시도할 때와 시도마다 새 ClientId를 쓸 때의 복구 과정 비교</title>
+  <desc id="kvs-stale-desc-n">고치기 전과 고친 뒤를 다섯 단계씩 비교한다. 두 경우 모두 마스터가 없을 때 뷰어가 ID-1로 offer를 보내고, 15초 동안 답이 없어 포기하지만 offer는 신호 채널에 남는다. 이어서 마스터가 돌아온다. 고치기 전에는 마스터가 남은 옛 offer에 answer를 만들고 그 answer가 채널에 보관된다. 다음 시도도 같은 ID-1을 쓰므로 옛 answer를 받아 ICE가 실패하고, 그다음 시도에서야 마스터 복귀 70초 뒤에 연결된다. 고친 뒤에는 옛 answer가 ID-1 앞으로 가지만 다음 시도는 새 ID-2를 쓰므로 옛 answer가 오지 않고, 첫 시도에서 마스터 복귀 14초 뒤에 연결된다.</desc>
+  <text class="d-strong" x="160" y="18" text-anchor="middle">고치기 전 · 같은 ClientId</text>
+  <rect class="d-box" x="8" y="36" width="304" height="56" rx="6"/>
+  <text x="20" y="60">offer 보냄 (ID-1)</text>
+  <text class="d-muted" x="20" y="82">마스터 없음 → 무응답</text>
+  <path class="d-line" d="M155 97 L160 103 L165 97"/>
+  <rect class="d-box" x="8" y="108" width="304" height="56" rx="6"/>
+  <text x="20" y="132">15초 뒤 포기</text>
+  <text class="d-muted" x="20" y="154">offer는 채널에 남음</text>
+  <path class="d-line" d="M155 169 L160 175 L165 169"/>
+  <rect class="d-box" x="8" y="180" width="304" height="56" rx="6"/>
+  <text x="20" y="204">마스터 복귀</text>
+  <text class="d-muted" x="20" y="226">옛 offer에 answer, 보관됨</text>
+  <path class="d-line" d="M155 241 L160 247 L165 241"/>
+  <rect class="d-box" x="8" y="252" width="304" height="56" rx="6"/>
+  <text class="d-strong" x="20" y="276">✗ 다음 시도도 ID-1</text>
+  <text class="d-muted" x="20" y="298">옛 answer → ICE 실패</text>
+  <path class="d-line" d="M155 313 L160 319 L165 313"/>
+  <rect class="d-box" x="8" y="324" width="304" height="56" rx="6"/>
+  <text class="d-strong" x="20" y="348">✓ 그다음 시도에서 연결</text>
+  <text class="d-muted" x="20" y="370">마스터 복귀 70초 뒤</text>
+  <text class="d-strong" x="160" y="418" text-anchor="middle">고친 뒤 · 시도마다 새 ID</text>
+  <rect class="d-box" x="8" y="436" width="304" height="56" rx="6"/>
+  <text x="20" y="460">offer 보냄 (ID-1)</text>
+  <text class="d-muted" x="20" y="482">마스터 없음 → 무응답</text>
+  <path class="d-line" d="M155 497 L160 503 L165 497"/>
+  <rect class="d-box" x="8" y="508" width="304" height="56" rx="6"/>
+  <text x="20" y="532">15초 뒤 포기</text>
+  <text class="d-muted" x="20" y="554">offer는 채널에 남음</text>
+  <path class="d-line" d="M155 569 L160 575 L165 569"/>
+  <rect class="d-box" x="8" y="580" width="304" height="56" rx="6"/>
+  <text x="20" y="604">마스터 복귀</text>
+  <text class="d-muted" x="20" y="626">옛 answer는 ID-1 앞으로</text>
+  <path class="d-line" d="M155 641 L160 647 L165 641"/>
+  <rect class="d-box" x="8" y="652" width="304" height="56" rx="6"/>
+  <text class="d-strong" x="20" y="676">✓ 다음 시도는 ID-2</text>
+  <text class="d-muted" x="20" y="698">옛 answer가 오지 않음</text>
+  <path class="d-line" d="M155 713 L160 719 L165 713"/>
+  <rect class="d-box" x="8" y="724" width="304" height="56" rx="6"/>
+  <text class="d-strong" x="20" y="748">✓ 첫 시도에서 연결</text>
+  <text class="d-muted" x="20" y="770">마스터 복귀 14초 뒤</text>
+</svg>
