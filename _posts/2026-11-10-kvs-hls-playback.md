@@ -7,15 +7,15 @@ description: "KVS에 녹화한 영상을 브라우저에서 다시 보며 만난
 ---
 
 > **시리즈: AWS KVS로 실시간 영상 보내기**
-> 1. KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다
-> 2. 시그널링: SDP offer/answer와 KVS 신호 채널
-> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나
-> 4. TURN과 ICE: 끝내 못 붙으면 중계한다
-> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP
-> 6. 녹화: KVS WebRTC 수집과 저장 세션
+> 1. [KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다]({% post_url 2026-11-10-kvs-webrtc-big-picture %})
+> 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
+> 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
+> 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
+> 5. [암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})
+> 6. [녹화: KVS WebRTC 수집과 저장 세션]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})
 > 7. **다시 보기: HLS 원리와 KVS 재생** ← 지금 글
 
-현장 장비의 카메라 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 실시간 영상은 WebRTC로 흐르고, 6편에서 다룬 것처럼 같은 영상을 Amazon Kinesis Video Streams(KVS)의 스트림에 녹화도 해 둡니다. 마지막으로 남은 일은 녹화한 영상을 대시보드에서 **다시 보는** 기능이었습니다.
+현장 장비의 카메라 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 실시간 영상은 WebRTC로 흐르고, [6편]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})에서 다룬 것처럼 같은 영상을 Amazon Kinesis Video Streams(KVS)의 스트림에 녹화도 해 둡니다. 마지막으로 남은 일은 녹화한 영상을 대시보드에서 **다시 보는** 기능이었습니다.
 
 KVS는 녹화된 스트림을 HLS 주소로 내어 줍니다. 그래서 처음 짠 순서는 흔히 보는 그대로였습니다. 브라우저에게 "HLS를 직접 재생할 수 있어?"라고 묻고, 된다고 하면 `<video>`에 주소를 그대로 넣고, 안 된다고 하면 JavaScript 라이브러리로 재생합니다. 그런데 Chrome에서 이상한 일이 생겼습니다.
 
@@ -36,7 +36,7 @@ Chrome은 "maybe"라고 답했고, 코드는 그것을 "된다"로 받아들여 
 이 글만 읽어도 되도록 앞 편 내용을 조금만 다시 적습니다.
 
 - KVS에는 두 가지가 있습니다. **신호 채널**은 WebRTC 연결을 맺도록 두 쪽의 연결 정보를 이어 주는 중개자이고, 영상 자체는 장비와 브라우저 사이를 WebRTC로 직접(또는 TURN 중계로) 흐릅니다. **스트림**은 영상을 시간순 조각으로 저장해 두는 저장소입니다.
-- 6편에서 신호 채널에 스트림을 연결해 두면, 장비가 보내는 WebRTC 영상을 KVS가 받아 스트림에 저장한다는 것을 보았습니다. 다시 보기는 이 스트림에서 영상을 꺼내 오는 일입니다.
+- [6편]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})에서 신호 채널에 스트림을 연결해 두면, 장비가 보내는 WebRTC 영상을 KVS가 받아 스트림에 저장한다는 것을 보았습니다. 다시 보기는 이 스트림에서 영상을 꺼내 오는 일입니다.
 - 브라우저는 로그인 뒤 Cognito 자격 증명 풀에서 받은 **임시 AWS 자격 증명**으로 KVS API에 SigV4 서명을 해서 직접 부릅니다. 이 부분은 [Cognito 사용자 풀과 자격 증명 풀: 로그인한 브라우저가 AWS를 직접 부르려면]({% post_url 2026-11-06-cognito-user-pool-identity-pool %})과 [인증 한 번에 정리: JWT, IAM(SigV4), Cognito는 각각 무엇을 증명하나]({% post_url 2026-11-01-auth-basics-jwt-iam-cognito %})에 정리했습니다.
 
 ## 왜 다시 보기는 HLS인가
@@ -440,7 +440,7 @@ fragment 목록을 그대로 보여 줄 수는 없습니다. 1초짜리 fragment
 
 ### 3. CSP의 media-src에 blob:과 KVS 주소
 
-5편에서 다룬 것처럼 이 대시보드는 CSP(Content Security Policy)로 페이지가 열 수 있는 주소를 제한합니다. 실시간 영상은 WebRTC 스트림을 `video.srcObject`로 붙이므로 주소를 열지 않았고, `media-src`를 신경 쓸 일이 없었습니다. 다시 보기는 다릅니다. 앞의 두 재생 길이 각각 다른 지시어에 걸립니다.
+[5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})에서 다룬 것처럼 이 대시보드는 CSP(Content Security Policy)로 페이지가 열 수 있는 주소를 제한합니다. 실시간 영상은 WebRTC 스트림을 `video.srcObject`로 붙이므로 주소를 열지 않았고, `media-src`를 신경 쓸 일이 없었습니다. 다시 보기는 다릅니다. 앞의 두 재생 길이 각각 다른 지시어에 걸립니다.
 
 - [`connect-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/connect-src)는 `fetch`·XHR처럼 스크립트가 여는 주소를 제한합니다. hls.js가 재생 목록과 조각을 받는 요청이 여기 걸립니다. KVS API 호출 때문에 이미 KVS 주소가 들어 있어서 추가할 것이 없었습니다.
 - [`media-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/media-src)는 `<audio>`·`<video>`가 불러오는 주소를 제한합니다. 따로 정하지 않으면 `default-src`를 따릅니다. hls.js 길에서는 `<video>`가 `blob:` 주소를 열고, 자체 HLS 길에서는 `<video>`가 KVS 주소를 직접 엽니다.
@@ -546,7 +546,7 @@ media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com
 
 ## 시리즈를 마치며
 
-일곱 편에 걸쳐 영상 하나가 현장 장비에서 브라우저까지 가는 길을 따라왔습니다. 1편에서 영상은 서버에서 땡겨 오는 것이 아니라 두 쪽이 만나서 직접 흐른다는 큰 그림을 잡았고, 2편에서 그 만남을 주선하는 시그널링(SDP offer/answer와 KVS 신호 채널)을 보았습니다. 3편과 4편에서는 NAT 때문에 두 기기가 바로 붙지 못하는 이유와, STUN으로 바깥 주소를 알아내고 끝내 안 되면 TURN으로 중계하는 ICE의 원리를 따라갔습니다. 5편에서 그 길 위의 영상을 DTLS-SRTP가 어떻게 암호화하는지와 브라우저 CSP를, 6편에서 같은 WebRTC 영상을 KVS 스트림에 녹화하는 방법을 다뤘고, 이 글에서 그 녹화를 HLS로 다시 꺼내 보았습니다.
+일곱 편에 걸쳐 영상 하나가 현장 장비에서 브라우저까지 가는 길을 따라왔습니다. [1편]({% post_url 2026-11-10-kvs-webrtc-big-picture %})에서 영상은 서버에서 땡겨 오는 것이 아니라 두 쪽이 만나서 직접 흐른다는 큰 그림을 잡았고, [2편]({% post_url 2026-11-10-kvs-webrtc-signaling %})에서 그 만남을 주선하는 시그널링(SDP offer/answer와 KVS 신호 채널)을 보았습니다. [3편]({% post_url 2026-11-10-webrtc-nat-stun %})과 [4편]({% post_url 2026-11-10-webrtc-turn-ice %})에서는 NAT 때문에 두 기기가 바로 붙지 못하는 이유와, STUN으로 바깥 주소를 알아내고 끝내 안 되면 TURN으로 중계하는 ICE의 원리를 따라갔습니다. [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})에서 그 길 위의 영상을 DTLS-SRTP가 어떻게 암호화하는지와 브라우저 CSP를, [6편]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})에서 같은 WebRTC 영상을 KVS 스트림에 녹화하는 방법을 다뤘고, 이 글에서 그 녹화를 HLS로 다시 꺼내 보았습니다.
 
 RTSP를 쓰는 IP 카메라 영상을 다시 압축하지 않고 그대로 보내는 이야기는 해결되면 따로 쓰겠습니다.
 

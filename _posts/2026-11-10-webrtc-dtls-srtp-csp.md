@@ -13,7 +13,7 @@ description: "WebRTC 영상이 DTLS-SRTP로 암호화되는 원리(지문, a=set
 > 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
 > 5. **암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP** ← 지금 글
 > 6. [녹화: KVS WebRTC 수집과 저장 세션]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})
-> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
+> 7. [다시 보기: HLS 원리와 KVS 재생]({% post_url 2026-11-10-kvs-hls-playback %})
 
 현장 장비의 카메라 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 영상은 Amazon Kinesis Video Streams(KVS)의 WebRTC 기능으로 보냅니다. 장비 쪽 보조 컴퓨터가 영상을 보내는 쪽(마스터), 브라우저가 받는 쪽(뷰어)입니다.
 
@@ -424,7 +424,7 @@ MDN의 `connect-src` 문서가 나열하는 대상은 ping, `fetch()`, XHR, WebS
 - **hls.js 경로**: 브라우저에 MSE(Media Source Extensions)나 그 변형인 ManagedMediaSource가 있으면 hls.js 같은 라이브러리를 쓸 수 있습니다. hls.js는 재생 목록과 영상 조각을 `fetch`·XHR로 받고(`connect-src`), MSE로 만든 `blob:` 주소를 `<video>`에 넣습니다(`media-src blob:`). [hls.js 공식 README](https://github.com/video-dev/hls.js#compatibility)는 macOS Safari 10 이상과 iPadOS 13 이상의 Safari를 지원 대상으로 적고, iOS Safari는 17.1 이상에서 ManagedMediaSource로 지원한다고 적습니다. Safari라고 해서 이 경로를 못 쓰는 것이 아닙니다.
 - **네이티브 HLS 경로**: 브라우저가 HLS를 직접 재생할 수 있으면 HLS 주소를 `video.src`에 그대로 넣습니다. 이때는 `<video>`가 KVS 데이터 엔드포인트의 주소를 직접 열기 때문에 `media-src https://*.kinesisvideo…`가 필요합니다. Safari는 이 경로도 지원합니다.
 
-이번 대시보드는 기능 탐지로 길을 골랐습니다. MSE(또는 ManagedMediaSource)가 있으면 hls.js를 먼저 쓰고, 없을 때만 `<video>`가 HLS를 재생할 수 있다고 답하는지 보고 네이티브 경로로 갑니다. 브라우저 이름으로 나누지 않은 이유가 있습니다. Chrome은 `canPlayType('application/vnd.apple.mpegurl')`에 `"maybe"`라고 답했는데, 실제로는 KVS 재생 목록을 자체 재생기로 열지 못했습니다. hls.js README도 Chrome 등이 `"maybe"`라고 답하지만 실제 재생은 실패할 수 있으니 `Hls.isSupported()`를 먼저 보라고 권합니다. 그래서 두 경로를 모두 열어 두는 `media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com`이 생겼고, hls.js가 받는 재생 목록·조각은 이미 있던 `connect-src https://*.kinesisvideo…`가 맡습니다. HLS의 원리는 7편에서 다룹니다.
+이번 대시보드는 기능 탐지로 길을 골랐습니다. MSE(또는 ManagedMediaSource)가 있으면 hls.js를 먼저 쓰고, 없을 때만 `<video>`가 HLS를 재생할 수 있다고 답하는지 보고 네이티브 경로로 갑니다. 브라우저 이름으로 나누지 않은 이유가 있습니다. Chrome은 `canPlayType('application/vnd.apple.mpegurl')`에 `"maybe"`라고 답했는데, 실제로는 KVS 재생 목록을 자체 재생기로 열지 못했습니다. hls.js README도 Chrome 등이 `"maybe"`라고 답하지만 실제 재생은 실패할 수 있으니 `Hls.isSupported()`를 먼저 보라고 권합니다. 그래서 두 경로를 모두 열어 두는 `media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com`이 생겼고, hls.js가 받는 재생 목록·조각은 이미 있던 `connect-src https://*.kinesisvideo…`가 맡습니다. HLS의 원리는 [7편]({% post_url 2026-11-10-kvs-hls-playback %})에서 다룹니다.
 
 ### 같은 헤더로 로컬에서 시험하기
 

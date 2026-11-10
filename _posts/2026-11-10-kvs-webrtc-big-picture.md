@@ -13,7 +13,7 @@ description: "현장 장비 카메라를 브라우저에서 실시간으로 보�
 > 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
 > 5. [암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})
 > 6. [녹화: KVS WebRTC 수집과 저장 세션]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})
-> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
+> 7. [다시 보기: HLS 원리와 KVS 재생]({% post_url 2026-11-10-kvs-hls-playback %})
 
 현장 장비의 상태를 웹에서 보는 관제 웹 대시보드를 AI 에이전트와 같이 만들고 있었습니다. 장비는 카메라가 달린 원격 장비이고, 안에 실린 작은 보조 컴퓨터가 AWS IoT Core에 MQTT(상태 메시지를 주고받는 가벼운 메시징 방식)로 붙어 위치와 상태를 올립니다. 카메라도 이미 화면에 나오긴 했습니다. 다만 장비가 작은 JPEG 사진을 **1초에 한 장** MQTT로 보내고, 대시보드가 그림을 바꿔 그리는 방식이었습니다. 움직이는 장비를 보기에는 너무 느렸습니다.
 
@@ -39,7 +39,7 @@ description: "현장 장비 카메라를 브라우저에서 실시간으로 보�
 - **보관하기**: 스트림에 보관 기간을 정하면 KVS가 조각을 저장하고 저장 상태로 암호화합니다. 보관 기간([`DataRetentionInHours`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_CreateStream.html))의 기본값은 0이고, 0이면 스트림이 데이터를 계속 보관하지 않습니다. 조각에는 생산자 시각과 서버가 받은 시각이 함께 붙어서, 나중에 시간으로 찾을 수 있습니다.
 - **꺼내 보기**: 저장된 조각을 `GetMedia`로 그대로 읽거나, HLS·DASH 같은 표준 재생 방식으로 봅니다.
 
-여기서 HLS(HTTP Live Streaming)가 바로 "땡겨오기"의 그림입니다. 플레이어가 재생 목록 파일을 받고, 거기 적힌 조각 파일을 HTTP로 **하나씩 내려받아** 이어 붙입니다. 브라우저가 묻고 서버가 답하는, 우리에게 익숙한 웹 요청의 모양입니다. 대신 조각 단위로 움직이므로 지연이 생깁니다. [KVS HLS 안내서](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/hls-playback.html)는 라이브 재생 지연을 **보통 3~5초, 경우에 따라 1~10초**로 적고, 지연이 조각 길이보다 짧을 수는 없다고 설명합니다. HLS의 원리와 KVS 재생은 7편에서 자세히 다룹니다.
+여기서 HLS(HTTP Live Streaming)가 바로 "땡겨오기"의 그림입니다. 플레이어가 재생 목록 파일을 받고, 거기 적힌 조각 파일을 HTTP로 **하나씩 내려받아** 이어 붙입니다. 브라우저가 묻고 서버가 답하는, 우리에게 익숙한 웹 요청의 모양입니다. 대신 조각 단위로 움직이므로 지연이 생깁니다. [KVS HLS 안내서](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/hls-playback.html)는 라이브 재생 지연을 **보통 3~5초, 경우에 따라 1~10초**로 적고, 지연이 조각 길이보다 짧을 수는 없다고 설명합니다. HLS의 원리와 KVS 재생은 [7편]({% post_url 2026-11-10-kvs-hls-playback %})에서 자세히 다룹니다.
 
 ### WebRTC 신호 채널: 두 기기가 직접 만나게 해 준다
 
@@ -123,7 +123,7 @@ KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TU
 | 시그널링 | SDP offer/answer, ICE 후보 (몇 KB) | 신호 채널, 서명한 WebSocket 주소 | [2편]({% post_url 2026-11-10-kvs-webrtc-signaling %}) |
 | 길 찾기 | STUN 요청·응답, 연결 시험 | 리전별 STUN, TURN(`GetIceServerConfig`) | [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), [4편]({% post_url 2026-11-10-webrtc-turn-ice %}) |
 | 미디어 | DTLS 핸드셰이크, SRTP 영상·소리 | TURN 중계(직접 길이 없을 때) | [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %}) |
-| 녹화·다시 보기 | 저장 세션 → 스트림, HLS 조각 | WebRTC 수집, 비디오 스트림, HLS | [6편]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %}), 7편 |
+| 녹화·다시 보기 | 저장 세션 → 스트림, HLS 조각 | WebRTC 수집, 비디오 스트림, HLS | [6편]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %}), [7편]({% post_url 2026-11-10-kvs-hls-playback %}) |
 
 ## KVS WebRTC의 역할 이름: 신호 채널, 마스터, 뷰어
 
@@ -181,7 +181,7 @@ KVS로 WebRTC를 쓰면 몇 가지 이름을 계속 만나게 됩니다. [동작
 
 이 글의 구성에서는 브라우저와 장비가 KVS의 제어 API와 시그널링 API를 **직접** 부릅니다. 이런 호출에는 AWS 자격 증명으로 만든 **SigV4 서명**이 필요하고, 시그널링 WebSocket도 접속 주소 자체에 서명을 붙입니다(서명 방식은 [인증 한 번에 정리: JWT, IAM(SigV4), Cognito]({% post_url 2026-11-01-auth-basics-jwt-iam-cognito %})에 정리해 두었습니다). 그래서 이 구성에서는 브라우저와 장비가 각자 **서명에 쓸 임시 AWS 자격**을 가져야 합니다.
 
-다른 구성도 있습니다. [KVS WebRTC JavaScript SDK 안내](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-js)는 백엔드가 AWS 자격으로 서명한 접속 주소와 ICE 서버 정보를 만들어 브라우저에 넘겨, 브라우저는 AWS 자격을 아예 갖지 않게 하는 방법도 설명합니다. 또 HLS 재생은 재생 주소를 받는 API 호출만 서명하고, 그 뒤의 재생 목록·조각 요청은 주소에 담긴 세션 토큰으로 인증됩니다(7편). 이 글은 직접 부르는 구성을 기준으로, 그 자격을 어디서 받느냐를 봅니다. 둘은 출발점이 다르기 때문에 길도 다릅니다.
+다른 구성도 있습니다. [KVS WebRTC JavaScript SDK 안내](https://github.com/awslabs/amazon-kinesis-video-streams-webrtc-sdk-js)는 백엔드가 AWS 자격으로 서명한 접속 주소와 ICE 서버 정보를 만들어 브라우저에 넘겨, 브라우저는 AWS 자격을 아예 갖지 않게 하는 방법도 설명합니다. 또 HLS 재생은 재생 주소를 받는 API 호출만 서명하고, 그 뒤의 재생 목록·조각 요청은 주소에 담긴 세션 토큰으로 인증됩니다([7편]({% post_url 2026-11-10-kvs-hls-playback %})). 이 글은 직접 부르는 구성을 기준으로, 그 자격을 어디서 받느냐를 봅니다. 둘은 출발점이 다르기 때문에 길도 다릅니다.
 
 <figure class="diagram">
 {% include figures/kvs-webrtc-big-picture/two-credential-paths.svg %}

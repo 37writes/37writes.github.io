@@ -13,7 +13,7 @@ description: "장비를 껐다 켜면 브라우저가 70초 뒤에야 다시 붙
 > 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
 > 5. [암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})
 > 6. [녹화: KVS WebRTC 수집과 저장 세션]({% post_url 2026-11-10-kvs-webrtc-recording-storage-session %})
-> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
+> 7. [다시 보기: HLS 원리와 KVS 재생]({% post_url 2026-11-10-kvs-hls-playback %})
 
 카메라가 달린 현장 장비의 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 실시간 영상은 Amazon Kinesis Video Streams(KVS)의 WebRTC 기능으로 보냈습니다. 장비가 먼저 KVS 신호 채널에 접속해 기다리고, 브라우저가 찾아가 연결을 맺는 구조입니다.
 
