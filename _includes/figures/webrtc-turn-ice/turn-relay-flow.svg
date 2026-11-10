@@ -1,0 +1,57 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 660" role="img" aria-labelledby="turn-flow-title turn-flow-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="turn-flow-title">브라우저가 TURN 서버에서 주소를 빌리고 상대 장비와 중계로 통신하는 순서</title>
+  <desc id="turn-flow-desc">세로선 세 개는 왼쪽부터 브라우저, TURN 서버, 상대 장비다. 1, 브라우저가 자격 증명 없이 Allocate를 보내고 401과 nonce를 받아 거절된다. 2, 자격 증명을 붙여 Allocate를 다시 보내 성공하고 빌린 주소를 받는다. 3, CreatePermission으로 상대 IP를 허락한다. 4, ChannelBind로 채널 0x4000을 상대와 묶는다. 5, 브라우저가 4바이트 머리의 ChannelData를 보내면 TURN 서버가 빌린 주소에서 상대에게 UDP로 보낸다. 6, 상대가 빌린 주소로 답하면 TURN 서버는 권한 있는 IP일 때만 ChannelData로 브라우저에 넘긴다. 7, 브라우저가 Refresh로 할당 수명을 늘린다. 기본 수명은 10분이다.</desc>
+  <rect class="d-box" x="4" y="10" width="80" height="38" rx="6"/>
+  <text x="44" y="35" text-anchor="middle">브라우저</text>
+  <rect class="d-box" x="144" y="10" width="104" height="38" rx="6"/>
+  <text x="196" y="35" text-anchor="middle">TURN 서버</text>
+  <rect class="d-box" x="278" y="10" width="80" height="38" rx="6"/>
+  <text x="318" y="35" text-anchor="middle">상대 장비</text>
+  <path class="d-line" d="M44 48 V644"/>
+  <path class="d-line" d="M196 48 V644"/>
+  <path class="d-line" d="M318 48 V644"/>
+  <path class="d-line" d="M47 92 H193"/>
+  <path class="d-line" d="M186 87 L193 92 L186 97"/>
+  <text class="d-mono" x="120" y="83" text-anchor="middle">Allocate</text>
+  <text class="d-muted" x="120" y="114" text-anchor="middle">자격 증명 없이</text>
+  <path class="d-line" d="M193 146 H47"/>
+  <path class="d-line" d="M54 141 L47 146 L54 151"/>
+  <text class="d-mono" x="120" y="137" text-anchor="middle">401 + nonce</text>
+  <text class="d-muted" x="120" y="168" text-anchor="middle">✗ 인증 필요</text>
+  <path class="d-line" d="M47 206 H193"/>
+  <path class="d-line" d="M186 201 L193 206 L186 211"/>
+  <text class="d-mono" x="120" y="197" text-anchor="middle">Allocate</text>
+  <text class="d-muted" x="120" y="228" text-anchor="middle">자격 증명 붙여 다시</text>
+  <path class="d-line" d="M193 260 H47"/>
+  <path class="d-line" d="M54 255 L47 260 L54 265"/>
+  <text x="120" y="251" text-anchor="middle">✓ 성공 응답</text>
+  <text class="d-muted" x="120" y="282" text-anchor="middle">빌린 주소 :49170</text>
+  <path class="d-line" d="M47 320 H193"/>
+  <path class="d-line" d="M186 315 L193 320 L186 325"/>
+  <text class="d-mono" x="120" y="311" text-anchor="middle">CreatePermission</text>
+  <text class="d-muted" x="120" y="342" text-anchor="middle">상대 IP 허락</text>
+  <path class="d-line" d="M47 380 H193"/>
+  <path class="d-line" d="M186 375 L193 380 L186 385"/>
+  <text class="d-mono" x="120" y="371" text-anchor="middle">ChannelBind</text>
+  <text class="d-muted" x="120" y="402" text-anchor="middle">채널 0x4000 ↔ 상대</text>
+  <path class="d-line" d="M47 444 H193"/>
+  <path class="d-line" d="M186 439 L193 444 L186 449"/>
+  <text class="d-mono" x="120" y="435" text-anchor="middle">ChannelData</text>
+  <text class="d-muted" x="120" y="466" text-anchor="middle">머리 4바이트</text>
+  <path class="d-line" d="M199 444 H315"/>
+  <path class="d-line" d="M308 439 L315 444 L308 449"/>
+  <text class="d-mono" x="257" y="435" text-anchor="middle">UDP</text>
+  <text class="d-muted" x="257" y="466" text-anchor="middle">빌린 주소에서</text>
+  <path class="d-line" d="M315 512 H199"/>
+  <path class="d-line" d="M206 507 L199 512 L206 517"/>
+  <text class="d-mono" x="257" y="503" text-anchor="middle">UDP</text>
+  <text class="d-muted" x="257" y="534" text-anchor="middle">빌린 주소로</text>
+  <path class="d-line" d="M193 512 H47"/>
+  <path class="d-line" d="M54 507 L47 512 L54 517"/>
+  <text class="d-mono" x="120" y="503" text-anchor="middle">ChannelData</text>
+  <text class="d-muted" x="120" y="534" text-anchor="middle">권한 있는 IP만</text>
+  <path class="d-line" d="M47 584 H193"/>
+  <path class="d-line" d="M186 579 L193 584 L186 589"/>
+  <text class="d-mono" x="120" y="575" text-anchor="middle">Refresh</text>
+  <text class="d-muted" x="120" y="606" text-anchor="middle">수명 연장, 기본 10분</text>
+</svg>
