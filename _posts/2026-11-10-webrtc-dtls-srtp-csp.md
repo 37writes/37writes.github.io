@@ -65,7 +65,7 @@ WebRTC에서 두 기기는 먼저 **시그널링**으로 서로의 조건을 적
 | 이름 | 한 줄 풀이 |
 |---|---|
 | **RTP** | 영상·소리를 작은 패킷으로 잘라 순서 번호와 시각을 붙여 보내는 형식. 그 자체로는 암호화가 없다 |
-| **SRTP** | RTP 패킷의 내용을 암호화하고, 위조·재전송을 막는 인증 태그를 붙인 형식 ([RFC 3711](https://www.rfc-editor.org/rfc/rfc3711)) |
+| **SRTP** | RTP 패킷의 내용을 암호화하고 인증 태그로 위조를 잡아내는 형식. 같은 패킷을 다시 흘려 넣는 재전송은 패킷 번호와 최근에 받은 번호 기록으로 거른다 ([RFC 3711](https://www.rfc-editor.org/rfc/rfc3711)) |
 | **TLS** | HTTPS가 쓰는 암호화 연결. 상대 인증서를 확인하고 키를 나눈다. TCP처럼 순서가 보장되는 길을 전제로 한다 |
 | **DTLS** | TLS를 UDP 위에서 쓰도록 고친 것. 패킷이 빠지거나 순서가 바뀌어도 핸드셰이크가 견딘다 ([RFC 6347](https://www.rfc-editor.org/rfc/rfc6347)은 DTLS 1.2, [RFC 9147](https://www.rfc-editor.org/rfc/rfc9147)은 DTLS 1.3) |
 
@@ -75,8 +75,8 @@ WebRTC에서 두 기기는 먼저 **시그널링**으로 서로의 조건을 적
 
 DTLS와 SRTP가 어떻게 합쳐지는지 정한 것이 [RFC 5764](https://www.rfc-editor.org/rfc/rfc5764)의 **DTLS-SRTP**입니다. 이름 때문에 "영상을 DTLS로 감싸서 보낸다"고 생각하기 쉬운데, 실제는 다릅니다. 역할이 나뉩니다.
 
-1. **DTLS는 핸드셰이크만 합니다.** 상대 인증서를 확인하고, 둘만 아는 비밀 값을 만듭니다.
-2. **그 비밀 값에서 SRTP 키를 꺼냅니다.** RFC 5764는 TLS의 키 추출 기능(exporter)에 `EXTRACTOR-dtls_srtp`라는 라벨을 주어 SRTP용 키와 솔트를 뽑게 합니다.
+1. **미디어에 대해서 DTLS는 핸드셰이크를 맡습니다.** 상대 인증서를 확인하고, 둘만 아는 비밀 값을 만듭니다. (데이터 채널은 다릅니다. 데이터 채널의 메시지는 DTLS가 직접 암호화해 나릅니다. 이 글은 영상 이야기라 미디어 쪽만 봅니다.)
+2. **그 비밀 값에서 SRTP 키를 꺼냅니다.** RFC 5764는 TLS의 키 추출 기능(exporter)에 `EXTRACTOR-dtls_srtp`라는 라벨을 주어 SRTP용 마스터 키와 솔트를 뽑게 합니다. 4.2절대로 클라이언트가 보낼 때 쓰는 것과 서버가 보낼 때 쓰는 것, 방향마다 한 벌씩입니다. SRTP는 이 마스터 키에서 다시 실제 암호화·인증에 쓸 세션 키를 만듭니다(RFC 3711 4.3절).
 3. **영상은 SRTP 패킷으로 보냅니다.** RFC 5764는 미디어를 DTLS의 application_data 레코드로 보내지 않는다고 적습니다. SRTP 패킷은 DTLS 틀 없이 그대로 선로에 나갑니다.
 
 왜 영상을 DTLS로 감싸지 않을까요? SRTP는 RTP 머리(순서 번호, 시각, 송신자 식별자)는 그대로 두고 내용만 암호화합니다. 받는 쪽과 중간 장비가 머리를 보고 순서를 맞추거나 손실을 셀 수 있습니다. 영상 패킷마다 붙는 덧붙임도 작습니다. 실시간 미디어에 맞춘 형식이 이미 있으니, 키 교환만 검증된 TLS 방식에 맡긴 것입니다.
@@ -85,21 +85,23 @@ DTLS와 SRTP가 어떻게 합쳐지는지 정한 것이 [RFC 5764](https://www.r
 
 ### 한 포트에 세 가지 패킷이 섞인다
 
-WebRTC는 보통 UDP 포트 하나로 ICE 확인용 STUN 패킷, DTLS 핸드셰이크 패킷, SRTP 미디어 패킷을 모두 주고받습니다. 받는 쪽은 패킷의 **첫 바이트**만 보고 셋을 구분합니다. RFC 5764 5.1.2절의 규칙입니다.
+WebRTC는 보통 UDP 포트 하나로 ICE 확인용 STUN 패킷, DTLS 핸드셰이크 패킷, SRTP 미디어 패킷을 모두 주고받습니다. 받는 쪽은 패킷의 **첫 바이트**만 보고 이들을 구분합니다. 이 규칙은 처음 [RFC 5764](https://www.rfc-editor.org/rfc/rfc5764) 5.1.2절에 있었고, 뒤에 [RFC 7983](https://www.rfc-editor.org/rfc/rfc7983#section-7)과 [RFC 9443](https://www.rfc-editor.org/rfc/rfc9443#section-3)이 범위를 고치고 넓혔습니다. 아래 표는 지금 규칙에서 이 글에 나오는 세 종류만 뽑은 것입니다.
 
 | 첫 바이트 값 | 패킷 |
 |---|---|
-| 0–1 | STUN (ICE 연결 확인) |
+| 0–3 | STUN (ICE 연결 확인) |
 | 20–63 | DTLS (핸드셰이크) |
 | 128–191 | RTP·RTCP (여기서는 SRTP·SRTCP) |
 
-세 형식의 첫 바이트가 겹치지 않게 생겼기 때문에 가능한 일입니다. 순서도 정해져 있습니다. RFC 8827 6.3절은 ICE로 상대에게 닿는지 확인하기 전에는 ICE 아닌 패킷을 보내면 안 된다고 정합니다. 그래서 순서는 언제나 **STUN 확인 → DTLS 핸드셰이크 → SRTP 미디어**입니다. 위 그림의 미디어 층이 이 순서입니다.
+현재 규칙에는 이 밖의 범위도 있습니다. 예를 들어 64–79는 TURN 서버에서 온 패킷이면 TURN의 채널 데이터(ChannelData)로 봅니다. TURN 중계를 쓰면 TURN 서버와 오가는 바깥 껍질이 하나 더 생기고, 그 껍질을 벗긴 안쪽 패킷이 다시 위 표대로 나뉩니다. 중계는 4편에서 다뤘습니다. 옛 RFC 5764 표에서 STUN이 0–1이었던 것도 지금은 0–3으로 바뀌었으니, 오래된 글의 표를 옮길 때 주의합니다.
+
+세 형식의 첫 바이트가 겹치지 않게 생겼기 때문에 가능한 일입니다. 순서도 정해져 있습니다. RFC 8827 6.3절은 ICE로 상대에게 닿는지 확인하기 전에는 ICE 아닌 패킷을 보내면 안 된다고 정합니다. 그래서 미디어 길에서는 **STUN 확인 → DTLS 핸드셰이크 → SRTP 미디어** 순서로 진행됩니다. 위 그림의 미디어 층이 이 순서입니다.
 
 연결된 뒤에도 STUN은 멈추지 않습니다. [RFC 7675](https://www.rfc-editor.org/rfc/rfc7675)의 동의 확인(consent freshness)으로, 상대가 아직 이 패킷을 받겠다고 하는지 주기적으로 묻습니다. 상대가 응답하지 않으면 보내기를 멈춥니다. 상대가 원하지 않는 곳으로 영상을 계속 쏟아붓지 않게 하는 장치입니다.
 
 ### 핸드셰이크 한 바퀴
 
-DTLS 1.2의 전체 핸드셰이크를 RFC 6347 기준으로 보면 이렇습니다. 메시지를 한 번에 몰아 보내는 묶음을 비행(flight)이라고 부릅니다.
+DTLS 1.2의 전체 핸드셰이크를 RFC 6347 기준으로 보면 이렇습니다. 아래는 **ECDHE 키 교환, 양쪽 인증서, 쿠키 교환을 쓰는 DTLS 1.2의 한 예**입니다. 키 교환 방식이나 쿠키 사용 여부에 따라 메시지 구성은 달라질 수 있습니다. 메시지를 한 번에 몰아 보내는 묶음을 비행(flight)이라고 부릅니다.
 
 ```text
 클라이언트                                  서버
@@ -120,16 +122,16 @@ ChangeCipherSpec, Finished              ──▶
 
 HTTPS와 비교하면 다른 점이 두 가지 보입니다.
 
-- **HelloVerifyRequest(쿠키)**: UDP는 보낸 주소를 속이기 쉽습니다. 서버가 아무 ClientHello에나 큰 응답을 돌려주면, 남의 주소를 적어 보낸 공격에 증폭기로 쓰일 수 있습니다. 그래서 서버는 먼저 작은 쿠키를 돌려주고, 그 쿠키를 다시 가져온 클라이언트에게만 본 응답을 보냅니다.
+- **HelloVerifyRequest(쿠키)**: UDP는 보낸 주소를 속이기 쉽습니다. 서버가 아무 ClientHello에나 큰 응답을 돌려주면, 남의 주소를 적어 보낸 공격에 증폭기로 쓰일 수 있습니다. 쿠키 교환을 쓰는 경우 서버는 먼저 작은 쿠키를 돌려주고, 그 쿠키를 다시 가져온 클라이언트에게만 본 응답을 보냅니다. [RFC 6347 4.2.1절](https://www.rfc-editor.org/rfc/rfc6347#section-4.2.1)은 서버가 쿠키 교환을 하도록 권하지만(SHOULD), 증폭 위험이 없는 환경이라면 생략할 수도 있다고 적습니다.
 - **양쪽 모두 인증서를 냅니다**: 서버가 `CertificateRequest`로 클라이언트 인증서도 요구하고, 클라이언트는 `Certificate`와 `CertificateVerify`로 답합니다. 보통 HTTPS는 서버만 인증서를 냅니다. WebRTC는 두 기기가 대등하니 서로 확인합니다. [RFC 5763](https://www.rfc-editor.org/rfc/rfc5763)이 이 상호 인증을 정합니다.
 
 오늘날 브라우저끼리는 DTLS 1.3을 쓰기도 합니다. 1.3은 비행 구성이 다르지만(더 짧습니다), "인증서를 서로 내고 확인한 뒤 키를 꺼낸다"는 뼈대는 같습니다. 이 글의 실험에서 어떤 버전이 쓰였는지는 뒤의 `getStats()` 절에 있습니다.
 
-### 인증서는 자체 서명, 믿음은 지문으로
+### 인증서는 보통 자체 서명, 믿음은 지문으로
 
 여기서 이상한 점이 하나 있습니다. HTTPS 인증서는 공인 인증 기관(CA)이 서명해 줍니다. 브라우저는 그 서명을 따라 올라가 믿을 만한지 판단합니다. 그런데 WebRTC의 두 기기에는 도메인 이름이 없습니다. 브라우저가 통화마다 CA에서 인증서를 받아 올 수도 없습니다.
 
-그래서 WebRTC의 DTLS 인증서는 **자체 서명(self-signed)**입니다. RFC 5763은 이 인증서가 공개 키를 담아 나르는 그릇일 뿐이라고 설명합니다. RFC 8827 4.1절은 통화마다 새로 만들어 써도 된다고 적습니다. 브라우저는 `RTCPeerConnection`을 만들 때 키 쌍과 인증서를 스스로 만듭니다.
+그래서 WebRTC의 DTLS 인증서는 보통 **자체 서명(self-signed)**입니다. [RFC 5763 1절](https://www.rfc-editor.org/rfc/rfc5763#section-1)은 인증서를 스스로 만들어 자체 서명해도 되고, 가지고 있다면 제3자가 발급한 인증서를 써도 된다고(MAY) 적습니다. 그리고 여기서 인증서는 DTLS가 공개 키만 따로 나르는 방법이 없어서 쓰는 형식, 곧 공개 키를 담아 나르는 그릇이라고 설명합니다. RFC 8827 4.1절은 통화마다 새로 만들어 써도 된다고 적습니다. 브라우저는 `RTCPeerConnection`을 만들 때 키 쌍과 인증서를 스스로 만듭니다.
 
 CA 서명이 없으면 무엇으로 상대를 믿을까요? 답은 **지문(fingerprint)**입니다. 각자 자기 인증서의 해시를 SDP에 적어 시그널링으로 먼저 보냅니다. [RFC 8122](https://www.rfc-editor.org/rfc/rfc8122)가 정한 형식은 해시 이름 뒤에 대문자 16진수를 콜론으로 이은 것입니다. 실제 SDP에는 이런 줄이 들어갑니다. 값은 이 글을 위해 만든 가짜입니다.
 
@@ -141,6 +143,17 @@ a=setup:actpass
 그다음 미디어 길에서 DTLS 핸드셰이크를 할 때, 받는 쪽은 상대가 낸 인증서의 해시를 직접 계산합니다. 그 값이 시그널링으로 받은 지문과 같으면 "SDP를 보낸 그 상대가 맞다"고 판단합니다. 다르면 연결을 끊습니다. [RFC 8842](https://www.rfc-editor.org/rfc/rfc8842)는 지문이 맞지 않으면 세션을 끝내야 한다고(MUST) 정합니다.
 
 비유하면 이렇습니다. 처음 만나는 사람의 얼굴 사진을 믿을 만한 친구에게 미리 받아 두고, 약속 장소에서 실제 얼굴과 사진을 대조하는 것입니다. 실제 동작으로 옮기면 사진은 지문이고, 친구는 시그널링 채널이고, 얼굴 대조는 DTLS 핸드셰이크 안의 인증서 해시 비교입니다.
+
+### 인증서를 그대로 보내도 되는 이유
+
+여기서 처음 보는 사람이 자주 막히는 질문이 두 가지 있습니다. "인증서를 네트워크로 그냥 보내는데 비밀 키는 왜 안전한가", 그리고 "누가 그 인증서를 복사해 가서 내밀면 지문도 맞지 않는가"입니다. 답은 인증서 안에 무엇이 있고, 핸드셰이크에서 무엇을 증명하느냐에 있습니다.
+
+- **인증서에는 공개 키만 들어 있습니다.** 키 쌍은 공개 키와 개인 키 둘로 이루어집니다. 인증서는 공개 키와 이름 같은 정보를 묶은 것이고, 개인 키는 만든 기기 밖으로 나가지 않습니다. 그래서 인증서와 지문은 남이 봐도 괜찮은 값입니다.
+- **해시, 서명, 암호화는 하는 일이 다릅니다.** 해시(지문)는 데이터를 짧은 값으로 줄인 것이라 "같은 인증서인가"만 확인합니다. 서명은 개인 키로만 만들 수 있고 공개 키로 누구나 검사할 수 있어서 "개인 키를 가진 쪽이 만들었나"를 증명합니다. 암호화는 내용을 숨깁니다.
+- **ECDHE는 공개된 값으로 같은 비밀을 만듭니다.** 양쪽이 한 번 쓰고 버릴 임시 키 쌍을 만들어 공개 쪽 값만 주고받으면, 각자 자기 임시 개인 키와 상대 공개 값으로 같은 비밀(pre-master secret)을 계산합니다. 선로에 흐른 값만으로는 이 비밀을 계산할 수 없습니다.
+- **그 교환을 인증서 개인 키로 서명합니다.** 위 ECDHE 예에서 서버는 자기 임시 공개 값을 `ServerKeyExchange`에 넣고 인증서 개인 키로 서명합니다([RFC 8422](https://www.rfc-editor.org/rfc/rfc8422)). 클라이언트는 `CertificateVerify`에 그때까지의 핸드셰이크 내용을 개인 키로 서명해 보냅니다. 마지막 `Finished`는 만든 비밀로 계산한 검사 값이라, 중간에 메시지가 바뀌었으면 여기서 어긋납니다.
+
+그래서 인증서를 복사한 공격자는 통과하지 못합니다. 지문은 맞아도 그 인증서의 개인 키가 없으니 서명을 만들 수 없습니다. 지문 대조는 "이 인증서가 SDP에 적힌 그 인증서인가"를, 서명과 `Finished` 검사는 "상대가 그 인증서의 개인 키를 정말 가졌고, 핸드셰이크가 중간에 바뀌지 않았나"를 확인합니다. 둘이 같이 있어야 상대를 믿을 수 있습니다.
 
 ### 그래서 시그널링 채널이 믿을 만해야 한다
 
@@ -191,9 +204,9 @@ TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
 
 가운데 `ECDSA` 자리가 핵심입니다. 이 자리는 **서버 인증서의 키 종류**를 정합니다. [RFC 8422](https://www.rfc-editor.org/rfc/rfc8422)는 `ECDHE_ECDSA` 묶음을 쓰려면 서버 인증서에 ECDSA(또는 EdDSA) 키가 있어야 하고, `ECDHE_RSA` 묶음을 쓰려면 RSA 키가 있어야 한다고 정합니다. 서버 인증서가 RSA인데 클라이언트가 `ECDHE_ECDSA` 계열만 제시하면, 서버는 고를 묶음이 없습니다.
 
-RFC 8827은 브라우저가 DTLS 1.2와 `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`(P-256 곡선)을 반드시 지원하게 합니다. 브라우저끼리는 둘 다 ECDSA 인증서를 만들기 때문에 이 조합으로 자연스럽게 맞습니다. 그래서 WebRTC 라이브러리 중에는 ECDSA 계열만 제시하는 것도 있습니다. 상대가 늘 브라우저라면 문제가 없습니다.
+RFC 8827은 브라우저가 DTLS 1.2와 `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`(P-256 곡선)을 반드시 지원하게 합니다. 이것은 "이 조합을 지원해야 한다"는 뜻이지, 모든 연결이 ECDSA 인증서만 쓴다는 뜻은 아닙니다. 다만 기본값으로 ECDSA 인증서를 만드는 브라우저끼리라면 이 조합으로 자연스럽게 맞습니다. 그래서 WebRTC 라이브러리 중에는 ECDSA 계열만 제시하는 것도 있습니다. 상대가 그런 브라우저뿐이라면 문제가 드러나지 않습니다.
 
-이번 장비 쪽 송신기는 Python의 aiortc 라이브러리였고, ECDHE-ECDSA 계열만 제시했습니다. 뷰어가 브라우저일 때는 잘 붙었습니다. 그런데 녹화용 저장 세션의 DTLS 인증서는 **RSA**였습니다. 앞 절대로 장비가 DTLS 클라이언트이니, 장비가 ECDSA 묶음만 담은 ClientHello를 보내고, RSA 인증서를 가진 서버는 고를 것이 없어 핸드셰이크를 끊습니다. 라이브러리는 이 실패를 빈 오류 목록 `error []`로만 보여 줬습니다. AWS 문서가 저장 세션 인증서의 종류를 적어 두지는 않아서, 이것은 붙어 보고 안 사실입니다.
+이번 장비 쪽 송신기는 Python의 aiortc 라이브러리(당시 1.15.0)였고, ECDHE-ECDSA 계열만 제시했습니다. 뷰어가 브라우저일 때는 잘 붙었습니다. 그런데 녹화용 저장 세션의 DTLS 인증서는 **RSA**였습니다. 앞 절대로 장비가 DTLS 클라이언트이니, 장비가 ECDSA 묶음만 담은 ClientHello를 보내고, RSA 인증서를 가진 서버는 고를 것이 없어 핸드셰이크를 끊습니다. 라이브러리는 이 실패를 빈 오류 목록 `error []`로만 보여 줬습니다. AWS 문서가 저장 세션 인증서의 종류를 적어 두지는 않아서, 이것은 붙어 보고 안 사실입니다.
 
 같은 상황을 OpenSSL로 다시 만들 수 있습니다. 내 컴퓨터(OpenSSL 3.6.4)에서 RSA 인증서를 가진 DTLS 1.2 서버를 띄우고, 클라이언트 묶음을 바꿔 가며 붙여 봤습니다.
 
@@ -209,6 +222,8 @@ openssl s_client -dtls1_2 -connect 127.0.0.1:4433 -cipher ECDHE-ECDSA-AES128-GCM
 openssl s_client -dtls1_2 -connect 127.0.0.1:4433 \
   -cipher 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256'
 ```
+
+여기서는 **암호 묶음 협상만** 재현합니다. 이 명령에는 SDP 지문 대조도, `use_srtp`도, SRTP 미디어 전송도 없습니다. WebRTC의 인증까지 확인하는 예제가 아닙니다.
 
 1번은 실패합니다. 서버 쪽에는 `no shared cipher`(같이 쓸 묶음이 없다)가, 클라이언트 쪽에는 경고 번호 40(`handshake failure`)이 찍힙니다.
 
@@ -230,15 +245,17 @@ Protocol: DTLSv1.2
 Server public key is 2048 bit
 ```
 
-첫 줄의 `self-signed certificate`도 눈여겨볼 만합니다. OpenSSL은 CA 서명이 없다고 경고하지만, WebRTC에서는 이것이 정상입니다. 앞에서 본 대로 믿음은 CA가 아니라 지문으로 정합니다.
+첫 줄의 `self-signed certificate`도 눈여겨볼 만합니다. OpenSSL은 CA 서명이 없다고 경고합니다. `s_client`는 기본으로 인증서 검증 오류를 알리기만 하고 핸드셰이크를 계속하기 때문에 2번이 "성공"으로 끝난 것이지, 상대를 확인한 것은 아닙니다. WebRTC 구현에서는 자체 서명 자체는 정상이고, 대신 앞에서 본 대로 SDP의 지문과 대조해 상대를 확인합니다.
 
-그래서 장비 쪽 송신기가 제시하는 묶음에 RSA 계열 세 가지를 더했습니다. 모두 AEAD(암호화와 위조 검사를 한 번에 하는 방식)이고 키 교환이 ECDHE라서 전방 보안(forward secrecy, 나중에 키가 새어도 지난 대화는 풀 수 없는 성질)을 유지합니다. RFC 8827도 전방 보안이 있는 묶음을 우선하라고 합니다.
+그래서 장비 쪽 송신기가 제시하는 묶음에 RSA 계열 세 가지를 더했습니다. 모두 AEAD(암호화와 위조 검사를 한 번에 하는 방식)이고 키 교환이 ECDHE라서 전방 보안(forward secrecy)을 유지합니다. 전방 보안은 나중에 **인증서의 개인 키**가 새어도 지난 연결의 키를 되살릴 수 없는 성질입니다. 연결마다 쓰고 버린 ECDHE 임시 키로 비밀을 만들었기 때문입니다. 반대로 그 연결의 세션 키 자체가 새면 그 연결은 보호받지 못합니다. RFC 8827도 전방 보안이 있는 묶음을 우선하라고 합니다.
 
 - `ECDHE-RSA-AES128-GCM-SHA256`
 - `ECDHE-RSA-AES256-GCM-SHA384`
 - `ECDHE-RSA-CHACHA20-POLY1305`
 
-aiortc는 이 목록을 바꾸는 공개 설정이 없어서 라이브러리 내부 값을 고쳐야 했습니다. 내부 구조가 바뀌면 조용히 지나가지 않고 바로 오류를 내게 해 뒀습니다. **지문 확인은 그대로 둡니다.** 묶음을 넓힌 것은 "어떤 종류의 인증서를 받아들일지"를 넓힌 것이지, "누구의 인증서를 믿을지"를 바꾼 것이 아닙니다. 상대 인증서가 RSA든 ECDSA든 SDP로 받은 지문과 맞아야 연결됩니다.
+당시 쓰던 aiortc 1.15.0에는 이 목록을 바꾸는 공개 설정이 없어서 라이브러리 내부 값을 고쳐야 했습니다. 내부 구조가 바뀌면 조용히 지나가지 않고 바로 오류를 내게 해 뒀습니다.
+
+이 부분은 버전에 따라 다릅니다. 이 글을 쓰는 2026년 11월 10일 기준으로 PyPI의 최신 릴리스 1.16.0 소스도 ECDHE-ECDSA 네 가지만 제시합니다. 반면 [GitHub의 main 브랜치 소스](https://github.com/aiortc/aiortc/blob/main/src/aiortc/rtcdtlstransport.py)에는 `ECDHE-RSA-AES128-GCM-SHA256`과 `ECDHE-RSA-AES256-GCM-SHA384`가 이미 들어 있습니다. 다음 릴리스에 들어갈 가능성이 있지만 확인한 것은 아닙니다. 그러니 같은 문제를 만나면 이 글의 우회를 따라 하기 전에, 지금 설치한 버전이 어떤 묶음을 제시하는지부터 확인하는 편이 좋습니다. **지문 확인은 그대로 둡니다.** 묶음을 넓힌 것은 "어떤 종류의 인증서를 받아들일지"를 넓힌 것이지, "누구의 인증서를 믿을지"를 바꾼 것이 아닙니다. 상대 인증서가 RSA든 ECDSA든 SDP로 받은 지문과 맞아야 연결됩니다.
 
 한 가지 덧붙입니다. TLS 1.3에서는 이런 어긋남이 묶음 이름에서 생기지 않습니다. [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446)의 1.3 묶음(예: `TLS_AES_128_GCM_SHA256`)은 대칭 암호와 해시만 정하고, 인증서 종류는 서명 알고리즘 협상에서 따로 정합니다. 1.3 묶음은 1.2에서 쓸 수도 없습니다. 이번 사례는 DTLS 1.2 방식으로 묶음을 고르는 라이브러리에서 생긴 일입니다.
 
@@ -315,7 +332,7 @@ Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src '
 
 브라우저가 KVS로 영상을 받기까지 하는 HTTP·WebSocket 호출을 순서대로 보면 이렇습니다. 앞 편에서 본 흐름을 "어느 주소로 가나"만 남겨 다시 적었습니다.
 
-1. **제어 API 호출**: `DescribeSignalingChannel`로 채널 정보를 찾고, [`GetSignalingChannelEndpoint`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_GetSignalingChannelEndpoint.html)로 이 채널에 붙을 주소를 받습니다. 리전의 고정 호스트 `https://kinesisvideo.<region>.amazonaws.com`에 HTTPS POST를 보냅니다. 다른 출처로 보내는 요청이라 브라우저는 그 전에 CORS 사전 요청(OPTIONS)도 보냅니다.
+1. **제어 API 호출**: `DescribeSignalingChannel`로 채널 정보를 찾고, [`GetSignalingChannelEndpoint`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_GetSignalingChannelEndpoint.html)로 이 채널에 붙을 주소를 받습니다. 리전의 고정 호스트 `https://kinesisvideo.<region>.amazonaws.com`에 HTTPS POST를 보냅니다. 다른 출처로 보내는 요청이라고 모두 사전 요청이 생기지는 않습니다. 이 호출은 본문이 JSON이고 SigV4 서명용 `Authorization` 같은 헤더가 붙습니다. [Fetch 표준](https://fetch.spec.whatwg.org/#cors-safelisted-request-header)이 "단순 요청"으로 보는 헤더·Content-Type 범위를 벗어나므로, 브라우저는 본 요청 전에 CORS 사전 요청(OPTIONS)을 먼저 보냅니다.
 2. **ICE 서버 설정 받기**: 1번에서 받은 HTTPS 엔드포인트에 [`GetIceServerConfig`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_signaling_GetIceServerConfig.html)를 호출합니다. TURN 서버 주소(`Uris`)와 그 서버에 쓸 임시 사용자 이름·비밀번호, 유효 시간(`Ttl`)을 받습니다. 이 호스트는 채널마다 따로 발급되는 `<무엇>.kinesisvideo.<region>.amazonaws.com` 형태입니다.
 3. **시그널링 WebSocket**: 1번에서 받은 WSS 엔드포인트에 서명을 붙여 WebSocket으로 붙고, 여기서 SDP와 ICE 후보를 주고받습니다. 이 호스트도 `<무엇>.kinesisvideo.<region>.amazonaws.com` 형태입니다.
 
@@ -340,7 +357,7 @@ connect-src 'self'
 
 <figure class="diagram">
 {% include figures/webrtc-dtls-srtp-csp/csp-directives.svg %}
-<figcaption>KVS 화면에서 connect-src는 제어 API·ICE 설정·시그널링 세 연결을, media-src는 HLS 다시 보기를 검사한다. srcObject 실시간 영상과 STUN·TURN 접속은 그 검사 밖이었다</figcaption>
+<figcaption>KVS 화면에서 connect-src는 제어 API·ICE 설정·시그널링, 그리고 hls.js가 받는 HLS 목록·조각을 검사한다. HLS 다시 보기는 재생 경로에 따라 connect-src와 media-src를 함께 쓴다. srcObject 실시간 영상과 STUN·TURN 접속은 그 검사 밖이었다(Chromium 관찰)</figcaption>
 </figure>
 
 ### 헤더 예시
@@ -391,18 +408,23 @@ MDN의 `connect-src` 문서가 나열하는 대상은 ping, `fetch()`, XHR, WebS
 이 지시어가 지금 브라우저에서 동작하는지도 시험했습니다. 앞의 브라우저 두 개 실험 페이지에 `webrtc 'block'`을 더해 띄웠더니, Chromium 156은 콘솔에 `Unrecognized Content-Security-Policy directive 'webrtc'.`를 찍고 연결을 그대로 허용했습니다. 제 환경의 Chromium은 아직 이 지시어를 모르는 것입니다. 정리하면 이렇습니다.
 
 - STUN·TURN 주소를 `connect-src`에 넣을 필요는 없었습니다(Chromium 관찰).
-- 거꾸로 CSP로 WebRTC 접속을 막을 수도 아직은 없습니다. 페이지에서 WebRTC를 아예 못 쓰게 하려는 목적이라면 CSP에 기대지 않는 편이 안전합니다.
+- 거꾸로 시험한 Chromium 156에서는 CSP로 WebRTC 접속을 막을 수도 없었습니다. 명세 초안에는 `webrtc` 지시어가 있으니 브라우저가 지원하면 달라질 수 있습니다. 지금 페이지에서 WebRTC를 아예 못 쓰게 하려는 목적이라면 CSP에만 기대지 않는 편이 안전합니다.
 - 다만 TURN 자격을 받는 `GetIceServerConfig`는 평범한 HTTPS 호출이라 `connect-src` 대상입니다. 앞의 세 줄 중 둘째 줄이 그것입니다.
 
 ### media-src: 실시간 영상은 왜 검사 밖인가
 
 `media-src`는 `<video>`, `<audio>`가 불러오는 주소를 제한합니다. 그런데 실시간 영상은 `media-src`에 아무것도 더하지 않아도 재생됐습니다.
 
-이유는 영상을 붙이는 방법에 있습니다. WebRTC로 받은 영상은 `MediaStream` 객체이고, 이것을 `video.srcObject = stream`으로 붙입니다. `srcObject`에는 주소(URL)가 없습니다. CSP는 주소를 보고 허용 여부를 정하는 규칙이라 검사할 대상이 없습니다. 앞의 브라우저 두 개 실험을 `media-src 'self'`인 페이지에서 돌렸을 때도 160×120 캔버스 영상이 `srcObject`로 그대로 재생됐습니다.
+이유는 영상을 붙이는 방법에 있습니다. WebRTC로 받은 영상은 `MediaStream` 객체이고, 이것을 `video.srcObject = stream`으로 붙입니다. `srcObject`에는 주소(URL)가 없습니다. 이 `MediaStream` 재생에는 주소로 무언가를 가져오는(fetch) 과정이 없어서, `media-src`의 주소 검사가 걸릴 자리가 없습니다. (CSP 전체가 주소만 보는 것은 아닙니다. 스크립트를 nonce·해시로 허용하는 규칙이나 `sandbox`, 앞의 `webrtc`처럼 주소와 무관한 규칙도 있습니다. 여기서 말하는 것은 `media-src`라는 가져오기 지시어의 검사입니다.) 앞의 브라우저 두 개 실험을 `media-src 'self'`인 페이지에서 돌렸을 때도 160×120 캔버스 영상이 `srcObject`로 그대로 재생됐습니다.
 
 같은 페이지에서 `MediaSource`로 만든 `blob:` 주소를 `<video>`의 `src`에 넣자 결과가 달라졌습니다. 콘솔에 `Loading media from 'blob:…' violates … media-src 'self'`가 찍히고, 시험 서버에도 `media-src`, 막힌 주소 `blob` 보고가 들어왔습니다. CSP3 명세대로 `'self'`는 `blob:` 주소를 포함하지 않습니다.
 
-이 차이가 나중에 다시 보기 기능에서 드러났습니다. 녹화한 영상은 HLS로 재생합니다. hls.js는 재생 목록과 영상 조각을 `fetch`로 받고(`connect-src`), MSE(Media Source Extensions)로 `blob:` 주소를 만들어 `<video>`에 넣습니다(`media-src blob:`). MSE가 없는 Safari는 KVS 데이터 엔드포인트의 HLS 주소를 `<video>`에서 바로 엽니다(`media-src https://*.kinesisvideo…`). 그래서 헤더 예시의 `media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com`이 생겼습니다. HLS의 원리는 7편에서 다룹니다.
+이 차이가 나중에 다시 보기 기능에서 드러났습니다. 녹화한 영상은 HLS로 재생합니다. HLS는 영상을 몇 초짜리 조각 파일로 나누고, 조각 목록을 적은 재생 목록 파일과 함께 평범한 HTTP로 받아 이어 붙이는 방식입니다. 브라우저에서 HLS를 재생하는 길은 두 가지이고, 길마다 CSP가 보는 지시어가 다릅니다.
+
+- **hls.js 경로**: 브라우저에 MSE(Media Source Extensions)나 그 변형인 ManagedMediaSource가 있으면 hls.js 같은 라이브러리를 쓸 수 있습니다. hls.js는 재생 목록과 영상 조각을 `fetch`·XHR로 받고(`connect-src`), MSE로 만든 `blob:` 주소를 `<video>`에 넣습니다(`media-src blob:`). [hls.js 공식 README](https://github.com/video-dev/hls.js#compatibility)는 macOS Safari 10 이상과 iPadOS 13 이상의 Safari를 지원 대상으로 적고, iOS Safari는 17.1 이상에서 ManagedMediaSource로 지원한다고 적습니다. Safari라고 해서 이 경로를 못 쓰는 것이 아닙니다.
+- **네이티브 HLS 경로**: 브라우저가 HLS를 직접 재생할 수 있으면 HLS 주소를 `video.src`에 그대로 넣습니다. 이때는 `<video>`가 KVS 데이터 엔드포인트의 주소를 직접 열기 때문에 `media-src https://*.kinesisvideo…`가 필요합니다. Safari는 이 경로도 지원합니다.
+
+이번 대시보드는 기능 탐지로 길을 골랐습니다. MSE(또는 ManagedMediaSource)가 있으면 hls.js를 먼저 쓰고, 없을 때만 `<video>`가 HLS를 재생할 수 있다고 답하는지 보고 네이티브 경로로 갑니다. 브라우저 이름으로 나누지 않은 이유가 있습니다. Chrome은 `canPlayType('application/vnd.apple.mpegurl')`에 `"maybe"`라고 답했는데, 실제로는 KVS 재생 목록을 자체 재생기로 열지 못했습니다. hls.js README도 Chrome 등이 `"maybe"`라고 답하지만 실제 재생은 실패할 수 있으니 `Hls.isSupported()`를 먼저 보라고 권합니다. 그래서 두 경로를 모두 열어 두는 `media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com`이 생겼고, hls.js가 받는 재생 목록·조각은 이미 있던 `connect-src https://*.kinesisvideo…`가 맡습니다. HLS의 원리는 7편에서 다룹니다.
 
 ### 같은 헤더로 로컬에서 시험하기
 
@@ -415,11 +437,35 @@ import http.server, json, sys
 from urllib.parse import urlsplit
 
 ROOT, PORT, POLICY_FILE = sys.argv[1], int(sys.argv[2]), sys.argv[3]
-directives = " ".join(open(POLICY_FILE).read().split()).split(";")
-# 로컬은 http라서 https 강제 지시어는 뺀다
-POLICY = "; ".join(d.strip() for d in directives
-                   if d.strip() and d.strip() != "upgrade-insecure-requests")
-POLICY += "; report-uri /__csp"
+
+# 로컬은 http라서 https 강제 지시어는 빼고, 원래 있던 보고 지시어는 이 서버로 바꾼다
+DROP = {"upgrade-insecure-requests", "report-uri", "report-to"}
+kept, dropped = [], []
+for d in " ".join(open(POLICY_FILE).read().split()).split(";"):
+    d = d.strip()
+    if d:
+        (dropped if d.split()[0].lower() in DROP else kept).append(d)
+POLICY = "; ".join(kept + ["report-uri /__csp"])
+print("뺀 지시어:", ", ".join(d.split()[0] for d in dropped) or "없음", flush=True)
+
+KEYWORDS = {"inline", "eval", "wasm-eval", "blob", "data"}
+
+def safe_target(blocked):
+    """막힌 주소에서 호스트만 남긴다. 모르는 모양이면 원문을 버린다."""
+    if not isinstance(blocked, str):
+        return "(형식 아님)"
+    if blocked in KEYWORDS:
+        return blocked
+    parts = urlsplit(blocked)
+    if parts.scheme in ("http", "https", "ws", "wss") and parts.hostname:
+        return parts.hostname  # 경로·쿼리(서명 값)는 남기지 않는다
+    if parts.scheme in ("blob", "data"):
+        return parts.scheme  # data: 내용은 남기지 않는다
+    return "(기록 안 함)"
+
+def safe_directive(name):
+    ok = isinstance(name, str) and len(name) < 40 and name.replace("-", "").isalpha()
+    return name if ok else "(형식 아님)"
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -433,30 +479,40 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.path != "/__csp":
             self.send_error(404)
             return
-        body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-        report = json.loads(body or b"{}").get("csp-report", {})
-        blocked = report.get("blocked-uri", "")
-        host = urlsplit(blocked).hostname or blocked  # 쿼리의 서명 값은 남기지 않는다
-        print("CSP", report.get("effective-directive"), host, flush=True)
+        length = min(int(self.headers.get("Content-Length") or 0), 65536)
+        try:
+            data = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            data = {}
+        report = data.get("csp-report") if isinstance(data, dict) else None
+        if not isinstance(report, dict):
+            report = {}
+        print("CSP", safe_directive(report.get("effective-directive")),
+              safe_target(report.get("blocked-uri")), flush=True)
         self.send_response(204)
         self.end_headers()
 
 http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 ```
 
-이 예시는 앞의 브라우저 두 개 실험 페이지를 띄워 돌려 봤습니다. 응답에 헤더가 붙고, `blob:` 위반이 생기자 서버에 `CSP media-src blob` 한 줄이 찍혔습니다(Chromium 156, Python 3.14).
+이 예시로 앞의 브라우저 두 개 실험 페이지를 띄워 돌려 봤습니다(Chromium 156, Python 3.14). 정책 파일에 일부러 다른 곳을 가리키는 `report-uri`와 `report-to`를 넣어 두었는데, 서버는 시작할 때 `뺀 지시어: upgrade-insecure-requests, report-uri, report-to`를 출력했습니다. 페이지에서 `blob:` 위반이 생기자 보고가 이 서버로 와서 `CSP media-src blob` 한 줄이 찍혔습니다. 서명 쿼리가 붙은 `wss://` 주소, `data:` 주소, 호스트 없는 경로, JSON이 아닌 본문을 손으로 보내 봤을 때도 호스트나 고정 표지(`data`, `(기록 안 함)`, `(형식 아님)`)만 찍혔습니다. 다만 이 비정형 입력들은 손으로 만든 것이고, 브라우저가 실제로 그런 보고를 보낸다고 확인한 것은 아닙니다.
 
 몇 가지를 일부러 정했습니다.
 
-- **헤더 값은 배포 설정에서 읽은 그대로 씁니다.** 시험용 헤더를 따로 손으로 적으면 배포 헤더와 어긋나고, 시험이 아무것도 증명하지 못합니다. 로컬이 http라서 의미가 없는 `upgrade-insecure-requests`만 뺍니다.
-- **보고는 지시어와 호스트만 출력합니다.** 막힌 주소가 서명된 WebSocket 주소라면 쿼리 문자열에 서명이 들어 있습니다. 보고를 그대로 로그에 쓰면 접속 권한을 로그에 남기게 됩니다.
+- **헤더 값은 배포 설정의 값을 그대로 씁니다.** 시험용 헤더를 따로 손으로 적으면 배포 헤더와 어긋나고, 시험이 아무것도 증명하지 못합니다. 바꾸는 것은 두 가지뿐이고, 무엇을 뺐는지 시작할 때 출력합니다. 로컬이 http라서 의미가 없는 `upgrade-insecure-requests`를 빼고, 원래 있던 보고 지시어(`report-uri`, `report-to`)를 이 서버의 `report-uri`로 바꿉니다.
+- **보고 지시어를 덧붙이지 않고 바꾸는 이유가 있습니다.** [CSP3의 정책 해석 규칙](https://www.w3.org/TR/CSP3/#parse-serialized-policy)은 같은 이름의 지시어가 두 번 나오면 뒤의 것을 무시합니다. 원래 정책에 `report-uri`가 있는데 뒤에 하나를 더 붙이면 보고는 원래 주소로 갑니다. `report-to`가 있으면 이를 지원하는 브라우저는 그쪽을 씁니다. 그러면 로컬 서버에는 아무것도 오지 않고, "0건"이 위반이 없다는 뜻인지 보고가 다른 데로 갔다는 뜻인지 알 수 없습니다. 그래서 시험을 시작할 때 일부러 위반을 하나 만들어, 보고가 이 서버에 도착하는지부터 확인합니다.
+- **보고는 지시어와 호스트만 출력합니다.** 막힌 주소가 서명된 WebSocket 주소라면 쿼리 문자열에 서명이 들어 있습니다. 보고를 그대로 로그에 쓰면 접속 권한을 로그에 남기게 됩니다. 호스트를 뽑을 수 없는 모양이면 원문으로 돌아가지 않고, 정해 둔 표지만 남깁니다. 보고 본문은 누구나 보낼 수 있는 입력이라 형식도 확인합니다.
 - **`report-uri`는 폐지 예정입니다.** [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy)은 `Reporting-Endpoints` 헤더와 `report-to`를 권하면서, 아직 `report-to`를 모르는 브라우저를 위해 `report-uri`도 같이 적으라고 합니다. 로컬 시험에는 `report-uri`로 충분했습니다.
 
-이 서버로 시험하는 내내 위반 보고는 0건이었습니다. 운영 중인 사이트에 새 규칙을 넣을 때는 막지 않고 보고만 받는 [`Content-Security-Policy-Report-Only`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy-Report-Only) 헤더로 먼저 며칠 지켜보는 방법도 있습니다.
+위의 의도적 위반 재현과는 별개의 기록이 하나 있습니다. 실제 대시보드를 같은 방식의 로컬 서버(배포 헤더, KVS 세 줄과 다시 보기용 `media-src`가 들어간 정책)로 띄워 실시간 영상과 다시 보기를 확인했을 때는 위반 보고가 0건이었습니다. Safari의 다시 보기는 이 시험에 들어 있지 않습니다. 이 0건은 보고 경로가 살아 있는지 확인한 위의 실험과 짝을 이룰 때 의미가 있습니다. 운영 중인 사이트에 새 규칙을 넣을 때는 막지 않고 보고만 받는 [`Content-Security-Policy-Report-Only`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy-Report-Only) 헤더로 먼저 며칠 지켜보는 방법도 있습니다.
 
 ### "적용되지 않을 수 있다"의 뜻
 
-처음 에이전트가 지적한 "실제로 적용되지 않을 수 있다"는 이것과 또 다른 문제였습니다. 헤더를 호스팅 서비스의 빌드 설정 파일 안에 적어 두었는데, 그 방식은 폐지 예정이었고 실제 배포된 앱 응답에는 헤더가 하나도 없었습니다. 그래서 헤더를 호스팅 서비스가 정한 사용자 지정 헤더 전용 파일로 옮겼습니다.
+처음 에이전트가 지적한 "실제로 적용되지 않을 수 있다"는 이것과 또 다른 문제였습니다. 헤더를 호스팅 서비스의 빌드 설정 파일 안에 적어 두었기 때문입니다. 이 호스팅 서비스(AWS Amplify Hosting)의 [사용자 지정 헤더 문서](https://docs.aws.amazon.com/amplify/latest/userguide/custom-headers.html)와 [이전 안내](https://docs.aws.amazon.com/amplify/latest/userguide/migrate-custom-headers.html)는 빌드 설정에 적은 헤더를 사용자 지정 헤더 전용 설정으로 옮기라고 강하게 권합니다. 폐지 일정을 적은 문서는 찾지 못했습니다. 그래서 헤더를 전용 파일로 옮겼습니다.
+
+그와 별개로, 당시 작업 기록에는 빌드 설정에 적은 헤더가 배포 응답에 적용되지 않았다는 판단이 남아 있습니다. 다만 그 판단의 근거가 된 응답 확인 결과(어느 주소에 어떤 명령으로 확인했는지)는 기록에서 찾지 못했습니다. 그래서 이 글에서는 "문서가 이전을 권했다"는 사실과 "우리 앱에서는 적용되지 않았다고 판단했다"는 당시 관찰을 나눠 적습니다.
+
+옮긴 뒤의 확인은 기록이 있습니다. 시험 배포 주소의 여러 경로(첫 페이지, 스크립트, 설정 파일) 응답에 헤더가 모두 붙어 있었고, 그 배포 주소에서 로그인부터 실시간 영상 재생까지 했을 때 CSP 위반은 0건이었습니다.
 
 이런 일은 설정 파일만 봐서는 알 수 없습니다. 배포한 뒤에는 응답 헤더를 직접 확인합니다. 아래 주소는 예시이고, 이 명령은 실행 미확인입니다.
 
@@ -490,6 +546,7 @@ curl -sI https://dashboard.example.com/ | grep -i '^content-security-policy'
 ## 주의할 점
 
 - **상대가 브라우저가 아니면 묶음부터 의심합니다.** DTLS 1.2로 협상하는 라이브러리가 ECDSA 계열만 제시하면 RSA 인증서를 가진 상대와는 붙지 않습니다. `no shared cipher`나 경고 번호 40, 빈 오류가 보이면 서로 제시한 묶음과 인증서 종류를 비교합니다.
+- **라이브러리 버전부터 확인합니다.** 제시하는 묶음 목록은 버전마다 다릅니다. 내부를 고치는 우회는 지금 쓰는 버전에 정말 필요한지 확인한 뒤에만 씁니다.
 - **묶음을 넓혀도 지문 확인은 끄지 않습니다.** 받아들일 인증서 종류를 넓히는 것과 상대를 믿는 기준을 바꾸는 것은 다른 일입니다.
 - **영상 보안은 시그널링 보안만큼만 강합니다.** 지문은 시그널링으로 건너가므로, 신호 채널에 누가 붙을 수 있는지(IAM 권한)를 좁히는 것이 곧 영상 보호입니다.
 - **`a=setup`으로 DTLS 역할이 바뀝니다.** offer를 누가 보내느냐에 따라 같은 장비가 DTLS 클라이언트가 되기도 합니다. 저장 세션은 offer를 보내는 쪽입니다.
@@ -497,7 +554,7 @@ curl -sI https://dashboard.example.com/ | grep -i '^content-security-policy'
 - **`default-src`만 있어도 `connect-src`가 정해진 것입니다.** 따로 적지 않았다고 열려 있는 것이 아닙니다.
 - **STUN·TURN은 `connect-src`로 열지도 막지도 못했습니다.** Chromium에서 관찰한 결과이고, 다른 브라우저는 확인하지 않았습니다. `webrtc` 지시어는 명세 초안에 있지만 시험한 Chromium은 인식하지 않았습니다.
 - **`srcObject`는 `media-src` 검사 밖, `blob:`은 안입니다.** 실시간 영상만 있을 때 통과했다고 다시 보기(HLS)도 통과하리라 보면 안 됩니다.
-- **헤더는 배포된 응답에서 확인합니다.** 설정 파일에 적었다고 붙는 것이 아닙니다. 로컬 시험은 배포 헤더 값을 그대로 읽어 씁니다.
+- **헤더는 배포된 응답에서 확인합니다.** 설정 파일에 적었다고 붙는 것이 아닙니다. 로컬 시험은 배포 헤더 값을 그대로 읽어 쓰고, 의도적 위반 하나로 보고가 로컬에 도착하는지부터 확인합니다.
 - **위반 보고와 오류 로그에 서명된 주소를 남기지 않습니다.**
 
 ## 정리
@@ -505,15 +562,15 @@ curl -sI https://dashboard.example.com/ | grep -i '^content-security-policy'
 | 질문 | 답 |
 |---|---|
 | WebRTC 영상은 암호화되나 | 항상 된다. 평문 RTP는 표준이 금지한다 (RFC 8827) |
-| DTLS와 SRTP는 어떻게 나뉘나 | DTLS는 핸드셰이크와 키 추출, 영상은 DTLS 틀 없이 SRTP 패킷 (RFC 5764) |
-| 자체 서명 인증서를 무엇으로 믿나 | 시그널링으로 먼저 받은 SDP의 `a=fingerprint`와 인증서 해시를 대조 |
+| DTLS와 SRTP는 어떻게 나뉘나 | 미디어에 대해 DTLS는 인증과 SRTP 키 추출, 영상은 DTLS 틀 없이 SRTP 패킷 (RFC 5764). 데이터 채널은 DTLS가 직접 나른다 |
+| 자체 서명 인증서를 무엇으로 믿나 | 시그널링으로 먼저 받은 SDP의 `a=fingerprint`와 인증서 해시를 대조하고, 핸드셰이크의 서명·`Finished`로 개인 키 보유를 확인 |
 | 그래서 무엇이 중요해지나 | 시그널링 채널. KVS는 TLS(WSS)와 SigV4 서명으로 지킨다 |
 | 누가 DTLS 클라이언트인가 | `a=setup`. offer는 `actpass`, answer가 보통 `active`를 골라 클라이언트가 된다 |
-| 저장 세션과 왜 안 붙었나 | 장비가 ECDSA 묶음만 제시했고 상대 인증서는 RSA. ECDHE-RSA AEAD 묶음을 더해 해결, 지문 확인은 그대로 |
+| 저장 세션과 왜 안 붙었나 | 장비(당시 aiortc 1.15.0)가 ECDSA 묶음만 제시했고 상대 인증서는 RSA(관찰). ECDHE-RSA AEAD 묶음을 더해 해결, 지문 확인은 그대로 |
 | CSP는 무엇인가 | 페이지가 불러오고 접속할 수 있는 출처를 브라우저에 알려 주는 응답 헤더. XSS 피해를 줄인다 |
 | KVS에 필요한 `connect-src` | 제어 API 호스트, `https://*.kinesisvideo…`, `wss://*.kinesisvideo…` 세 줄 |
 | STUN·TURN도 넣어야 하나 | 넣지 않아도 됐다 (Chromium 관찰). TURN 자격을 받는 HTTPS 호출은 `connect-src` 대상 |
-| `media-src`는 언제 필요한가 | `srcObject` 실시간 영상은 불필요, HLS 다시 보기는 `'self' blob:`과 KVS 데이터 호스트 |
+| `media-src`는 언제 필요한가 | `srcObject` 실시간 영상은 불필요. HLS 다시 보기는 hls.js 경로면 `blob:`, 네이티브 경로면 KVS 데이터 호스트. hls.js가 받는 목록·조각은 `connect-src` |
 
 정리하면 DTLS-SRTP는 "영상이 길 위에서 안전한가"를, CSP는 "이 페이지가 어디로 말을 걸 수 있는가"를 지킵니다. 앞의 것은 시그널링을 믿을 수 있어야 성립하고, 뒤의 것은 헤더가 실제로 붙어 있어야 성립합니다. 이번에 막힌 두 곳도 결국 그 전제가 어긋난 자리였습니다. 하나는 상대가 브라우저라는 가정이 틀렸고, 다른 하나는 헤더가 붙어 있다는 가정이 틀렸습니다.
 

@@ -1,6 +1,6 @@
-<svg class="diagram-svg diagram-wide" viewBox="0 0 480 544" role="img" aria-labelledby="csp-dir-title csp-dir-desc" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 566" role="img" aria-labelledby="csp-dir-title csp-dir-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="csp-dir-title">KVS WebRTC 화면에서 CSP 지시어별로 검사받는 접속과 검사 밖의 접속</title>
-  <desc id="csp-dir-desc">첫째 묶음은 connect-src다. fetch, XHR, WebSocket 접속이 여기서 검사받는다. 제어 API 호스트 https://kinesisvideo.region.amazonaws.com은 채널 찾기와 엔드포인트 받기에 쓰인다. https://*.kinesisvideo.region.amazonaws.com은 ICE 서버 설정, 곧 TURN 자격을 받는 채널 전용 HTTPS 호스트다. wss://*.kinesisvideo.region.amazonaws.com은 시그널링 WebSocket이다. 둘째 묶음은 media-src다. video 요소가 여는 주소가 검사받으며, HLS 다시 보기에 'self', blob:, https://*.kinesisvideo 호스트가 필요하다. 셋째 묶음은 검사 밖이다. srcObject로 붙이는 실시간 영상은 URL이 아니라 MediaStream 객체라 media-src 검사를 받지 않는다. STUN과 TURN 접속은 connect-src로 막히지 않았고, 이것은 Chromium에서 관찰한 결과다.</desc>
+  <desc id="csp-dir-desc">첫째 묶음은 connect-src다. fetch, XHR, WebSocket 접속이 여기서 검사받는다. 제어 API 호스트 https://kinesisvideo.region.amazonaws.com은 채널 찾기와 엔드포인트 받기에 쓰인다. https://*.kinesisvideo.region.amazonaws.com은 ICE 서버 설정, 곧 TURN 자격을 받는 채널 전용 HTTPS 호스트이고, hls.js가 HLS 재생 목록과 조각을 받는 데이터 호스트도 이 줄이 덮는다. wss://*.kinesisvideo.region.amazonaws.com은 시그널링 WebSocket이다. 둘째 묶음은 media-src다. video 요소가 여는 주소가 검사받으며, HLS 다시 보기에 'self', blob:, https://*.kinesisvideo 호스트가 필요하다. blob:은 hls.js 경로, 데이터 호스트는 video가 HLS 주소를 직접 여는 네이티브 경로에 쓰인다. 그래서 HLS는 재생 경로에 따라 connect-src와 media-src를 함께 쓴다. 셋째 묶음은 검사 밖이다. srcObject로 붙이는 실시간 영상은 URL이 아니라 MediaStream 객체라 media-src 검사를 받지 않는다. STUN과 TURN 접속은 connect-src로 막히지 않았고, 이것은 Chromium에서 관찰한 결과다.</desc>
 
   <rect class="d-box" x="16" y="16" width="448" height="216" rx="8"/>
   <text class="d-strong" x="32" y="46">connect-src</text>
@@ -8,49 +8,52 @@
   <text class="d-mono" x="32" y="80">https://kinesisvideo.&lt;region&gt;…</text>
   <text class="d-muted" x="32" y="102">제어 API: 채널 찾기, 엔드포인트 받기</text>
   <text class="d-mono" x="32" y="136">https://*.kinesisvideo.&lt;region&gt;…</text>
-  <text class="d-muted" x="32" y="158">ICE 서버 설정(TURN 자격) 받기</text>
+  <text class="d-muted" x="32" y="158">ICE 서버 설정(TURN 자격), hls.js의 HLS 목록·조각</text>
   <text class="d-mono" x="32" y="192">wss://*.kinesisvideo.&lt;region&gt;…</text>
   <text class="d-muted" x="32" y="214">시그널링 WebSocket</text>
 
-  <rect class="d-box" x="16" y="248" width="448" height="104" rx="8"/>
+  <rect class="d-box" x="16" y="248" width="448" height="126" rx="8"/>
   <text class="d-strong" x="32" y="278">media-src</text>
   <text class="d-muted" x="132" y="278">video 요소가 여는 주소</text>
   <text class="d-mono" x="32" y="312">'self' blob: https://*.kinesisvideo…</text>
   <text class="d-muted" x="32" y="334">HLS 다시 보기 (7편)</text>
+  <text class="d-muted" x="32" y="356">blob:은 hls.js 경로, 데이터 호스트는 네이티브 경로</text>
 
-  <rect class="d-line" x="16" y="368" width="448" height="160" rx="8"/>
-  <text class="d-strong" x="32" y="398">검사 밖</text>
-  <text x="32" y="432">srcObject 실시간 영상</text>
-  <text class="d-muted" x="32" y="454">URL이 아니라 MediaStream 객체</text>
-  <text x="32" y="488">STUN · TURN (ICE)</text>
-  <text class="d-muted" x="32" y="510">connect-src로 안 막힘 (Chromium 관찰)</text>
+  <rect class="d-line" x="16" y="390" width="448" height="160" rx="8"/>
+  <text class="d-strong" x="32" y="420">검사 밖</text>
+  <text x="32" y="454">srcObject 실시간 영상</text>
+  <text class="d-muted" x="32" y="476">URL이 아니라 MediaStream 객체</text>
+  <text x="32" y="510">STUN · TURN (ICE)</text>
+  <text class="d-muted" x="32" y="532">connect-src로 안 막힘 (Chromium 관찰)</text>
 </svg>
-<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 640" role="img" aria-labelledby="csp-dir-title-n csp-dir-desc-n" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 684" role="img" aria-labelledby="csp-dir-title-n csp-dir-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="csp-dir-title-n">KVS WebRTC 화면에서 CSP 지시어별로 검사받는 접속과 검사 밖의 접속</title>
-  <desc id="csp-dir-desc-n">connect-src는 fetch, XHR, WebSocket을 검사하며 제어 API 호스트, ICE 서버 설정용 https://*.kinesisvideo 호스트, 시그널링용 wss://*.kinesisvideo 호스트가 필요하다. media-src는 video 요소가 여는 주소를 검사하며 HLS 다시 보기에 'self', blob:, https://*.kinesisvideo 호스트가 필요하다. srcObject 실시간 영상은 URL이 아니라 검사 밖이고, STUN과 TURN 접속은 connect-src로 막히지 않았다(Chromium 관찰).</desc>
+  <desc id="csp-dir-desc-n">connect-src는 fetch, XHR, WebSocket을 검사하며 제어 API 호스트, ICE 서버 설정과 hls.js의 HLS 목록·조각을 받는 https://*.kinesisvideo 호스트, 시그널링용 wss://*.kinesisvideo 호스트가 필요하다. media-src는 video 요소가 여는 주소를 검사하며 HLS 다시 보기에 'self', blob:, https://*.kinesisvideo 호스트가 필요하다. blob:은 hls.js 경로, 호스트는 네이티브 HLS 경로에 쓰인다. srcObject 실시간 영상은 URL이 아니라 검사 밖이고, STUN과 TURN 접속은 connect-src로 막히지 않았다(Chromium 관찰).</desc>
 
-  <rect class="d-box" x="8" y="8" width="304" height="256" rx="8"/>
+  <rect class="d-box" x="8" y="8" width="304" height="278" rx="8"/>
   <text class="d-strong" x="20" y="38">connect-src</text>
   <text class="d-muted" x="20" y="60">fetch · XHR · WebSocket</text>
   <text class="d-mono" x="20" y="96">https://kinesisvideo…</text>
   <text class="d-muted" x="20" y="118">제어 API</text>
   <text class="d-mono" x="20" y="156">https://*.kinesisvideo…</text>
   <text class="d-muted" x="20" y="178">ICE 서버 설정(TURN 자격)</text>
-  <text class="d-mono" x="20" y="216">wss://*.kinesisvideo…</text>
-  <text class="d-muted" x="20" y="238">시그널링 WebSocket</text>
+  <text class="d-muted" x="20" y="200">hls.js의 HLS 목록·조각</text>
+  <text class="d-mono" x="20" y="238">wss://*.kinesisvideo…</text>
+  <text class="d-muted" x="20" y="260">시그널링 WebSocket</text>
 
-  <rect class="d-box" x="8" y="280" width="304" height="152" rx="8"/>
-  <text class="d-strong" x="20" y="310">media-src</text>
-  <text class="d-muted" x="20" y="332">video 요소가 여는 주소</text>
-  <text class="d-mono" x="20" y="368">'self' blob:</text>
-  <text class="d-mono" x="20" y="390">https://*.kinesisvideo…</text>
-  <text class="d-muted" x="20" y="412">HLS 다시 보기 (7편)</text>
+  <rect class="d-box" x="8" y="302" width="304" height="174" rx="8"/>
+  <text class="d-strong" x="20" y="332">media-src</text>
+  <text class="d-muted" x="20" y="354">video 요소가 여는 주소</text>
+  <text class="d-mono" x="20" y="390">'self' blob:</text>
+  <text class="d-mono" x="20" y="412">https://*.kinesisvideo…</text>
+  <text class="d-muted" x="20" y="434">HLS 다시 보기 (7편)</text>
+  <text class="d-muted" x="20" y="456">blob:은 hls.js, 호스트는 네이티브</text>
 
-  <rect class="d-line" x="8" y="448" width="304" height="184" rx="8"/>
-  <text class="d-strong" x="20" y="478">검사 밖</text>
-  <text x="20" y="512">srcObject 실시간 영상</text>
-  <text class="d-muted" x="20" y="534">URL이 아닌 MediaStream</text>
-  <text x="20" y="570">STUN · TURN (ICE)</text>
-  <text class="d-muted" x="20" y="592">connect-src로 안 막힘</text>
-  <text class="d-muted" x="20" y="614">(Chromium 관찰)</text>
+  <rect class="d-line" x="8" y="492" width="304" height="184" rx="8"/>
+  <text class="d-strong" x="20" y="522">검사 밖</text>
+  <text x="20" y="556">srcObject 실시간 영상</text>
+  <text class="d-muted" x="20" y="578">URL이 아닌 MediaStream</text>
+  <text x="20" y="614">STUN · TURN (ICE)</text>
+  <text class="d-muted" x="20" y="636">connect-src로 안 막힘</text>
+  <text class="d-muted" x="20" y="658">(Chromium 관찰)</text>
 </svg>
