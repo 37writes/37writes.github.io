@@ -1,6 +1,6 @@
-<svg class="diagram-svg diagram-tall" viewBox="0 0 360 690" role="img" aria-labelledby="kvs-seq-title kvs-seq-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="kvs-seq-title">뷰어와 마스터가 KVS 신호 채널을 거쳐 offer, answer, ICE 후보를 주고받은 뒤 영상이 채널 밖으로 흐르는 순서</title>
-  <desc id="kvs-seq-desc">세 개의 세로줄이 왼쪽부터 뷰어(브라우저), 신호 채널(KVS), 마스터(현장 장비)다. 먼저 마스터가 신호 채널에 접속해 기다린다. 뷰어는 API 세 개로 접속 주소와 TURN 정보를 받고, SigV4로 서명한 약 5분짜리 WSS 주소로 신호 채널에 접속한다. 뷰어가 base64 JSON으로 감싼 SDP_OFFER를 보내면 신호 채널이 보낸 뷰어의 ID를 붙여 마스터에게 전달한다. 마스터는 그 뷰어의 ClientId 앞으로 SDP_ANSWER를 보내고 신호 채널이 뷰어에게 전달한다. 이어서 양쪽이 ICE_CANDIDATE를 찾는 대로 여러 번 주고받는다. 연결이 맺어지면 영상은 마스터에서 뷰어로 직접 또는 TURN 중계를 거쳐 흐르고, 신호 채널을 거치지 않는다. 뷰어는 시그널링을 닫아도 영상이 계속 흐르고, 마스터는 다음 뷰어를 위해 계속 접속해 기다린다.</desc>
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 710" role="img" aria-labelledby="kvs-seq-title kvs-seq-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="kvs-seq-title">이 글의 구성에서 뷰어와 마스터가 KVS 신호 채널을 거쳐 offer, answer, ICE 후보를 주고받은 뒤 영상이 채널 밖으로 흐르는 순서</title>
+  <desc id="kvs-seq-desc">이 글의 구성(뷰어가 offer를 만드는 경우)을 그린 순서도다. 세 개의 세로줄이 왼쪽부터 뷰어(브라우저), 신호 채널(KVS), 마스터(현장 장비)다. 먼저 마스터가 신호 채널에 접속해 기다린다. 뷰어는 WSS 접속 전에 HTTPS 요청인 API 세 개로 접속 주소와 TURN 정보를 받고, SigV4로 서명한 약 5분짜리 WSS 주소로 신호 채널에 접속한다. 뷰어가 base64 JSON으로 감싼 SDP_OFFER를 보내면 신호 채널이 보낸 뷰어의 ID를 붙여 마스터에게 전달한다. 마스터는 그 뷰어의 ClientId 앞으로 SDP_ANSWER를 보내고 신호 채널이 뷰어에게 전달한다. 양쪽은 ICE_CANDIDATE를 찾는 대로 여러 번 주고받는다. 후보 교환은 offer 직후부터 시작해 SDP 교환과 겹칠 수 있다. 연결이 맺어지면 영상은 마스터에서 뷰어로 직접 또는 TURN 중계를 거쳐 흐르고, 신호 채널을 거치지 않는다. 뷰어는 시그널링을 닫아도 영상이 계속 흐르고, 마스터는 다음 뷰어를 위해 계속 접속해 기다린다.</desc>
   <rect class="d-box" x="2" y="8" width="76" height="52" rx="6"/>
   <text class="d-strong" x="40" y="32" text-anchor="middle">뷰어</text>
   <text class="d-small" x="40" y="51" text-anchor="middle">브라우저</text>
@@ -10,55 +10,56 @@
   <rect class="d-box" x="282" y="8" width="76" height="52" rx="6"/>
   <text class="d-strong" x="320" y="32" text-anchor="middle">마스터</text>
   <text class="d-small" x="320" y="51" text-anchor="middle">현장 장비</text>
-  <path class="d-line" d="M40 60 V650" stroke-dasharray="3 5"/>
-  <path class="d-line" d="M320 60 V650" stroke-dasharray="3 5"/>
-  <path class="d-line" d="M180 60 V508" stroke-dasharray="3 5"/>
-  <path class="d-line" d="M180 588 V650" stroke-dasharray="3 5"/>
+  <path class="d-line" d="M40 60 V670" stroke-dasharray="3 5"/>
+  <path class="d-line" d="M320 60 V670" stroke-dasharray="3 5"/>
+  <path class="d-line" d="M180 60 V400" stroke-dasharray="3 5"/>
+  <path class="d-line" d="M180 424 V462" stroke-dasharray="3 5"/>
+  <path class="d-line" d="M180 608 V670" stroke-dasharray="3 5"/>
   <text class="d-muted" x="250" y="90" text-anchor="middle">접속해 기다림</text>
   <path class="d-line" d="M320 102 H180"/>
   <path class="d-line" d="M186 97 L180 102 L186 107"/>
-  <text class="d-muted" x="110" y="148" text-anchor="middle">API 3개로 준비</text>
+  <text class="d-muted" x="110" y="148" text-anchor="middle">HTTPS API 3개</text>
   <path class="d-line" d="M40 160 H180"/>
   <path class="d-line" d="M174 155 L180 160 L174 165"/>
-  <text class="d-small" x="110" y="180" text-anchor="middle">주소 · TURN 정보</text>
+  <text class="d-small" x="110" y="180" text-anchor="middle">WSS 전 · 주소와 TURN</text>
   <text class="d-muted" x="110" y="214" text-anchor="middle">서명한 WSS 접속</text>
   <path class="d-line" d="M40 226 H180"/>
   <path class="d-line" d="M174 221 L180 226 L174 231"/>
   <text class="d-small" x="110" y="246" text-anchor="middle">SigV4 · 약 5분</text>
-  <text class="d-mono" x="110" y="282" text-anchor="middle">SDP_OFFER</text>
+  <text class="d-mono" x="110" y="282" text-anchor="middle" style="font-size:17px">SDP_OFFER</text>
   <path class="d-line" d="M40 294 H180"/>
   <path class="d-line" d="M174 289 L180 294 L174 299"/>
   <text class="d-small" x="110" y="314" text-anchor="middle">base64 JSON</text>
-  <text class="d-mono" x="250" y="282" text-anchor="middle">SDP_OFFER</text>
+  <text class="d-mono" x="250" y="282" text-anchor="middle" style="font-size:17px">SDP_OFFER</text>
   <path class="d-line" d="M180 294 H320"/>
   <path class="d-line" d="M314 289 L320 294 L314 299"/>
   <text class="d-small" x="250" y="314" text-anchor="middle">보낸 뷰어 ID 포함</text>
-  <text class="d-mono" x="250" y="350" text-anchor="middle">SDP_ANSWER</text>
+  <text class="d-mono" x="250" y="350" text-anchor="middle" style="font-size:17px">SDP_ANSWER</text>
   <path class="d-line" d="M320 362 H180"/>
   <path class="d-line" d="M186 357 L180 362 L186 367"/>
   <text class="d-small" x="250" y="382" text-anchor="middle">ClientId 앞으로</text>
-  <text class="d-mono" x="110" y="350" text-anchor="middle">SDP_ANSWER</text>
+  <text class="d-mono" x="110" y="350" text-anchor="middle" style="font-size:17px">SDP_ANSWER</text>
   <path class="d-line" d="M180 362 H40"/>
   <path class="d-line" d="M46 357 L40 362 L46 367"/>
-  <text class="d-mono" x="110" y="418" text-anchor="middle">ICE_CANDIDATE</text>
-  <text class="d-mono" x="250" y="418" text-anchor="middle">ICE_CANDIDATE</text>
-  <path class="d-line" d="M40 430 H180"/>
-  <path class="d-line" d="M174 425 L180 430 L174 435"/>
-  <path class="d-line" d="M180 430 H320"/>
-  <path class="d-line" d="M314 425 L320 430 L314 435"/>
-  <path class="d-line" d="M320 450 H180"/>
-  <path class="d-line" d="M186 445 L180 450 L186 455"/>
-  <path class="d-line" d="M180 450 H40"/>
-  <path class="d-line" d="M46 445 L40 450 L46 455"/>
-  <text class="d-small" x="180" y="476" text-anchor="middle">찾는 대로 양쪽에서 여러 번</text>
-  <text class="d-strong" x="180" y="530" text-anchor="middle">영상 (직접 또는 TURN)</text>
-  <path class="d-line" d="M320 548 H40"/>
-  <path class="d-line" d="M320 554 H40"/>
-  <path class="d-line" d="M48 541 L40 551 L48 561"/>
-  <text class="d-accent" x="180" y="578" text-anchor="middle">신호 채널을 거치지 않는다</text>
-  <text class="d-muted" x="110" y="616" text-anchor="middle">시그널링 닫기</text>
-  <path class="d-line" d="M40 628 H180" stroke-dasharray="5 4"/>
-  <path class="d-line" d="M174 623 L180 628 L174 633"/>
-  <text class="d-small" x="110" y="648" text-anchor="middle">영상은 계속 흐름</text>
-  <text class="d-small" x="356" y="676" text-anchor="end">마스터는 계속 대기</text>
+  <text class="d-mono" x="180" y="418" text-anchor="middle" style="font-size:17px">ICE_CANDIDATE</text>
+  <path class="d-line" d="M40 432 H180"/>
+  <path class="d-line" d="M174 427 L180 432 L174 437"/>
+  <path class="d-line" d="M180 432 H320"/>
+  <path class="d-line" d="M314 427 L320 432 L314 437"/>
+  <path class="d-line" d="M320 452 H180"/>
+  <path class="d-line" d="M186 447 L180 452 L186 457"/>
+  <path class="d-line" d="M180 452 H40"/>
+  <path class="d-line" d="M46 447 L40 452 L46 457"/>
+  <text class="d-small" x="180" y="478" text-anchor="middle">찾는 대로 양쪽에서 여러 번</text>
+  <text class="d-small" x="180" y="496" text-anchor="middle">offer 직후부터 SDP 교환과 겹칠 수 있다</text>
+  <text class="d-strong" x="180" y="550" text-anchor="middle">영상 (직접 또는 TURN)</text>
+  <path class="d-line" d="M320 568 H40"/>
+  <path class="d-line" d="M320 574 H40"/>
+  <path class="d-line" d="M48 561 L40 571 L48 581"/>
+  <text class="d-accent" x="180" y="598" text-anchor="middle">신호 채널을 거치지 않는다</text>
+  <text class="d-muted" x="110" y="636" text-anchor="middle">시그널링 닫기</text>
+  <path class="d-line" d="M40 648 H180" stroke-dasharray="5 4"/>
+  <path class="d-line" d="M174 643 L180 648 L174 653"/>
+  <text class="d-small" x="110" y="668" text-anchor="middle">영상은 계속 흐름</text>
+  <text class="d-small" x="356" y="696" text-anchor="end">마스터는 계속 대기</text>
 </svg>
