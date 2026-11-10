@@ -9,7 +9,7 @@ description: "장비를 껐다 켜면 브라우저가 70초 뒤에야 다시 붙
 > **시리즈: AWS KVS로 실시간 영상 보내기**
 > 1. [KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다]({% post_url 2026-11-10-kvs-webrtc-big-picture %})
 > 2. **시그널링: SDP offer/answer와 KVS 신호 채널** ← 지금 글
-> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나 (예정)
+> 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
 > 4. TURN과 ICE: 끝내 못 붙으면 중계한다 (예정)
 > 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
 > 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
@@ -497,4 +497,4 @@ async function connectOnce(video, { onNoAnswer, onError }) {
 
 한 가지 예고를 붙입니다. 이 글의 결론은 "`ClientId`는 시도마다 새로"였지만, 녹화를 켜면 이 결정이 정반대가 됩니다. 녹화 채널에서는 브라우저가 KVS 쪽 저장 세션에 붙는데, 저장 세션은 끊긴 뷰어의 자리를 잠시 붙잡아 두고 동시에 붙을 수 있는 수도 적어서, 다시 붙을 때마다 새 ID를 쓰면 자리를 혼자 다 차지하게 됩니다. 그 이야기는 6편에서 합니다.
 
-다음 편에서는 SDP의 `a=candidate` 줄에 들어갈 주소가 어디서 오는지, 두 기기가 왜 서로의 주소를 알아도 바로 붙지 못하는지를 NAT와 STUN으로 풀어 봅니다.
+[다음 편]({% post_url 2026-11-10-webrtc-nat-stun %})에서는 SDP의 `a=candidate` 줄에 들어갈 주소가 어디서 오는지, 두 기기가 왜 서로의 주소를 알아도 바로 붙지 못하는지를 NAT와 STUN으로 풀어 봅니다.
