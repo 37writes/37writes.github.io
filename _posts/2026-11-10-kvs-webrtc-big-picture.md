@@ -8,12 +8,12 @@ description: "현장 장비 카메라를 브라우저에서 실시간으로 보�
 
 > **시리즈: AWS KVS로 실시간 영상 보내기**
 > 1. **KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다** ← 지금 글
-> 2. 시그널링: SDP offer/answer와 KVS 신호 채널
-> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나
-> 4. TURN과 ICE: 끝내 못 붙으면 중계한다
-> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP
-> 6. 녹화: KVS WebRTC 수집과 저장 세션
-> 7. 다시 보기: HLS 원리와 KVS 재생
+> 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
+> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나 (예정)
+> 4. TURN과 ICE: 끝내 못 붙으면 중계한다 (예정)
+> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
+> 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
+> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
 
 현장 장비의 상태를 웹에서 보는 관제 웹 대시보드를 AI 에이전트와 같이 만들고 있었습니다. 장비는 카메라가 달린 원격 장비이고, 안에 실린 작은 보조 컴퓨터가 AWS IoT Core에 MQTT(상태 메시지를 주고받는 가벼운 메시징 방식)로 붙어 위치와 상태를 올립니다. 카메라도 이미 화면에 나오긴 했습니다. 다만 장비가 작은 JPEG 사진을 **1초에 한 장** MQTT로 보내고, 대시보드가 그림을 바꿔 그리는 방식이었습니다. 움직이는 장비를 보기에는 너무 느렸습니다.
 
@@ -120,7 +120,7 @@ KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TU
 
 | 층 | 무엇이 오가나 | KVS가 주는 것 | 다루는 편 |
 |---|---|---|---|
-| 시그널링 | SDP offer/answer, ICE 후보 (몇 KB) | 신호 채널, 서명한 WebSocket 주소 | 2편 |
+| 시그널링 | SDP offer/answer, ICE 후보 (몇 KB) | 신호 채널, 서명한 WebSocket 주소 | [2편]({% post_url 2026-11-10-kvs-webrtc-signaling %}) |
 | 길 찾기 | STUN 요청·응답, 연결 시험 | 리전별 STUN, TURN(`GetIceServerConfig`) | 3편, 4편 |
 | 미디어 | DTLS 핸드셰이크, SRTP 영상·소리 | TURN 중계(직접 길이 없을 때) | 5편 |
 | 녹화·다시 보기 | 저장 세션 → 스트림, HLS 조각 | WebRTC 수집, 비디오 스트림, HLS | 6편, 7편 |
@@ -400,4 +400,4 @@ export async function watch(region, channelName, credentials, videoEl) {
 - **브라우저와 장비는 다른 길로 임시 자격을 받습니다.** 브라우저는 로그인 토큰을 Cognito 자격 증명 풀에, 장비는 X.509 인증서를 IoT 자격 증명 공급자에 냅니다. 장비 쪽 자격은 role alias로 정하고 기본 1시간(900~43,200초)이며, `credentials-iot:ThingName` 같은 정책 변수로 자기 채널에만 묶을 수 있습니다. 어느 쪽에도 장기 AWS 액세스 키를 두지 않습니다. 다만 장비의 인증서 개인 키는 여전히 보호해야 할 비밀입니다.
 - **권한의 핵심은 마스터 자리입니다.** 뷰어에는 보기 동작만, 장비에는 자기 채널의 마스터 자리만 줍니다.
 
-다음 편에서는 1층, 시그널링을 들여다봅니다. SDP offer와 answer에 실제로 무엇이 들어 있는지, KVS 신호 채널이 쪽지를 어떻게 전달하고 보관하는지, 그리고 그 보관 때문에 겪은 "오래된 answer" 문제를 다룹니다.
+[다음 편]({% post_url 2026-11-10-kvs-webrtc-signaling %})에서는 1층, 시그널링을 들여다봅니다. SDP offer와 answer에 실제로 무엇이 들어 있는지, KVS 신호 채널이 쪽지를 어떻게 전달하고 보관하는지, 그리고 그 보관 때문에 겪은 "오래된 answer" 문제를 다룹니다.
