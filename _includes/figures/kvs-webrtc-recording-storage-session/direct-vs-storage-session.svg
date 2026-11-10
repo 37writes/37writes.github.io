@@ -1,0 +1,96 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 372" role="img" aria-labelledby="kvs-rec-cmp-title kvs-rec-cmp-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="kvs-rec-cmp-title">녹화를 껐을 때의 직접 연결과 켰을 때의 저장 세션 경유 연결 비교</title>
+  <desc id="kvs-rec-cmp-desc">왼쪽은 녹화를 끈 직접 연결이다. 장비가 뷰어 1, 2, 3에게 영상을 한 줄씩 따로 보내므로 업링크가 시청자 수만큼 늘고, 시청자는 채널당 10명까지(늘리기 요청 가능), offer는 뷰어가 장비에게 보낸다. 오른쪽은 녹화를 켠 저장 세션 경유 연결이다. 장비는 저장 세션 한 곳에만 영상을 보내고, 저장 세션이 스트림에 녹화하면서 뷰어 1, 2, 3에게 나눠 준다. 업링크는 한 줄이고, 시청자는 3명까지(늘릴 수 없음), offer는 KVS의 저장 세션이 장비와 뷰어에게 보낸다.</desc>
+  <path class="d-line" d="M240 8 V364"/>
+
+  <text class="d-strong" x="116" y="26" text-anchor="middle">녹화 끔: 직접 연결</text>
+  <rect class="d-box" x="52" y="44" width="128" height="48"/>
+  <text x="116" y="74" text-anchor="middle">장비 (마스터)</text>
+  <path class="d-line" d="M84 92 V164 H44 V236"/>
+  <path class="d-line" d="M39 230 L44 236 L49 230"/>
+  <path class="d-line" d="M116 92 V236"/>
+  <path class="d-line" d="M111 230 L116 236 L121 230"/>
+  <path class="d-line" d="M148 92 V164 H188 V236"/>
+  <path class="d-line" d="M183 230 L188 236 L193 230"/>
+  <rect class="d-box" x="12" y="236" width="64" height="40"/>
+  <text x="44" y="262" text-anchor="middle">뷰어 1</text>
+  <rect class="d-box" x="84" y="236" width="64" height="40"/>
+  <text x="116" y="262" text-anchor="middle">뷰어 2</text>
+  <rect class="d-box" x="156" y="236" width="64" height="40"/>
+  <text x="188" y="262" text-anchor="middle">뷰어 3</text>
+  <text class="d-strong" x="116" y="310" text-anchor="middle">업링크 × 시청자 수</text>
+  <text class="d-muted" x="116" y="334" text-anchor="middle">시청자 최대 10명 (soft)</text>
+  <text class="d-muted" x="116" y="358" text-anchor="middle">offer: 뷰어 → 장비</text>
+
+  <text class="d-strong" x="364" y="26" text-anchor="middle">녹화 켬: 저장 세션</text>
+  <rect class="d-box" x="300" y="44" width="128" height="48"/>
+  <text x="364" y="74" text-anchor="middle">장비 (마스터)</text>
+  <path class="d-line" d="M364 92 V124"/>
+  <path class="d-line" d="M359 118 L364 124 L369 118"/>
+  <rect class="d-line" x="272" y="124" width="184" height="64" rx="6"/>
+  <text class="d-strong" x="364" y="152" text-anchor="middle">저장 세션 (KVS)</text>
+  <text class="d-small" x="364" y="176" text-anchor="middle">스트림에 녹화 · 뷰어에 중계</text>
+  <path class="d-line" d="M330 188 V212 H292 V236"/>
+  <path class="d-line" d="M287 230 L292 236 L297 230"/>
+  <path class="d-line" d="M364 188 V236"/>
+  <path class="d-line" d="M359 230 L364 236 L369 230"/>
+  <path class="d-line" d="M398 188 V212 H436 V236"/>
+  <path class="d-line" d="M431 230 L436 236 L441 230"/>
+  <rect class="d-box" x="260" y="236" width="64" height="40"/>
+  <text x="292" y="262" text-anchor="middle">뷰어 1</text>
+  <rect class="d-box" x="332" y="236" width="64" height="40"/>
+  <text x="364" y="262" text-anchor="middle">뷰어 2</text>
+  <rect class="d-box" x="404" y="236" width="64" height="40"/>
+  <text x="436" y="262" text-anchor="middle">뷰어 3</text>
+  <text class="d-strong" x="364" y="310" text-anchor="middle">업링크 한 줄</text>
+  <text class="d-muted d-accent" x="364" y="334" text-anchor="middle">시청자 최대 3명 (hard)</text>
+  <text class="d-muted" x="364" y="358" text-anchor="middle">offer: KVS → 장비·뷰어</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 664" role="img" aria-labelledby="kvs-rec-cmp-title-n kvs-rec-cmp-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="kvs-rec-cmp-title-n">녹화를 껐을 때의 직접 연결과 켰을 때의 저장 세션 경유 연결 비교</title>
+  <desc id="kvs-rec-cmp-desc-n">위쪽은 녹화를 끈 직접 연결이다. 장비가 뷰어 1, 2, 3에게 영상을 한 줄씩 따로 보내므로 업링크가 시청자 수만큼 늘고, 시청자는 채널당 10명까지(늘리기 요청 가능), offer는 뷰어가 장비에게 보낸다. 아래쪽은 녹화를 켠 저장 세션 경유 연결이다. 장비는 저장 세션 한 곳에만 영상을 보내고, 저장 세션이 스트림에 녹화하면서 뷰어 1, 2, 3에게 나눠 준다. 업링크는 한 줄이고, 시청자는 3명까지(늘릴 수 없음), offer는 KVS의 저장 세션이 장비와 뷰어에게 보낸다.</desc>
+  <text class="d-strong" x="160" y="26" text-anchor="middle">녹화 끔: 직접 연결</text>
+  <rect class="d-box" x="96" y="40" width="128" height="48"/>
+  <text x="160" y="70" text-anchor="middle">장비 (마스터)</text>
+  <path class="d-line" d="M128 88 V120 H60 V160"/>
+  <path class="d-line" d="M55 154 L60 160 L65 154"/>
+  <path class="d-line" d="M160 88 V160"/>
+  <path class="d-line" d="M155 154 L160 160 L165 154"/>
+  <path class="d-line" d="M192 88 V120 H260 V160"/>
+  <path class="d-line" d="M255 154 L260 160 L265 154"/>
+  <rect class="d-box" x="16" y="160" width="88" height="40"/>
+  <text x="60" y="186" text-anchor="middle">뷰어 1</text>
+  <rect class="d-box" x="116" y="160" width="88" height="40"/>
+  <text x="160" y="186" text-anchor="middle">뷰어 2</text>
+  <rect class="d-box" x="216" y="160" width="88" height="40"/>
+  <text x="260" y="186" text-anchor="middle">뷰어 3</text>
+  <text class="d-strong" x="160" y="232" text-anchor="middle">업링크 × 시청자 수</text>
+  <text class="d-muted" x="160" y="256" text-anchor="middle">시청자 최대 10명 (soft)</text>
+  <text class="d-muted" x="160" y="280" text-anchor="middle">offer: 뷰어 → 장비</text>
+
+  <path class="d-line" d="M8 304 H312"/>
+
+  <text class="d-strong" x="160" y="336" text-anchor="middle">녹화 켬: 저장 세션</text>
+  <rect class="d-box" x="96" y="350" width="128" height="48"/>
+  <text x="160" y="380" text-anchor="middle">장비 (마스터)</text>
+  <path class="d-line" d="M160 398 V422"/>
+  <path class="d-line" d="M155 416 L160 422 L165 416"/>
+  <rect class="d-line" x="68" y="422" width="184" height="64" rx="6"/>
+  <text class="d-strong" x="160" y="450" text-anchor="middle">저장 세션 (KVS)</text>
+  <text class="d-small" x="160" y="474" text-anchor="middle">스트림에 녹화 · 뷰어에 중계</text>
+  <path class="d-line" d="M128 486 V506 H60 V528"/>
+  <path class="d-line" d="M55 522 L60 528 L65 522"/>
+  <path class="d-line" d="M160 486 V528"/>
+  <path class="d-line" d="M155 522 L160 528 L165 522"/>
+  <path class="d-line" d="M192 486 V506 H260 V528"/>
+  <path class="d-line" d="M255 522 L260 528 L265 522"/>
+  <rect class="d-box" x="16" y="528" width="88" height="40"/>
+  <text x="60" y="554" text-anchor="middle">뷰어 1</text>
+  <rect class="d-box" x="116" y="528" width="88" height="40"/>
+  <text x="160" y="554" text-anchor="middle">뷰어 2</text>
+  <rect class="d-box" x="216" y="528" width="88" height="40"/>
+  <text x="260" y="554" text-anchor="middle">뷰어 3</text>
+  <text class="d-strong" x="160" y="600" text-anchor="middle">업링크 한 줄</text>
+  <text class="d-muted d-accent" x="160" y="624" text-anchor="middle">시청자 최대 3명 (hard)</text>
+  <text class="d-muted" x="160" y="648" text-anchor="middle">offer: KVS → 장비·뷰어</text>
+</svg>
