@@ -456,12 +456,26 @@ def safe_target(blocked):
         return "(형식 아님)"
     if blocked in KEYWORDS:
         return blocked
-    parts = urlsplit(blocked)
-    if parts.scheme in ("http", "https", "ws", "wss") and parts.hostname:
-        return parts.hostname  # 경로·쿼리(서명 값)는 남기지 않는다
+    try:
+        parts = urlsplit(blocked)
+        host = parts.hostname
+    except ValueError:  # 대괄호가 맞지 않는 주소 등
+        return "(형식 아님)"
+    if parts.scheme in ("http", "https", "ws", "wss") and host:
+        return host  # 경로·쿼리(서명 값)는 남기지 않는다
     if parts.scheme in ("blob", "data"):
         return parts.scheme  # data: 내용은 남기지 않는다
     return "(기록 안 함)"
+
+def body_length(raw):
+    """Content-Length를 0~65536의 정수로 읽는다. 아니면 None."""
+    if raw is None:
+        return 0
+    raw = raw.strip()
+    if not (raw.isascii() and raw.isdigit()):
+        return None
+    n = int(raw)
+    return n if n <= 65536 else None
 
 def safe_directive(name):
     ok = isinstance(name, str) and len(name) < 40 and name.replace("-", "").isalpha()
@@ -479,7 +493,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.path != "/__csp":
             self.send_error(404)
             return
-        length = min(int(self.headers.get("Content-Length") or 0), 65536)
+        length = body_length(self.headers.get("Content-Length"))
+        if length is None:
+            self.send_error(400)  # 본문을 읽지 않고 거절한다
+            return
         try:
             data = json.loads(self.rfile.read(length) or b"{}")
         except ValueError:
@@ -501,7 +518,7 @@ http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
 
 - **헤더 값은 배포 설정의 값을 그대로 씁니다.** 시험용 헤더를 따로 손으로 적으면 배포 헤더와 어긋나고, 시험이 아무것도 증명하지 못합니다. 바꾸는 것은 두 가지뿐이고, 무엇을 뺐는지 시작할 때 출력합니다. 로컬이 http라서 의미가 없는 `upgrade-insecure-requests`를 빼고, 원래 있던 보고 지시어(`report-uri`, `report-to`)를 이 서버의 `report-uri`로 바꿉니다.
 - **보고 지시어를 덧붙이지 않고 바꾸는 이유가 있습니다.** [CSP3의 정책 해석 규칙](https://www.w3.org/TR/CSP3/#parse-serialized-policy)은 같은 이름의 지시어가 두 번 나오면 뒤의 것을 무시합니다. 원래 정책에 `report-uri`가 있는데 뒤에 하나를 더 붙이면 보고는 원래 주소로 갑니다. `report-to`가 있으면 이를 지원하는 브라우저는 그쪽을 씁니다. 그러면 로컬 서버에는 아무것도 오지 않고, "0건"이 위반이 없다는 뜻인지 보고가 다른 데로 갔다는 뜻인지 알 수 없습니다. 그래서 시험을 시작할 때 일부러 위반을 하나 만들어, 보고가 이 서버에 도착하는지부터 확인합니다.
-- **보고는 지시어와 호스트만 출력합니다.** 막힌 주소가 서명된 WebSocket 주소라면 쿼리 문자열에 서명이 들어 있습니다. 보고를 그대로 로그에 쓰면 접속 권한을 로그에 남기게 됩니다. 호스트를 뽑을 수 없는 모양이면 원문으로 돌아가지 않고, 정해 둔 표지만 남깁니다. 보고 본문은 누구나 보낼 수 있는 입력이라 형식도 확인합니다.
+- **보고는 지시어와 호스트만 출력합니다.** 막힌 주소가 서명된 WebSocket 주소라면 쿼리 문자열에 서명이 들어 있습니다. 보고를 그대로 로그에 쓰면 접속 권한을 로그에 남기게 됩니다. 호스트를 뽑을 수 없는 모양이면 원문으로 돌아가지 않고, 정해 둔 표지만 남깁니다. 보고 본문은 누구나 보낼 수 있는 입력이라 형식도 확인합니다. 주소를 해석하다 오류가 나도 같은 표지를 남기고, `Content-Length`가 숫자가 아니거나 64KiB를 넘으면 본문을 읽지 않고 400으로 거절합니다.
 - **`report-uri`는 폐지 예정입니다.** [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy)은 `Reporting-Endpoints` 헤더와 `report-to`를 권하면서, 아직 `report-to`를 모르는 브라우저를 위해 `report-uri`도 같이 적으라고 합니다. 로컬 시험에는 `report-uri`로 충분했습니다.
 
 위의 의도적 위반 재현과는 별개의 기록이 하나 있습니다. 실제 대시보드를 같은 방식의 로컬 서버(배포 헤더, KVS 세 줄과 다시 보기용 `media-src`가 들어간 정책)로 띄워 실시간 영상과 다시 보기를 확인했을 때는 위반 보고가 0건이었습니다. Safari의 다시 보기는 이 시험에 들어 있지 않습니다. 이 0건은 보고 경로가 살아 있는지 확인한 위의 실험과 짝을 이룰 때 의미가 있습니다. 운영 중인 사이트에 새 규칙을 넣을 때는 막지 않고 보고만 받는 [`Content-Security-Policy-Report-Only`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy-Report-Only) 헤더로 먼저 며칠 지켜보는 방법도 있습니다.
