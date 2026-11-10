@@ -103,11 +103,21 @@ STREAM_ARN=$(aws kinesisvideo create-stream \
 : "${STREAM_ARN:?스트림 ARN을 받지 못함}"
 
 # 2) 스트림이 ACTIVE가 될 때까지 확인 (만드는 중이면 연결이 거절된다)
-until [ "$(aws kinesisvideo describe-stream \
+#    조회 자체가 실패하면 바로 끝내고, CREATING은 최대 30회 × 2초만 기다린다
+tries=0
+while :; do
+  stream_status=$(aws kinesisvideo describe-stream \
     --stream-arn "$STREAM_ARN" \
     --query StreamInfo.Status --output text \
-    --region "$REGION")" = ACTIVE ]; do
-  sleep 2
+    --region "$REGION") || { echo "스트림 조회 실패" >&2; exit 1; }
+  case "$stream_status" in
+    ACTIVE) break ;;
+    CREATING)
+      tries=$((tries + 1))
+      [ "$tries" -lt 30 ] || { echo "60초 안에 ACTIVE가 되지 않음" >&2; exit 1; }
+      sleep 2 ;;
+    *) echo "예상하지 못한 상태: $stream_status" >&2; exit 1 ;;
+  esac
 done
 
 # 3) 신호 채널을 스트림에 연결 (녹화 켜기)
@@ -121,7 +131,7 @@ aws kinesisvideo describe-media-storage-configuration \
   --channel-arn "$CHANNEL_ARN" --region "$REGION"
 ```
 
-2번의 확인을 넣은 이유는 `UpdateMediaStorageConfiguration`이 채널이나 스트림이 활성(Active) 상태가 아니면 `ResourceInUseException`으로 거절하기 때문입니다. 스트림을 막 만든 직후에는 아직 만드는 중일 수 있습니다.
+2번의 확인을 넣은 이유는 `UpdateMediaStorageConfiguration`이 채널이나 스트림이 활성(Active) 상태가 아니면 `ResourceInUseException`으로 거절하기 때문입니다. 스트림을 막 만든 직후에는 아직 만드는 중일 수 있습니다. 조회 명령을 반복 조건(`until [ "$(aws …)" = ACTIVE ]`) 안에 넣으면, 권한 오류나 자격 증명 만료로 조회가 실패해도 `set -e`가 스크립트를 끝내지 않고 빈 결과로 계속 돕니다. 그래서 조회 실패, 만드는 중(`CREATING`), 그 밖의 상태를 따로 나눠 처리했습니다.
 
 장비와 웹 쪽 코드는 연결 여부를 하드코딩하지 않고, 접속할 때마다 `DescribeMediaStorageConfiguration`을 불러 "녹화 모드인지 직접 모드인지"를 골랐습니다. 그래서 백엔드에서 연결을 끊고 배포하면 양쪽이 저절로 직접 연결로 돌아갑니다.
 
@@ -317,21 +327,47 @@ function storageJoinDue({ hasStoragePeer, lastJoinAt, lastOfferAt, now = Date.no
   return now - since >= REJOIN_AFTER_MS;
 }
 
-// 부르는 쪽: 끝난 상대는 닫고 참조를 비워야 "상대 없음"이 된다
-let storagePeer = null;   // 저장 세션의 offer를 받을 때 만든 RTCPeerConnection
+let storagePeer = null;   // 저장 세션용 RTCPeerConnection (없으면 null)
+let lastJoinAt = 0;
+let lastOfferAt = 0;
+
+// 정리는 이 함수 하나로: 참조를 먼저 비우고 닫는다
+// (close()는 connectionstatechange 이벤트를 일으키지 않으므로 이벤트에 기대지 않는다)
+function disposeStoragePeer(pc) {
+  if (storagePeer === pc) storagePeer = null;
+  pc.close();
+}
 
 function watchStoragePeer(pc) {
   pc.addEventListener('connectionstatechange', () => {
-    if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-      pc.close();
-      if (storagePeer === pc) storagePeer = null;
-    }
+    if (pc.connectionState === 'failed') disposeStoragePeer(pc);
   });
 }
-// 주기 검사: storageJoinDue({ hasStoragePeer: storagePeer !== null, lastJoinAt, lastOfferAt })
+
+// 저장 세션의 offer가 왔을 때 (answer를 만들어 보내는 부분은 생략)
+function onStorageOffer(iceServers) {
+  const pc = new RTCPeerConnection({ iceServers });
+  storagePeer = pc;
+  watchStoragePeer(pc);
+  lastOfferAt = Date.now();
+  return pc;
+}
+
+// 앱이 직접 끝낼 때(카메라 끄기 등)도 같은 정리 함수를 부른다
+function stopStoragePeer() {
+  if (storagePeer) disposeStoragePeer(storagePeer);
+}
+
+// 주기 검사 (예: 1초마다)
+function checkStorageJoin(joinStorageSession) {
+  if (storageJoinDue({ hasStoragePeer: storagePeer !== null, lastJoinAt, lastOfferAt })) {
+    lastJoinAt = Date.now();
+    joinStorageSession();   // JoinStorageSession 호출 (생략)
+  }
+}
 ```
 
-이 함수는 "상대 객체가 아예 없고 25초가 지났는가"만 판단합니다. `failed`나 `closed`가 된 상대를 닫고 참조를 `null`로 비우는 일은 부르는 쪽 몫입니다. 그 정리를 빠뜨리면 끝난 상대가 계속 "있다"로 남아 다시 join하지 못합니다.
+`storageJoinDue`는 "상대 객체가 아예 없고 25초가 지났는가"만 판단합니다. 끝난 상대를 치우는 일은 부르는 쪽 몫이고, 위 예시는 그 정리를 `disposeStoragePeer` 하나로 모았습니다. 참조를 먼저 비우고 나서 닫습니다. W3C WebRTC 명세의 `close()` 절차는 상태를 `closed`로 바꾸지만 `connectionstatechange` 이벤트는 일으키지 않습니다. 그래서 이벤트 처리기에서 `closed`를 기다렸다가 참조를 비우게 짜면, 앱이 직접 `close()`를 부른 경우에는 참조가 그대로 남습니다. 이벤트로는 `failed`만 받고, 앱이 직접 끝내는 경로(`stopStoragePeer`)도 같은 정리 함수를 부르게 한 이유입니다. 정리를 빠뜨리면 끝난 상대가 계속 "있다"로 남아 다시 join하지 못합니다.
 
 고친 뒤에는 뷰어 없이 마스터만 켜 둔 상태에서 **약 36분 동안 녹화가 하나로 이어졌습니다.** 36분은 시험용 마스터를 끈 시점에서 끝난 길이입니다. 여기서 "녹화 하나"는 끊기지 않고 이어진 한 구간을 말합니다. 스트림 안에서는 그 구간도 몇 초짜리 조각(fragment) 여러 개가 줄지어 이루어져 있습니다.
 
@@ -443,4 +479,5 @@ KVS WebRTC 수집으로 녹화를 켜면, 신호 채널이 이어 주던 장비�
 - API: [JoinStorageSession](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_webrtc_JoinStorageSession.html) · [JoinStorageSessionAsViewer](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_webrtc_JoinStorageSessionAsViewer.html) · [UpdateMediaStorageConfiguration](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_UpdateMediaStorageConfiguration.html) · [UpdateDataRetention](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_UpdateDataRetention.html)
 - [AWS::KinesisVideo::Stream (CloudFormation)](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesisvideo-stream.html)
 - [Amazon Kinesis Video Streams 요금](https://aws.amazon.com/kinesis/video-streams/pricing/)
+- [W3C WebRTC: RTCPeerConnection close()](https://www.w3.org/TR/webrtc/#dom-rtcpeerconnection-close)
 - [RFC 8445: Interactive Connectivity Establishment (ICE)](https://www.rfc-editor.org/rfc/rfc8445) · [RFC 7675: STUN Usage for Consent Freshness](https://www.rfc-editor.org/rfc/rfc7675) · [RFC 8838: Trickle ICE](https://www.rfc-editor.org/rfc/rfc8838)
