@@ -1,6 +1,6 @@
-<svg class="diagram-svg diagram-wide" viewBox="0 0 480 432" role="img" aria-labelledby="kvsbp-path-title kvsbp-path-desc" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 466" role="img" aria-labelledby="kvsbp-path-title kvsbp-path-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="kvsbp-path-title">시그널링 길과 영상 길이 다른 KVS WebRTC 구조</title>
-  <desc id="kvsbp-path-desc">현장 장비는 마스터로 KVS 신호 채널에 먼저 접속해 기다리고, 브라우저는 뷰어로 나중에 접속한다. 둘은 신호 채널의 WSS 연결로 SDP와 ICE 후보 쪽지만 주고받는다(점선). 영상은 신호 채널을 지나지 않고 장비와 브라우저 사이의 직접 길로 흐르거나, 직접 길이 막히면 KVS TURN 중계를 거쳐 흐른다(실선). KVS STUN은 기기에게 바깥에서 보이는 주소를 알려 준다.</desc>
+  <desc id="kvsbp-path-desc">현장 장비는 마스터로 KVS 신호 채널에 먼저 접속해 기다리고, 브라우저는 뷰어로 나중에 접속한다. 둘은 신호 채널의 WSS 연결로 SDP와 ICE 후보 쪽지만 주고받는다(점선). 영상은 신호 채널을 지나지 않고 장비와 브라우저 사이의 직접 길로 흐르거나, 직접 길이 막히면 KVS TURN 중계를 거쳐 흐른다(실선, TURN 상자에만 이어짐). KVS STUN은 따로 떨어진 상자로, 기기에게 바깥에서 보이는 주소만 알려 주고 영상을 나르지 않는다.</desc>
   <rect class="d-box" x="140" y="8" width="200" height="68"/>
   <text class="d-strong" x="240" y="36" text-anchor="middle">KVS 신호 채널</text>
   <text class="d-muted" x="240" y="62" text-anchor="middle">쪽지만 전달, 영상 없음</text>
@@ -20,22 +20,25 @@
   <path class="d-line" d="M150 198 H330"/>
   <text x="240" y="188" text-anchor="middle">영상 직접 (SRTP)</text>
 
-  <path class="d-line" d="M50 232 V338 H120"/>
-  <path class="d-line" d="M430 232 V338 H360"/>
-  <text class="d-muted" x="58" y="270">또는 중계</text>
-  <rect class="d-box" x="120" y="290" width="240" height="96"/>
-  <text class="d-strong" x="240" y="318" text-anchor="middle">KVS STUN · TURN</text>
-  <text x="240" y="344" text-anchor="middle">STUN: 바깥 주소 알려 줌</text>
-  <text x="240" y="370" text-anchor="middle">TURN: 막히면 영상 중계</text>
+  <path class="d-line" d="M50 232 V304 H140"/>
+  <path class="d-line" d="M430 232 V304 H340"/>
+  <text class="d-muted" x="58" y="258">또는 중계</text>
+  <rect class="d-box" x="140" y="270" width="200" height="68"/>
+  <text class="d-strong" x="240" y="298" text-anchor="middle">KVS TURN</text>
+  <text x="240" y="324" text-anchor="middle">막히면 영상 중계</text>
 
-  <path class="d-line" d="M60 416 H100" stroke-dasharray="6 4"/>
-  <text class="d-muted" x="108" y="421">쪽지(시그널링)</text>
-  <path class="d-line" d="M260 416 H300"/>
-  <text class="d-muted" x="308" y="421">영상(미디어)</text>
+  <rect class="d-box" x="140" y="354" width="200" height="68"/>
+  <text class="d-strong" x="240" y="382" text-anchor="middle">KVS STUN</text>
+  <text class="d-muted" x="240" y="408" text-anchor="middle">바깥 주소만 알려 줌</text>
+
+  <path class="d-line" d="M60 450 H100" stroke-dasharray="6 4"/>
+  <text class="d-muted" x="108" y="455">쪽지(시그널링)</text>
+  <path class="d-line" d="M260 450 H300"/>
+  <text class="d-muted" x="308" y="455">영상(미디어)</text>
 </svg>
-<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 436" role="img" aria-labelledby="kvsbp-path-title-n kvsbp-path-desc-n" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 466" role="img" aria-labelledby="kvsbp-path-title-n kvsbp-path-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="kvsbp-path-title-n">시그널링 길과 영상 길이 다른 KVS WebRTC 구조</title>
-  <desc id="kvsbp-path-desc-n">현장 장비는 마스터로 KVS 신호 채널에 먼저 접속해 기다리고, 브라우저는 뷰어로 나중에 접속한다. 둘은 신호 채널의 WSS 연결로 SDP와 ICE 후보 쪽지만 주고받는다(점선). 영상은 신호 채널을 지나지 않고 장비와 브라우저 사이의 직접 길로 흐르거나, 직접 길이 막히면 KVS TURN 중계를 거쳐 흐른다(실선). KVS STUN은 기기에게 바깥에서 보이는 주소를 알려 준다.</desc>
+  <desc id="kvsbp-path-desc-n">현장 장비는 마스터로 KVS 신호 채널에 먼저 접속해 기다리고, 브라우저는 뷰어로 나중에 접속한다. 둘은 신호 채널의 WSS 연결로 SDP와 ICE 후보 쪽지만 주고받는다(점선). 영상은 신호 채널을 지나지 않고 장비와 브라우저 사이의 직접 길로 흐르거나, 직접 길이 막히면 KVS TURN 중계를 거쳐 흐른다(실선, TURN 상자에만 이어짐). KVS STUN은 따로 떨어진 상자로, 기기에게 바깥에서 보이는 주소만 알려 주고 영상을 나르지 않는다.</desc>
   <rect class="d-box" x="80" y="8" width="200" height="68"/>
   <text class="d-strong" x="180" y="36" text-anchor="middle">KVS 신호 채널</text>
   <text class="d-muted" x="180" y="62" text-anchor="middle">쪽지만 전달, 영상 없음</text>
@@ -56,16 +59,19 @@
   <text x="180" y="188" text-anchor="middle">영상</text>
   <text class="d-muted" x="180" y="222" text-anchor="middle">직접</text>
 
-  <path class="d-line" d="M20 232 V338 H40"/>
-  <path class="d-line" d="M340 232 V338 H320"/>
-  <text class="d-muted" x="180" y="272" text-anchor="middle">막히면 아래로 중계</text>
-  <rect class="d-box" x="40" y="290" width="280" height="96"/>
-  <text class="d-strong" x="180" y="318" text-anchor="middle">KVS STUN · TURN</text>
-  <text x="180" y="344" text-anchor="middle">STUN: 바깥 주소 알려 줌</text>
-  <text x="180" y="370" text-anchor="middle">TURN: 막히면 영상 중계</text>
+  <path class="d-line" d="M20 232 V304 H60"/>
+  <path class="d-line" d="M340 232 V304 H300"/>
+  <text class="d-muted" x="180" y="258" text-anchor="middle">또는 중계</text>
+  <rect class="d-box" x="60" y="270" width="240" height="68"/>
+  <text class="d-strong" x="180" y="298" text-anchor="middle">KVS TURN</text>
+  <text x="180" y="324" text-anchor="middle">막히면 영상 중계</text>
 
-  <path class="d-line" d="M16 416 H52" stroke-dasharray="6 4"/>
-  <text class="d-muted" x="60" y="421">쪽지(시그널링)</text>
-  <path class="d-line" d="M192 416 H228"/>
-  <text class="d-muted" x="236" y="421">영상(미디어)</text>
+  <rect class="d-box" x="60" y="354" width="240" height="68"/>
+  <text class="d-strong" x="180" y="382" text-anchor="middle">KVS STUN</text>
+  <text class="d-muted" x="180" y="408" text-anchor="middle">바깥 주소만 알려 줌</text>
+
+  <path class="d-line" d="M16 450 H52" stroke-dasharray="6 4"/>
+  <text class="d-muted" x="60" y="455">쪽지(시그널링)</text>
+  <path class="d-line" d="M192 450 H228"/>
+  <text class="d-muted" x="236" y="455">영상(미디어)</text>
 </svg>
