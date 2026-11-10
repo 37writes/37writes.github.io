@@ -1,6 +1,6 @@
-<svg class="diagram-svg diagram-tall" viewBox="0 0 360 648" role="img" aria-labelledby="ice-nom-title ice-nom-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="ice-nom-title">ICE가 후보를 모으고, 쌍을 우선순위대로 검사하고, 하나를 지명하는 과정</title>
-  <desc id="ice-nom-desc">1단계, 내 쪽과 상대 쪽이 각각 host 기기 주소, srflx 바깥 주소, relay 빌린 주소 후보를 모은다. 2단계, 후보를 짝지은 쌍을 우선순위가 높은 것부터 STUN Binding으로 검사한다. 내 쪽이 대칭 NAT 뒤에 있는 예에서 host와 host 쌍은 응답이 없어 실패, srflx와 srflx 쌍도 실패, relay와 srflx 쌍은 성공, relay와 relay 쌍도 성공한다. 3단계, controlling 쪽이 성공한 쌍 가운데 relay와 srflx 쌍을 골라 USE-CANDIDATE를 붙여 다시 검사하고, 이 쌍이 선택된 쌍이 되어 미디어가 흐른다. 무엇을 고를지는 구현이 정한다.</desc>
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 700" role="img" aria-labelledby="ice-nom-title ice-nom-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ice-nom-title">ICE가 후보를 모으고, 체크리스트의 쌍을 우선순위대로 검사하고, 하나를 지명하는 과정 (가상 예)</title>
+  <desc id="ice-nom-desc">가상 예다. 1단계, 내 쪽과 상대 쪽이 각각 host 기기 주소, srflx 바깥 주소, relay 빌린 주소 후보를 모아 시그널링으로 서로 보낸다. 2단계, 체크리스트를 만든다. 내 srflx 후보로 만든 쌍은 기반인 host로 바뀌어 host 쌍과 합쳐지므로, 검사는 내 host 또는 relay에서 상대 후보로 보낸다. 두 기기가 서로 다른 망에 있어 직접 경로가 막힌 예에서, 우선순위가 높은 것부터 host와 host 쌍은 응답이 없어 실패, host와 상대 srflx 쌍도 실패, relay와 상대 srflx 쌍은 성공, relay와 relay 쌍도 성공한다. 3단계, controlling 쪽이 성공한 쌍 가운데 relay와 srflx 쌍을 골라 USE-CANDIDATE를 붙여 다시 검사하고, 이 쌍이 선택된 쌍이 되어 미디어가 흐른다. 무엇을 고를지는 구현이 정하고, 최적 경로가 보장되지는 않는다.</desc>
 
   <text class="d-strong" x="12" y="28">① 후보 모으기</text>
   <rect class="d-box" x="8" y="42" width="166" height="114" rx="6"/>
@@ -21,26 +21,28 @@
   <text class="d-muted" x="256" y="144">빌린 주소</text>
   <text class="d-muted" x="180" y="182" text-anchor="middle">시그널링으로 서로 보낸다</text>
 
-  <text class="d-strong" x="12" y="222">② 쌍마다 STUN Binding 검사</text>
-  <text class="d-muted" x="12" y="246">위일수록 우선순위가 높다 (일부)</text>
+  <text class="d-strong" x="12" y="222">② 체크리스트를 차례로 검사</text>
+  <text class="d-muted" x="12" y="246">내 쪽 → 상대 쪽, 위일수록 우선순위 높음</text>
   <rect class="d-box" x="8" y="258" width="344" height="38" rx="6"/>
-  <text class="d-mono" x="22" y="282">host  ↔ host</text>
+  <text class="d-mono" x="22" y="282">host  → host</text>
   <text x="222" y="282">✗ 응답 없음</text>
   <rect class="d-box" x="8" y="304" width="344" height="38" rx="6"/>
-  <text class="d-mono" x="22" y="328">srflx ↔ srflx</text>
+  <text class="d-mono" x="22" y="328">host  → srflx</text>
   <text x="222" y="328">✗ 응답 없음</text>
   <rect class="d-box" x="8" y="350" width="344" height="38" rx="6"/>
-  <text class="d-mono" x="22" y="374">relay ↔ srflx</text>
+  <text class="d-mono" x="22" y="374">relay → srflx</text>
   <text class="d-accent" x="222" y="374">✓ 성공</text>
   <rect class="d-box" x="8" y="396" width="344" height="38" rx="6"/>
-  <text class="d-mono" x="22" y="420">relay ↔ relay</text>
+  <text class="d-mono" x="22" y="420">relay → relay</text>
   <text class="d-accent" x="222" y="420">✓ 성공</text>
-  <text class="d-muted" x="180" y="458" text-anchor="middle">예: 내 쪽이 대칭 NAT 뒤에 있을 때</text>
+  <text class="d-muted" x="180" y="458" text-anchor="middle">내 srflx 쌍은 기반 host에서 보내므로</text>
+  <text class="d-muted" x="180" y="480" text-anchor="middle">host 쌍과 합쳐진다 (일부 쌍만 표시)</text>
+  <text class="d-muted" x="180" y="502" text-anchor="middle">가상 예: 서로 다른 망, 직접 경로가 막힘</text>
 
-  <text class="d-strong" x="12" y="498">③ controlling 쪽이 지명</text>
-  <rect class="d-box" x="44" y="514" width="272" height="94" rx="6"/>
-  <text class="d-mono" x="180" y="540" text-anchor="middle">relay ↔ srflx</text>
-  <text class="d-mono" x="180" y="564" text-anchor="middle">+ USE-CANDIDATE</text>
-  <text class="d-accent" x="180" y="592" text-anchor="middle">✓ 선택된 쌍, 미디어가 흐른다</text>
-  <text class="d-muted" x="180" y="636" text-anchor="middle">무엇을 고를지는 구현이 정한다</text>
+  <text class="d-strong" x="12" y="542">③ controlling 쪽이 지명</text>
+  <rect class="d-box" x="44" y="558" width="272" height="94" rx="6"/>
+  <text class="d-mono" x="180" y="584" text-anchor="middle">relay → srflx</text>
+  <text class="d-mono" x="180" y="608" text-anchor="middle">+ USE-CANDIDATE</text>
+  <text class="d-accent" x="180" y="636" text-anchor="middle">✓ 선택된 쌍, 미디어가 흐른다</text>
+  <text class="d-muted" x="180" y="682" text-anchor="middle">무엇을 고를지는 구현이 정한다</text>
 </svg>

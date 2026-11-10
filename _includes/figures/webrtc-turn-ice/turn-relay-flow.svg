@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 660" role="img" aria-labelledby="turn-flow-title turn-flow-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="turn-flow-title">브라우저가 TURN 서버에서 주소를 빌리고 상대 장비와 중계로 통신하는 순서</title>
-  <desc id="turn-flow-desc">세로선 세 개는 왼쪽부터 브라우저, TURN 서버, 상대 장비다. 1, 브라우저가 자격 증명 없이 Allocate를 보내고 401과 nonce를 받아 거절된다. 2, 자격 증명을 붙여 Allocate를 다시 보내 성공하고 빌린 주소를 받는다. 3, CreatePermission으로 상대 IP를 허락한다. 4, ChannelBind로 채널 0x4000을 상대와 묶는다. 5, 브라우저가 4바이트 머리의 ChannelData를 보내면 TURN 서버가 빌린 주소에서 상대에게 UDP로 보낸다. 6, 상대가 빌린 주소로 답하면 TURN 서버는 권한 있는 IP일 때만 ChannelData로 브라우저에 넘긴다. 7, 브라우저가 Refresh로 할당 수명을 늘린다. 기본 수명은 10분이다.</desc>
+  <desc id="turn-flow-desc">세로선 세 개는 왼쪽부터 브라우저, TURN 서버, 상대 장비다. 1, 브라우저가 자격 증명 없이 Allocate를 보내고 401과 nonce를 받아 거절된다. 2, 자격 증명을 붙여 Allocate를 다시 보내 성공하고 빌린 주소를 받는다. 3, CreatePermission으로 상대 IP를 허락한다. ChannelBind도 권한을 만들므로 이 단계는 생략할 수 있다. 4, ChannelBind로 채널 0x4000을 상대의 IP와 포트에 묶는다. 5, 브라우저가 4바이트 머리의 ChannelData를 보내면 TURN 서버가 빌린 주소에서 상대에게 UDP로 보낸다. 6, 상대가 빌린 주소로 답하면 TURN 서버는 출발지 IP가 권한 목록에 있고 출발지 IP와 포트가 채널과 같을 때 ChannelData로 브라우저에 넘긴다. 권한은 있지만 포트가 달라 채널이 없으면 Data 지시로 넘긴다. 7, 브라우저가 Refresh로 할당 수명을 늘린다. 기본 수명은 10분이다. 권한, 채널, Refresh의 성공 응답은 생략했다.</desc>
   <rect class="d-box" x="4" y="10" width="80" height="38" rx="6"/>
   <text x="44" y="35" text-anchor="middle">브라우저</text>
   <rect class="d-box" x="144" y="10" width="104" height="38" rx="6"/>
@@ -49,7 +49,7 @@
   <path class="d-line" d="M193 512 H47"/>
   <path class="d-line" d="M54 507 L47 512 L54 517"/>
   <text class="d-mono" x="120" y="503" text-anchor="middle">ChannelData</text>
-  <text class="d-muted" x="120" y="534" text-anchor="middle">권한 있는 IP만</text>
+  <text class="d-muted" x="120" y="534" text-anchor="middle">IP 권한 + 채널 일치</text>
   <path class="d-line" d="M47 584 H193"/>
   <path class="d-line" d="M186 579 L193 584 L186 589"/>
   <text class="d-mono" x="120" y="575" text-anchor="middle">Refresh</text>
