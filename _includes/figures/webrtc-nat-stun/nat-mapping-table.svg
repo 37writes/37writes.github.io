@@ -1,39 +1,40 @@
-<svg class="diagram-svg diagram-tall" viewBox="0 0 360 748" role="img" aria-labelledby="nat-table-title nat-table-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="nat-table-title">NAT가 매핑 표 한 줄로 나가는 패킷, 돌아오는 패킷, 표에 없는 패킷을 다루는 방법</title>
-  <desc id="nat-table-desc">맨 위는 NAT의 매핑 표 한 줄이다. 안쪽 192.168.0.10:5000이 바깥 203.0.113.7:40001로 바뀌었고, 상대는 198.51.100.20:3478이다. 첫째, 나갈 때 NAT는 출발지 192.168.0.10:5000을 203.0.113.7:40001로 바꾸고 표에 적는다. 둘째, 상대가 답을 보내면 도착지 203.0.113.7:40001을 표에서 찾아 192.168.0.10:5000으로 되돌려 안쪽 기기에 전달한다. 셋째, 표에 없는 198.51.100.99:6000이 같은 바깥 주소로 보내면, 주소와 포트까지 따지는 NAT는 그 패킷을 버리고 안쪽 기기는 그런 패킷이 왔다는 것도 모른다.</desc>
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 770" role="img" aria-labelledby="nat-table-title nat-table-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="nat-table-title">주소·포트 의존 필터링을 하는 NAT가 매핑 한 줄로 나가는 패킷과 돌아오는 패킷의 주소를 바꾸고, 허용하지 않은 상대의 패킷은 필터링하는 방법</title>
+  <desc id="nat-table-desc">주소·포트 의존 필터링을 하는 NAT의 예시다. 맨 위는 매핑 한 줄과 허용 상대다. 안쪽 192.168.0.10:5000이 바깥 203.0.113.7:40001로 바뀌었고, 안쪽이 먼저 보낸 상대 198.51.100.20:3478이 허용 상대다. 첫째, 나갈 때 NAT는 출발지 192.168.0.10:5000을 203.0.113.7:40001로 바꾸고 매핑을 적는다. 둘째, 허용 상대가 답을 보내면 도착지 203.0.113.7:40001을 매핑에서 찾아 192.168.0.10:5000으로 되돌려 안쪽 기기에 전달한다. 셋째, 허용하지 않은 198.51.100.99:6000이 같은 바깥 주소로 보내면, 매핑은 있지만 허용한 상대가 아니므로 필터링되어 버려진다. 끝점 독립 필터링을 하는 NAT라면 이 패킷도 들어온다.</desc>
 
-  <rect class="d-line" x="12" y="12" width="336" height="124" rx="6"/>
-  <text class="d-strong" x="180" y="40" text-anchor="middle">NAT 매핑 표 (한 줄)</text>
-  <text class="d-muted" x="40" y="72">안쪽</text>
-  <text class="d-mono" x="104" y="72">192.168.0.10:5000</text>
-  <text class="d-muted" x="40" y="98">바깥</text>
-  <text class="d-mono" x="104" y="98">203.0.113.7:40001</text>
-  <text class="d-muted" x="40" y="124">상대</text>
-  <text class="d-mono" x="104" y="124">198.51.100.20:3478</text>
+  <rect class="d-line" x="12" y="12" width="336" height="146" rx="6"/>
+  <text class="d-strong" x="180" y="38" text-anchor="middle">매핑과 허용 상대 (한 줄)</text>
+  <text class="d-small" x="180" y="60" text-anchor="middle">주소·포트 의존 필터링 예시</text>
+  <text class="d-muted" x="34" y="92">안쪽</text>
+  <text class="d-mono" x="122" y="92">192.168.0.10:5000</text>
+  <text class="d-muted" x="34" y="118">바깥</text>
+  <text class="d-mono" x="122" y="118">203.0.113.7:40001</text>
+  <text class="d-muted" x="34" y="144">허용 상대</text>
+  <text class="d-mono" x="122" y="144">198.51.100.20:3478</text>
 
-  <rect class="d-box" x="12" y="156" width="336" height="180"/>
-  <text class="d-strong" x="180" y="184" text-anchor="middle">① 나갈 때</text>
-  <text class="d-muted" x="180" y="208" text-anchor="middle">출발지를 바꾸고 표에 적는다</text>
-  <text class="d-mono" x="180" y="240" text-anchor="middle">출발 192.168.0.10:5000</text>
-  <path class="d-line" d="M180 250 V272"/>
-  <path class="d-line" d="M175 266 L180 272 L185 266"/>
-  <text class="d-mono" x="180" y="294" text-anchor="middle">출발 203.0.113.7:40001</text>
-  <text class="d-muted" x="180" y="322" text-anchor="middle">→ 상대에게 나간다</text>
+  <rect class="d-box" x="12" y="178" width="336" height="180"/>
+  <text class="d-strong" x="180" y="206" text-anchor="middle">① 나갈 때</text>
+  <text class="d-muted" x="180" y="230" text-anchor="middle">출발지를 바꾸고 매핑을 적는다</text>
+  <text class="d-mono" x="180" y="262" text-anchor="middle">출발 192.168.0.10:5000</text>
+  <path class="d-line" d="M180 272 V294"/>
+  <path class="d-line" d="M175 288 L180 294 L185 288"/>
+  <text class="d-mono" x="180" y="316" text-anchor="middle">출발 203.0.113.7:40001</text>
+  <text class="d-muted" x="180" y="344" text-anchor="middle">→ 상대에게 나간다</text>
 
-  <rect class="d-box" x="12" y="356" width="336" height="180"/>
-  <text class="d-strong" x="180" y="384" text-anchor="middle">② 상대가 답할 때</text>
-  <text class="d-muted" x="180" y="408" text-anchor="middle">표를 보고 안쪽 주소로 되돌린다</text>
-  <text class="d-mono" x="180" y="440" text-anchor="middle">도착 203.0.113.7:40001</text>
-  <path class="d-line" d="M180 450 V472"/>
-  <path class="d-line" d="M175 466 L180 472 L185 466"/>
-  <text class="d-mono" x="180" y="494" text-anchor="middle">도착 192.168.0.10:5000</text>
-  <text class="d-strong" x="180" y="524" text-anchor="middle">✓ 안쪽 기기로 전달</text>
+  <rect class="d-box" x="12" y="378" width="336" height="180"/>
+  <text class="d-strong" x="180" y="406" text-anchor="middle">② 허용 상대가 답할 때</text>
+  <text class="d-muted" x="180" y="430" text-anchor="middle">매핑을 보고 안쪽 주소로 되돌린다</text>
+  <text class="d-mono" x="180" y="462" text-anchor="middle">도착 203.0.113.7:40001</text>
+  <path class="d-line" d="M180 472 V494"/>
+  <path class="d-line" d="M175 488 L180 494 L185 488"/>
+  <text class="d-mono" x="180" y="516" text-anchor="middle">도착 192.168.0.10:5000</text>
+  <text class="d-strong" x="180" y="546" text-anchor="middle">✓ 안쪽 기기로 전달</text>
 
-  <rect class="d-box" x="12" y="556" width="336" height="180"/>
-  <text class="d-strong" x="180" y="584" text-anchor="middle">③ 표에 없는 상대가 보낼 때</text>
-  <text class="d-muted" x="180" y="608" text-anchor="middle">바깥 주소는 맞지만 상대가 다르다</text>
-  <text class="d-mono" x="180" y="640" text-anchor="middle">출발 198.51.100.99:6000</text>
-  <text class="d-mono" x="180" y="666" text-anchor="middle">도착 203.0.113.7:40001</text>
-  <text class="d-strong d-accent" x="180" y="700" text-anchor="middle">✗ 버린다</text>
-  <text class="d-muted" x="180" y="724" text-anchor="middle">안쪽 기기는 온 줄도 모른다</text>
+  <rect class="d-box" x="12" y="578" width="336" height="180"/>
+  <text class="d-strong" x="180" y="606" text-anchor="middle">③ 허용하지 않은 상대가 보낼 때</text>
+  <text class="d-muted" x="180" y="630" text-anchor="middle">매핑은 있지만 허용한 상대가 아니다</text>
+  <text class="d-mono" x="180" y="662" text-anchor="middle">출발 198.51.100.99:6000</text>
+  <text class="d-mono" x="180" y="688" text-anchor="middle">도착 203.0.113.7:40001</text>
+  <text class="d-strong d-accent" x="180" y="722" text-anchor="middle">✗ 필터링되어 버려진다</text>
+  <text class="d-muted" x="180" y="746" text-anchor="middle">끝점 독립 필터링이면 들어온다</text>
 </svg>
