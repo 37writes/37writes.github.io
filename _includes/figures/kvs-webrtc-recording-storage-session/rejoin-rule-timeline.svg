@@ -1,33 +1,37 @@
-<svg class="diagram-svg diagram-tall" viewBox="0 0 360 600" role="img" aria-labelledby="kvs-rejoin-title kvs-rejoin-desc" xmlns="http://www.w3.org/2000/svg">
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 684" role="img" aria-labelledby="kvs-rejoin-title kvs-rejoin-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="kvs-rejoin-title">JoinStorageSession을 다시 부르는 규칙을 고치기 전과 고친 뒤의 시간 흐름</title>
-  <desc id="kvs-rejoin-desc">위쪽은 고치기 전이다. 0초에 join을 부르고 offer가 온다. 약 0.7초, offer에 답하는 중에 join을 또 불러 답하던 세션이 버려진다. 약 30초, 버려진 연결이 ICE consent 확인에 실패해 닫힌다. 약 33초, 같은 일이 처음부터 되풀이되어 녹화는 30초 남짓한 조각만 남는다. 아래쪽은 25초 규칙으로 고친 뒤다. 0초에 join을 부르고 offer가 온다. 연결 중이거나 연결된 상대가 있으면 join을 부르지 않아 협상 중인 세션을 지킨다. 상대가 아예 없고 마지막 join과 offer 중 늦은 쪽에서 25초가 지났을 때만 join한다. 결과로 시험용 마스터를 끌 때까지 약 36분 동안 녹화 하나가 이어졌다.</desc>
-  <text class="d-strong" x="16" y="28">고치기 전: 약 33초마다 새 세션</text>
-  <path class="d-line" d="M32 48 V268"/>
-  <circle class="d-dot" cx="32" cy="64" r="5"/>
-  <text x="52" y="70">0초 · join, offer 도착</text>
-  <circle class="d-accent" cx="32" cy="116" r="5"/>
-  <text class="d-accent" x="52" y="122">약 0.7초 · 답하는 중 또 join</text>
-  <text class="d-small" x="52" y="144">답하던 세션이 버려짐</text>
-  <circle class="d-dot" cx="32" cy="180" r="5"/>
-  <text x="52" y="186">약 30초 · 버려진 연결 닫힘</text>
-  <text class="d-small" x="52" y="208">ICE consent 확인 실패 (RFC 7675)</text>
-  <circle class="d-dot" cx="32" cy="244" r="5"/>
-  <text x="52" y="250">약 33초 · 처음부터 되풀이</text>
-  <text class="d-small" x="52" y="272">녹화는 30초 남짓한 조각만 남음</text>
+  <desc id="kvs-rejoin-desc">위쪽은 고치기 전에 이번에 관찰한 흐름이다. 0초에 join을 부르고 offer가 온다. 약 0.7초, offer에 답하는 중에 join을 또 불러 답하던 세션이 버려진다. 약 30초, ICE consent가 만료되고 우리 구현이 이때 연결을 닫는다. RFC 7675가 요구하는 것은 그 경로로 보내기를 멈추는 것까지다. 약 33초, 같은 일이 처음부터 되풀이되어 녹화는 30초 남짓한 조각만 남는다. 아래쪽은 고친 뒤다. 0초에 join을 부르고 offer가 온다. 상대가 있는 동안에는 협상 중이어도 join을 다시 부르지 않는다. 결과로 시험용 마스터를 끌 때까지 약 36분 동안 녹화 하나가 이어졌다. 따로 놓인 상자는 상대가 사라질 경우의 규칙이다. 상대 객체가 없고 마지막 join과 마지막 offer 중 늦은 쪽에서 25초가 지나면 다시 join한다.</desc>
+  <text class="d-strong" x="16" y="28">고치기 전 (이번 관찰)</text>
+  <text class="d-small" x="16" y="50">약 33초마다 새 세션이 열림</text>
+  <path class="d-line" d="M32 70 V284"/>
+  <circle class="d-dot" cx="32" cy="80" r="5"/>
+  <text x="52" y="86">0초 · join, offer 도착</text>
+  <circle class="d-accent" cx="32" cy="132" r="5"/>
+  <text class="d-accent" x="52" y="138">약 0.7초 · 답하는 중 또 join</text>
+  <text class="d-small" x="52" y="160">답하던 세션이 버려짐</text>
+  <circle class="d-dot" cx="32" cy="196" r="5"/>
+  <text x="52" y="202">약 30초 · consent 만료</text>
+  <text class="d-small" x="52" y="224">우리 구현이 이때 연결을 닫음</text>
+  <text class="d-small" x="52" y="244">(RFC 7675의 요구는 송신 중단까지)</text>
+  <circle class="d-dot" cx="32" cy="278" r="5"/>
+  <text x="52" y="284">약 33초 · 처음부터 되풀이</text>
+  <text class="d-small" x="52" y="306">녹화는 30초 남짓한 조각만 남음</text>
 
-  <path class="d-line" d="M8 300 H352"/>
+  <path class="d-line" d="M8 330 H352"/>
 
-  <text class="d-strong" x="16" y="336">고친 뒤: 25초 규칙</text>
-  <path class="d-line" d="M32 356 V552"/>
-  <circle class="d-dot" cx="32" cy="372" r="5"/>
-  <text x="52" y="378">0초 · join, offer 도착</text>
-  <circle class="d-dot" cx="32" cy="424" r="5"/>
-  <text x="52" y="430">상대가 연결 중·연결됨</text>
-  <text class="d-small" x="52" y="452">→ join 안 함, 협상 중인 세션을 지킴</text>
-  <circle class="d-dot" cx="32" cy="488" r="5"/>
-  <text x="52" y="494">상대 없음 + 25초 지남 → join</text>
-  <text class="d-small" x="52" y="516">마지막 join·offer 중 늦은 쪽 기준</text>
-  <circle class="d-dot" cx="32" cy="552" r="5"/>
-  <text class="d-strong" x="52" y="558">약 36분 녹화 하나</text>
-  <text class="d-small" x="52" y="580">시험용 마스터를 끌 때까지 이어짐</text>
+  <text class="d-strong" x="16" y="366">고친 뒤</text>
+  <path class="d-line" d="M32 386 V512"/>
+  <circle class="d-dot" cx="32" cy="396" r="5"/>
+  <text x="52" y="402">0초 · join, offer 도착</text>
+  <circle class="d-dot" cx="32" cy="448" r="5"/>
+  <text x="52" y="454">상대가 있는 동안</text>
+  <text class="d-small" x="52" y="476">→ 협상 중이어도 다시 join 안 함</text>
+  <circle class="d-dot" cx="32" cy="512" r="5"/>
+  <text class="d-strong" x="52" y="518">약 36분 녹화 하나</text>
+  <text class="d-small" x="52" y="540">시험용 마스터를 끌 때까지 이어짐</text>
+
+  <rect class="d-box" x="16" y="568" width="328" height="100" rx="6"/>
+  <text x="32" y="596">상대가 사라질 경우의 규칙</text>
+  <text class="d-small" x="32" y="622">상대 객체가 없고, 마지막 join·offer 중</text>
+  <text class="d-small" x="32" y="644">늦은 쪽에서 25초가 지나면 다시 join</text>
 </svg>
