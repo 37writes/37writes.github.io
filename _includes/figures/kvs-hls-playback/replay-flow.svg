@@ -1,8 +1,8 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 760" role="img" aria-labelledby="hls-flow-title hls-flow-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="hls-flow-title">KVS 녹화를 브라우저에서 HLS로 다시 보는 여섯 단계</title>
-  <desc id="hls-flow-desc">위쪽 세 단계는 브라우저가 임시 AWS 자격으로 SigV4 서명을 해서 부르는 API다. 1단계 GetDataEndpoint로 API 이름마다 그 스트림의 데이터 주소를 받고, 2단계 ListFragments로 조각 목록을 받아 시각순으로 정렬해 녹화 단위로 묶고, 3단계 GetHLSStreamingSessionURL로 ON_DEMAND 모드, 시간 범위, 만료 시간을 정해 재생 주소를 받는다. 점선 아래 세 단계는 서명 없이 그 주소 속 세션 토큰만으로 진행된다. 4단계 플레이어가 마스터 재생 목록과 미디어 재생 목록을 받아 조각 주소와 길이, 녹화 시각을 읽고, 5단계 초기화 조각 하나와 미디어 조각들을 차례로 받고, 6단계 hls.js가 MSE의 SourceBuffer에 조각을 이어 붙여 video 요소가 재생한다.</desc>
+  <desc id="hls-flow-desc">위쪽 세 단계는 브라우저가 임시 AWS 자격으로 SigV4 서명을 해서 부르는 세 종류의 API다. 실제 요청 수는 이보다 많을 수 있다. 1단계 GetDataEndpoint로 API 이름마다 그 스트림의 데이터 주소를 받고, 2단계 ListFragments로 조각 목록을 받아 시각순으로 정렬해 녹화 단위로 묶는다. 2단계는 녹화 목록을 보여 주는 이 화면을 위한 단계이고, 볼 시간 범위를 이미 알면 재생 주소를 받는 데 꼭 필요하지는 않다. 3단계 GetHLSStreamingSessionURL로 ON_DEMAND 모드, 시간 범위, 만료 시간을 정해 재생 주소를 받는다. 점선 아래 세 단계는 서명 없이 그 주소 속 세션 토큰만으로 진행된다. 4단계 플레이어가 마스터 재생 목록과 미디어 재생 목록을 받아 조각 주소와 길이, 녹화 시각을 읽고, 5단계 초기화 조각과 미디어 조각들을 차례로 받고, 6단계 hls.js가 MSE의 SourceBuffer에 조각을 이어 붙여 video 요소가 재생한다.</desc>
 
-  <text class="d-muted" x="180" y="24" text-anchor="middle">서명한 API 호출 (SigV4)</text>
+  <text class="d-muted" x="180" y="24" text-anchor="middle">서명한 API 세 종류 (SigV4)</text>
 
   <rect class="d-box" x="30" y="40" width="300" height="84"/>
   <text class="d-strong" x="180" y="66" text-anchor="middle">① 데이터 주소 받기</text>
@@ -15,7 +15,7 @@
   <rect class="d-box" x="30" y="148" width="300" height="84"/>
   <text class="d-strong" x="180" y="174" text-anchor="middle">② 녹화 구간 찾기</text>
   <text class="d-mono" x="180" y="198" text-anchor="middle">ListFragments</text>
-  <text class="d-muted" x="180" y="221" text-anchor="middle">조각 목록 → 정렬 → 녹화로 묶기</text>
+  <text class="d-muted" x="180" y="221" text-anchor="middle">이 화면의 목록용 · 정렬해 녹화로 묶기</text>
 
   <path class="d-line" d="M180 232 V256"/>
   <path class="d-line" d="M175 250 L180 256 L185 250"/>
@@ -45,7 +45,7 @@
   <rect class="d-box" x="30" y="564" width="300" height="84"/>
   <text class="d-strong" x="180" y="590" text-anchor="middle">⑤ 조각 받기</text>
   <text class="d-mono" x="180" y="614" text-anchor="middle">fMP4</text>
-  <text class="d-muted" x="180" y="637" text-anchor="middle">초기화 조각 1개 + 미디어 조각들</text>
+  <text class="d-muted" x="180" y="637" text-anchor="middle">초기화 조각 + 미디어 조각들</text>
 
   <path class="d-line" d="M180 648 V672"/>
   <path class="d-line" d="M175 666 L180 672 L185 666"/>

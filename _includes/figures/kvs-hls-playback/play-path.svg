@@ -1,17 +1,17 @@
-<svg class="diagram-svg diagram-wide" viewBox="0 0 480 400" role="img" aria-labelledby="hls-path-title hls-path-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="hls-path-title">브라우저가 HLS 다시 보기를 재생하는 두 길과 각각 필요한 CSP</title>
-  <desc id="hls-path-desc">먼저 MediaSource나 ManagedMediaSource, 곧 MSE가 있는지 본다. 있으면 hls.js가 JavaScript로 재생 목록과 조각을 받아 SourceBuffer에 이어 붙이고, video의 src는 blob 주소가 된다. 이 길에는 CSP의 media-src에 blob:과 connect-src에 KVS 주소가 필요하다. 없으면 video의 src에 HLS 주소를 그대로 넣고 브라우저가 KVS 주소를 직접 연다. 이 길에는 media-src에 KVS 주소가 필요하다. canPlayType이 maybe라고 답하는 것은 길을 고르는 근거로 쓰지 않는다. 있다고 답해도 실제로는 재생하지 못할 수 있기 때문이다.</desc>
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 476" role="img" aria-labelledby="hls-path-title hls-path-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hls-path-title">브라우저가 HLS 다시 보기 재생 길을 고르는 순서와 길마다 필요한 CSP</title>
+  <desc id="hls-path-desc">먼저 hls.js를 쓸 수 있는지 본다. MediaSource나 ManagedMediaSource, 곧 MSE가 있는지는 hls.js를 내려받을지 정하는 1차 검사이고, 있으면 hls.js를 불러와 Hls.isSupported()로 다시 확인한다. 쓸 수 있으면 hls.js가 JavaScript로 재생 목록과 조각을 받아 SourceBuffer에 이어 붙이고, video의 src는 blob 주소가 된다. 이 길에는 CSP의 media-src에 blob:과 connect-src에 KVS 주소가 필요하다. MSE가 없거나 Hls.isSupported()가 거짓이면 자체 HLS를 시도한다. canPlayType이 빈 문자열이 아니면 video의 src에 HLS 주소를 그대로 넣고 브라우저가 KVS 주소를 직접 연다. 이 길에는 media-src에 KVS 주소가 필요하다. 자체 HLS도 안 되면 오류를 낸다. canPlayType의 maybe는 첫 판단으로 쓰지 않고 hls.js를 쓸 수 없을 때만 시도해 본다. 있다고 답해도 실제로는 재생하지 못할 수 있기 때문이다.</desc>
 
   <rect class="d-box" x="90" y="12" width="300" height="60"/>
-  <text class="d-strong" x="240" y="38" text-anchor="middle">MSE가 있나?</text>
-  <text class="d-muted" x="240" y="61" text-anchor="middle">MediaSource · ManagedMediaSource</text>
+  <text class="d-strong" x="240" y="38" text-anchor="middle">hls.js를 쓸 수 있나?</text>
+  <text class="d-muted" x="240" y="61" text-anchor="middle">MSE 있음 → Hls.isSupported()</text>
 
   <path class="d-line" d="M200 72 V96 H123 V120"/>
   <path class="d-line" d="M118 114 L123 120 L128 114"/>
-  <text class="d-muted" x="162" y="90" text-anchor="middle">있음</text>
+  <text class="d-muted" x="162" y="90" text-anchor="middle">예</text>
   <path class="d-line" d="M280 72 V96 H357 V120"/>
   <path class="d-line" d="M352 114 L357 120 L362 114"/>
-  <text class="d-muted" x="318" y="90" text-anchor="middle">없음</text>
+  <text class="d-muted" x="318" y="90" text-anchor="middle">아니오</text>
 
   <rect class="d-box" x="12" y="120" width="222" height="196"/>
   <text class="d-strong" x="123" y="150" text-anchor="middle">hls.js (MSE)</text>
@@ -23,23 +23,29 @@
   <text class="d-mono" x="123" y="306" text-anchor="middle">connect-src KVS 주소</text>
 
   <rect class="d-box" x="246" y="120" width="222" height="196"/>
-  <text class="d-strong" x="357" y="150" text-anchor="middle">자체 HLS</text>
+  <text class="d-strong" x="357" y="150" text-anchor="middle">자체 HLS 시도</text>
   <text class="d-muted" x="357" y="180" text-anchor="middle">브라우저가 직접 받음</text>
   <text class="d-muted" x="357" y="204" text-anchor="middle">KVS 주소를 바로 연다</text>
   <text class="d-mono" x="357" y="232" text-anchor="middle">src = HLS URL</text>
   <text class="d-muted" x="357" y="262" text-anchor="middle">CSP에 필요한 것</text>
   <text class="d-mono" x="357" y="286" text-anchor="middle">media-src KVS 주소</text>
+  <text class="d-muted d-small" x="357" y="306" text-anchor="middle">canPlayType이 빈 답이 아닐 때</text>
 
-  <text class="d-strong d-accent" x="240" y="352" text-anchor="middle">✗ canPlayType의 'maybe'로 고르지 않는다</text>
-  <text class="d-muted" x="240" y="378" text-anchor="middle">있다고 답해도 재생하지 못할 수 있다</text>
+  <path class="d-line" d="M357 316 V340"/>
+  <path class="d-line" d="M352 334 L357 340 L362 334"/>
+  <rect class="d-box" x="246" y="340" width="222" height="52"/>
+  <text class="d-strong" x="357" y="372" text-anchor="middle">둘 다 안 되면 오류</text>
+
+  <text class="d-strong d-accent" x="240" y="432" text-anchor="middle">✗ 'maybe'를 첫 판단으로 쓰지 않는다</text>
+  <text class="d-muted" x="240" y="458" text-anchor="middle">hls.js를 못 쓸 때만 해 본다</text>
 </svg>
-<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 612" role="img" aria-labelledby="hls-path-title-n hls-path-desc-n" xmlns="http://www.w3.org/2000/svg">
-  <title id="hls-path-title-n">브라우저가 HLS 다시 보기를 재생하는 두 길과 각각 필요한 CSP</title>
-  <desc id="hls-path-desc-n">먼저 MSE가 있는지 본다. 있으면 hls.js가 JavaScript로 재생 목록과 조각을 받아 SourceBuffer에 이어 붙이고, video의 src는 blob 주소가 된다. CSP에는 media-src blob:과 connect-src에 KVS 주소가 필요하다. 없으면 video의 src에 HLS 주소를 넣고 브라우저가 KVS 주소를 직접 연다. CSP에는 media-src에 KVS 주소가 필요하다. canPlayType의 maybe는 근거로 쓰지 않는다. 있다고 답해도 재생하지 못할 수 있다.</desc>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 720" role="img" aria-labelledby="hls-path-title-n hls-path-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="hls-path-title-n">브라우저가 HLS 다시 보기 재생 길을 고르는 순서와 길마다 필요한 CSP</title>
+  <desc id="hls-path-desc-n">먼저 hls.js를 쓸 수 있는지 본다. MSE가 있는지는 hls.js를 내려받을지 정하는 1차 검사이고, 있으면 Hls.isSupported()로 다시 확인한다. 쓸 수 있으면 hls.js가 JavaScript로 재생 목록과 조각을 받아 SourceBuffer에 이어 붙이고, video의 src는 blob 주소가 된다. CSP에는 media-src blob:과 connect-src에 KVS 주소가 필요하다. 못 쓰면 자체 HLS를 시도한다. canPlayType이 빈 문자열이 아니면 video의 src에 HLS 주소를 넣고 브라우저가 KVS 주소를 직접 연다. CSP에는 media-src에 KVS 주소가 필요하다. 둘 다 안 되면 오류를 낸다. canPlayType의 maybe는 첫 판단으로 쓰지 않고 hls.js를 못 쓸 때만 해 본다.</desc>
 
   <rect class="d-box" x="20" y="12" width="290" height="64"/>
-  <text class="d-strong" x="165" y="40" text-anchor="middle">MSE가 있나?</text>
-  <text class="d-muted" x="165" y="64" text-anchor="middle">MediaSource · ManagedMediaSource</text>
+  <text class="d-strong" x="165" y="40" text-anchor="middle">hls.js를 쓸 수 있나?</text>
+  <text class="d-muted" x="165" y="64" text-anchor="middle">MSE 있음 → Hls.isSupported()</text>
 
   <path class="d-line" d="M165 76 V104"/>
   <path class="d-line" d="M160 98 L165 104 L170 98"/>
@@ -47,7 +53,7 @@
   <path class="d-line" d="M14 407 L20 412 L14 417"/>
 
   <rect class="d-box" x="20" y="104" width="290" height="200"/>
-  <text class="d-strong" x="165" y="134" text-anchor="middle">있으면: hls.js</text>
+  <text class="d-strong" x="165" y="134" text-anchor="middle">쓸 수 있으면: hls.js</text>
   <text class="d-muted" x="165" y="164" text-anchor="middle">JS가 목록·조각을 받음</text>
   <text class="d-muted" x="165" y="188" text-anchor="middle">SourceBuffer에 이어 붙임</text>
   <text class="d-mono" x="165" y="216" text-anchor="middle">src = blob:…</text>
@@ -55,15 +61,21 @@
   <text class="d-mono" x="165" y="270" text-anchor="middle">media-src blob:</text>
   <text class="d-mono" x="165" y="292" text-anchor="middle">connect-src KVS 주소</text>
 
-  <rect class="d-box" x="20" y="324" width="290" height="176"/>
-  <text class="d-strong" x="165" y="354" text-anchor="middle">없으면: 자체 HLS</text>
+  <rect class="d-box" x="20" y="324" width="290" height="200"/>
+  <text class="d-strong" x="165" y="354" text-anchor="middle">못 쓰면: 자체 HLS 시도</text>
   <text class="d-muted" x="165" y="384" text-anchor="middle">브라우저가 직접 받음</text>
   <text class="d-muted" x="165" y="408" text-anchor="middle">KVS 주소를 바로 연다</text>
   <text class="d-mono" x="165" y="436" text-anchor="middle">src = HLS URL</text>
   <text class="d-muted" x="165" y="464" text-anchor="middle">CSP에 필요한 것</text>
   <text class="d-mono" x="165" y="488" text-anchor="middle">media-src KVS 주소</text>
+  <text class="d-muted d-small" x="165" y="512" text-anchor="middle">canPlayType이 빈 답이 아닐 때</text>
 
-  <text class="d-strong d-accent" x="165" y="540" text-anchor="middle">✗ canPlayType의 'maybe'로</text>
-  <text class="d-strong d-accent" x="165" y="564" text-anchor="middle">고르지 않는다</text>
-  <text class="d-muted" x="165" y="592" text-anchor="middle">있다고 답해도 재생 못 할 수 있다</text>
+  <path class="d-line" d="M165 524 V548"/>
+  <path class="d-line" d="M160 542 L165 548 L170 542"/>
+  <rect class="d-box" x="20" y="548" width="290" height="52"/>
+  <text class="d-strong" x="165" y="580" text-anchor="middle">둘 다 안 되면 오류</text>
+
+  <text class="d-strong d-accent" x="165" y="640" text-anchor="middle">✗ 'maybe'를 첫 판단으로</text>
+  <text class="d-strong d-accent" x="165" y="664" text-anchor="middle">쓰지 않는다</text>
+  <text class="d-muted" x="165" y="694" text-anchor="middle">hls.js를 못 쓸 때만 해 본다</text>
 </svg>

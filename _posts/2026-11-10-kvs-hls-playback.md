@@ -29,7 +29,7 @@ Chrome은 "maybe"라고 답했고, 코드는 그것을 "된다"로 받아들여 
 
 > HLS 재생 목록에는 무엇이 들어 있고, 브라우저는 그것을 어떻게 영상으로 만드나? 그리고 "maybe"는 대체 무슨 뜻인가?
 
-이 글은 그 질문에 대한 정리입니다. 먼저 HLS가 영상을 조각과 재생 목록으로 나르는 원리를 RFC 8216 기준으로 기초부터 짚고, KVS가 녹화를 HLS로 꺼내 주는 API 세 개를 공식 문서 기준으로 살펴봅니다. 이어서 브라우저가 HLS를 재생하는 두 길(자체 재생과 MSE 위의 hls.js)과 `canPlayType`의 세 가지 답을 보고, 그때 정한 것들과 배포본에서만 실패한 사례로 돌아갑니다.
+이 글은 그 질문에 대한 정리입니다. 먼저 HLS가 영상을 조각과 재생 목록으로 나르는 원리를 RFC 8216 기준으로 기초부터 짚고, KVS가 녹화를 HLS로 꺼내 주는 API를 공식 문서 기준으로 살펴봅니다. 이어서 브라우저가 HLS를 재생하는 두 길(자체 재생과 MSE 위의 hls.js)과 `canPlayType`의 세 가지 답을 보고, 그때 정한 것들과 배포본에서만 실패한 사례로 돌아갑니다.
 
 ## 앞 편 짧은 복습
 
@@ -43,16 +43,16 @@ Chrome은 "maybe"라고 답했고, 코드는 그것을 "된다"로 받아들여 
 
 실시간 영상에 이미 WebRTC를 쓰고 있는데 다시 보기에 왜 다른 방식을 쓸까요? 두 방식이 풀려는 문제가 다르기 때문입니다.
 
-WebRTC는 **지금 이 순간**을 보내는 데 맞춰져 있습니다. 영상은 프레임이 나오는 대로 작은 RTP 패킷으로 잘려 UDP로 흐르고, 늦게 온 패킷은 기다리지 않고 버립니다. 그래서 지연이 수백 ms 수준으로 짧은 대신, 지난 장면으로 되돌아가거나 원하는 위치로 건너뛰는 개념이 없습니다. 연결도 시청자마다 하나씩 맺어야 합니다.
+WebRTC는 **지금 이 순간**을 보내는 데 맞춰져 있습니다. 영상은 프레임이 나오는 대로 작은 패킷으로 잘려 보통 UDP 위의 SRTP로 흐릅니다. 받는 쪽은 아주 짧게만 버퍼링해서 도착 간격의 흔들림(jitter)을 흡수하고, 잃어버린 패킷은 재전송 요청(NACK)으로 다시 받기도 하지만 재생할 시점을 넘긴 데이터는 버릴 수 있습니다. UDP가 막힌 곳에서는 TURN 서버까지 TCP나 TLS로 붙기도 합니다([RFC 8835 §3.4~3.5](https://www.rfc-editor.org/rfc/rfc8835.html#section-3.4), [RFC 8834 §6.1](https://www.rfc-editor.org/rfc/rfc8834.html#section-6.1)). 이렇게 버퍼를 짧게 두는 설계 덕분에 지연을 수백 ms 수준까지 줄일 수 있지만, 그 값은 네트워크 상태에 따라 달라지고 프로토콜이 보장하는 수치는 아닙니다. 그리고 WebRTC 전송 자체에는 녹화를 찾아 지난 장면으로 되돌아가거나 원하는 위치로 건너뛰는 기능이 없습니다. 연결도 시청자마다 하나씩 맺어야 합니다.
 
-HLS(HTTP Live Streaming)는 반대입니다. 영상을 몇 초짜리 **파일 조각**으로 잘라 두고, 플레이어가 평범한 HTTP GET으로 차례로 받아 이어 붙입니다. 조각 하나를 다 받아야 재생할 수 있으니 지연은 길어집니다. KVS 문서는 HLS로 실시간을 볼 때 지연이 보통 3~5초, 상황에 따라 1~10초라고 적고, 1초보다 짧은 지연이 필요하면 HLS 대신 `GetMedia` API를 고려하라고 합니다. 대신 조각은 파일이라서 이미 저장된 과거 영상에도 그대로 쓸 수 있고, 몇 번째 조각부터 받을지만 정하면 원하는 위치로 건너뛸 수 있습니다. HTTP라서 캐시·CDN·방화벽과도 잘 맞습니다.
+HLS(HTTP Live Streaming)는 반대입니다. 영상을 몇 초짜리 **파일 조각**으로 잘라 두고, 플레이어가 평범한 HTTP GET으로 차례로 받아 이어 붙입니다. 이 글의 KVS 경로에서는 fragment가 만들어져 KVS에 들어가는 시간, 재생 목록과 조각을 받아 오는 시간, 플레이어가 재생 전에 데이터를 쌓아 두는 버퍼링 시간이 더해져 지연이 길어집니다(hls.js처럼 조각을 받는 도중부터 처리하는 실험적 옵션을 둔 플레이어도 있어서, 조각 하나를 다 받아야만 재생한다는 것이 HLS의 규칙은 아닙니다). KVS 문서는 HLS로 실시간을 볼 때 지연이 보통 3~5초, 상황에 따라 1~10초라고 적고, 1초보다 짧은 지연이 필요하면 HLS 대신 `GetMedia` API를 고려하라고 합니다. 대신 조각은 파일이라서 이미 저장된 과거 영상에도 그대로 쓸 수 있고, 몇 번째 조각부터 받을지만 정하면 원하는 위치로 건너뛸 수 있습니다. HTTP라서 캐시·CDN·방화벽과도 잘 맞습니다.
 
 | | WebRTC | HLS |
 |---|---|---|
 | 나르는 단위 | 프레임을 자른 RTP 패킷 | 몇 초짜리 파일 조각 |
-| 전송 | UDP(필요하면 TURN 중계) | HTTP GET |
-| 지연 | 수백 ms | 수 초(KVS 문서 기준 보통 3~5초) |
-| 지난 장면, 건너뛰기 | 없음 | 조각을 고르면 된다 |
+| 전송 | 보통 UDP 위 SRTP(TURN을 거치면 TCP·TLS도) | HTTP GET |
+| 지연 | 수백 ms까지 줄일 수 있다(보장 값은 아님) | 수 초(KVS 문서 기준 보통 3~5초) |
+| 지난 장면, 건너뛰기 | 전송 자체에는 없음 | 조각을 고르면 된다 |
 | 잘 맞는 일 | 실시간 관제, 원격 조작 | 녹화 다시 보기, 많은 시청자 |
 
 다시 보기는 지연이 몇 초 늘어도 상관없고, 대신 "10분 전부터 보기"와 재생 막대 끌기가 꼭 필요합니다. 그래서 다시 보기는 HLS가 맞습니다.
@@ -72,7 +72,7 @@ HLS는 Apple이 만들었고 [RFC 8216](https://www.rfc-editor.org/rfc/rfc8216)�
 
 ### 조각(segment)
 
-조각은 영상의 몇 초를 담은 파일입니다. 조각마다 플레이어가 그 조각만으로 디코딩을 시작할 수 있어야 하므로, 보통 조각은 **키프레임(I-frame)**에서 시작합니다. 키프레임은 앞 프레임을 참조하지 않고 그 자체로 완전한 그림인 프레임이고, 그 뒤 프레임들은 앞 프레임과의 차이만 담습니다. 그래서 인코더가 키프레임을 얼마나 자주 넣느냐가 조각을 얼마나 잘게 자를 수 있는지를 정합니다. 이 이야기는 KVS 쪽에서 다시 나옵니다.
+조각은 영상의 몇 초를 담은 파일입니다. 영상은 대부분의 프레임이 앞 프레임과의 차이만 담고, 가끔 그 자체로 완전한 그림인 **키프레임**이 들어갑니다. 그중 디코더가 그 지점부터 앞 내용 없이 새로 디코딩을 시작할 수 있는 키프레임을 **랜덤 액세스 지점**이라고 하고, H.264에서는 **IDR** 프레임이 그 역할을 합니다(뒤 프레임이 IDR 앞을 참조하지 못하게 끊어 준다는 점에서 단순한 I-frame보다 강한 약속입니다). 아무 조각에서나 재생을 시작하거나 건너뛰기 좋도록, 보통 조각을 이런 랜덤 액세스 지점에 맞춰 자릅니다. RFC 8216도 H.264 조각에는 IDR을 넣기를 권하고(SHOULD), 조각이 IDR로 시작하지 않으면 그 앞 프레임은 받아 놓고도 버려질 수 있다고 적습니다. "모든 조각이 다른 조각 없이 디코딩된다"는 보장은 따로 `#EXT-X-INDEPENDENT-SEGMENTS` 태그로 선언합니다. 그래서 인코더가 키프레임을 얼마나 자주 넣느냐가 조각을 얼마나 잘게 자를 수 있는지를 정합니다. 이 이야기는 KVS 쪽에서 다시 나옵니다.
 
 ### 재생 목록 두 층: 마스터와 미디어
 
@@ -124,12 +124,12 @@ seg-2.m4s
 - `#EXT-X-VERSION:6`: 이 목록을 해석하는 데 필요한 HLS 프로토콜 호환 버전입니다. 소수점 조각 길이, `EXT-X-MAP` 같은 기능은 일정 버전 이상에서만 쓸 수 있어서, 쓰는 기능에 따라 정합니다.
 - `#EXT-X-TARGETDURATION:2`: **조각 길이의 상한(초, 정수)**입니다. 필수 태그이고, 모든 조각의 `EXTINF` 길이를 가장 가까운 정수로 반올림한 값이 이보다 크면 안 됩니다. 플레이어는 이 값으로 목록을 다시 받을 간격을 정하므로 라이브에서 특히 중요합니다.
 - `#EXT-X-MEDIA-SEQUENCE:0`: 목록의 첫 조각 번호입니다. 없으면 0입니다. 라이브 목록은 앞쪽 조각이 빠지면서 이 번호가 늘어나고, 플레이어는 이 번호로 "어디까지 받았는지"를 맞춥니다.
-- `#EXT-X-PLAYLIST-TYPE:VOD`: 이 목록이 **바뀌지 않는다**는 약속입니다. `EVENT`면 "뒤에 붙기만 하고 앞은 안 지운다"는 약속이고, 태그가 없으면 어떤 약속도 없는 라이브 목록입니다.
+- `#EXT-X-PLAYLIST-TYPE:VOD`: 이 목록이 **바뀌지 않는다**는 약속입니다. `EVENT`면 "뒤에 붙기만 하고 앞은 안 지운다"는 약속입니다. 이 태그는 선택 사항이라, 없다고 곧 라이브 목록이라는 뜻은 아닙니다. 없으면 VOD나 EVENT의 추가 변경 제한을 선언하지 않았을 뿐이고, 목록 갱신에 관한 RFC의 기본 규칙은 그대로 적용됩니다. `ENDLIST`로 닫힌 목록에도 이 태그가 없을 수 있습니다.
 - `#EXT-X-MAP:URI="init.mp4"`: 뒤따르는 조각들을 해석하는 데 필요한 **초기화 조각(initialization section)**의 주소입니다. 조각이 fMP4이면 이 태그가 필요합니다(아래 "조각 그릇"에서 다시 봅니다).
-- `#EXT-X-PROGRAM-DATE-TIME:...`: 바로 다음 조각의 **첫 샘플을 절대 시각에 연결**합니다(ISO 8601 형식). 플레이어 안의 재생 위치는 "시작부터 몇 초"일 뿐인데, 이 태그가 있으면 "이 장면은 실제로 몇 시 몇 분에 찍혔나"를 알 수 있습니다. 녹화 다시 보기에서 화면에 녹화 시각을 띄울 때 바로 이것을 씁니다.
+- `#EXT-X-PROGRAM-DATE-TIME:...`: 바로 다음 조각의 **첫 샘플을 절대 시각에 연결**합니다(ISO 8601 형식). 곧 미디어 시각과 절대 시각 사이의 **매핑**입니다. 플레이어 안의 재생 위치는 "시작부터 몇 초"일 뿐인데, 이 태그가 있으면 그 위치를 날짜·시각으로 바꿔 볼 수 있습니다. 그 시각이 촬영 시각인지, 서버가 받은 시각인지는 목록을 만든 쪽이 어떤 시계를 썼느냐에 달려 있습니다. 녹화 다시 보기에서 화면에 녹화 시각을 띄울 때 바로 이것을 씁니다.
 - `#EXTINF:1.001,`: 바로 **다음 한 조각**의 길이(초)입니다. 다음 줄의 주소 하나에만 적용됩니다. 쉼표 뒤에는 사람이 읽을 제목을 넣을 수 있지만 보통 비워 둡니다.
 - `seg-0.m4s`: 조각 주소입니다. `#`으로 시작하지 않는 줄은 모두 주소입니다.
-- `#EXT-X-DISCONTINUITY`: 이 태그 앞뒤 조각 사이에 **끊김**이 있다는 표시입니다. 타임스탬프가 이어지지 않거나 인코딩 설정·트랙 구성이 바뀌면 반드시 넣어야 합니다. 예시에서는 `seg-1` 다음에 19초쯤 녹화가 비었다가 `seg-2`가 이어집니다. 플레이어는 이 표시를 보면 시간축을 새로 맞추고 다음 조각을 바로 이어서 재생합니다.
+- `#EXT-X-DISCONTINUITY`: 이 태그 앞뒤 조각 사이에 **끊김**이 있다는 표시입니다. RFC는 파일 형식, 트랙의 수·종류, 타임스탬프 순서가 바뀌면 반드시(MUST) 넣으라고 하고, 인코딩 매개변수나 인코딩 순서가 바뀌는 경우에는 넣기를 권합니다(SHOULD). 예시에서는 `seg-1`이 2.000초(1.001 + 0.999)에 끝나고 18초 동안 녹화가 비었다가 `seg-2`가 이어집니다. 플레이어는 이 표시를 보면 시간축을 새로 맞추고 다음 조각을 바로 이어서 재생합니다.
 - `#EXT-X-ENDLIST`: **조각이 더 붙지 않는다**는 표시입니다. 이것이 있으면 플레이어는 목록을 다시 받지 않고, 전체 길이를 알 수 있으니 재생 막대를 그릴 수 있습니다.
 
 `#EXT`로 시작하는 줄은 태그이고, 플레이어는 모르는 태그를 무시합니다. 그래서 서버가 추가 정보를 넣어도 오래된 플레이어가 깨지지 않습니다.
@@ -144,10 +144,10 @@ seg-2.m4s
 
 ### 조각 그릇: TS와 fMP4
 
-조각 파일 안의 영상은 어떤 그릇(컨테이너)에 담길까요? RFC 8216은 MPEG-2 TS, fragmented MPEG-4(fMP4), 오디오 전용 packed audio, 자막용 WebVTT를 정합니다. 영상에는 앞의 둘을 씁니다.
+용어 셋을 먼저 짚습니다. **코덱**(H.264, AAC 등)은 영상·소리를 압축하는 규칙이고, **컨테이너**(MP4, TS 등)는 그렇게 압축한 데이터를 시각 정보와 함께 담는 파일 형식이며, **트랙**은 컨테이너 안에서 영상, 소리처럼 따로 흐르는 시간축 하나입니다. 조각 파일 안의 영상은 어떤 그릇(컨테이너)에 담길까요? RFC 8216은 MPEG-2 TS, fragmented MPEG-4(fMP4), 오디오 전용 packed audio, 자막용 WebVTT를 정합니다. 영상에는 앞의 둘을 씁니다.
 
 - **MPEG-2 TS**: 방송에서 온 오래된 형식입니다. 조각 하나하나가 자기 설명을 다 담고 있어서 어느 조각부터든 바로 해석할 수 있지만, 188바이트 작은 패킷마다 머리가 붙어 덧붙는 크기가 큽니다.
-- **fMP4**: MP4를 잘게 나눈 형식입니다. 코덱 설정 같은 "영상 전체에 대한 설명"은 **초기화 조각** 하나(`ftyp`와 `moov` 상자)에 한 번만 두고, 각 미디어 조각에는 실제 프레임(`moof`와 `mdat` 상자)만 담습니다. 그래서 플레이어는 초기화 조각을 먼저 한 번 받고, 그다음 미디어 조각을 차례로 받습니다. 위 예시의 `EXT-X-MAP`이 그 초기화 조각을 가리킵니다.
+- **fMP4**: MP4를 잘게 나눈 형식입니다. 코덱 설정 같은 "영상 전체에 대한 설명"은 **초기화 조각**(`ftyp`와 `moov` 상자)에 따로 두고, 각 미디어 조각에는 실제 프레임(`moof`와 `mdat` 상자)만 담습니다. 그래서 플레이어는 초기화 조각을 먼저 받고, 그다음 미디어 조각을 차례로 받습니다. 위 예시의 `EXT-X-MAP`이 그 초기화 조각을 가리킵니다. 예시처럼 트랙 하나에 코덱 설정이 끝까지 같으면 초기화 조각도 하나로 충분하지만, 트랙마다 목록이 따로 있거나 중간에 코덱 설정이 바뀌면 `EXT-X-MAP`이 새로 나와 초기화 조각이 더 필요할 수 있습니다.
 
 KVS는 두 가지를 다 지원하는데, 기본값이자 권장값은 fMP4입니다. 문서는 MPEG-TS를 고르면 fMP4보다 덧붙는 크기가 대략 5~25% 더 든다고 적고, TS는 오래된 플레이어 호환이 필요할 때만 쓰라고 합니다.
 
@@ -164,9 +164,9 @@ fragment마다 시각이 두 개 붙습니다.
 - **ProducerTimestamp**: 영상을 보낸 쪽(producer)이 붙인 시각입니다.
 - **ServerTimestamp**: KVS가 그 fragment를 받은 시각입니다.
 
-어느 시각으로 찾고 재생할지를 API마다 고릅니다. 장비 시계를 믿기 어렵다면 KVS가 붙인 서버 시각이 안전합니다.
+어느 시각으로 찾고 재생할지를 API마다 고릅니다. 장비 시계를 믿기 어렵다면 KVS가 붙인 서버 시각이 일관된 기준이 됩니다. 다만 서버 시각은 **받은 시각**이라, 촬영 시각과는 전송 지연이나 보내는 쪽 버퍼링만큼 차이가 날 수 있습니다.
 
-이 fragment들을 브라우저에서 영상으로 바꾸는 데 API 세 개가 필요합니다. 순서대로 보겠습니다.
+AWS 문서가 정한 최소 흐름은 `GetDataEndpoint`로 주소를 받고 `GetHLSStreamingSessionURL`로 재생 주소를 받는 두 단계입니다. 보고 싶은 시간 범위를 이미 알면 그것으로 충분합니다. 이 글의 다시 보기 화면은 "언제 녹화가 있는지" 목록을 보여 줘야 해서 그 사이에 `ListFragments`를 더 부릅니다. 그래서 이 화면은 서명한 API를 세 **종류** 씁니다. 실제 요청 수는 더 많습니다. `GetDataEndpoint`는 API 이름마다 따로 부르고, `ListFragments`는 여러 쪽으로 나뉘어 올 수 있기 때문입니다. 순서대로 보겠습니다.
 
 ### ① GetDataEndpoint: 이 스트림의 데이터 주소
 
@@ -209,7 +209,7 @@ KVS는 스트림을 관리하는 API(만들기, 설명 보기)와 영상 데이�
 - **나눠서 옵니다.** `MaxResults`는 기본 100, 최대 1000이고, 더 있으면 `NextToken`이 함께 옵니다. 다음 요청에 그 토큰을 넣어 이어 받습니다.
 - **조금 늦습니다.** 결과는 최종 일관성(eventually consistent)을 따릅니다. 방금 들어온 fragment는 보통 1초 안쪽이지만 바로 안 보일 수 있습니다.
 
-할당량도 있습니다. fragment 메타데이터 API는 스트림당 초당 10,000 "점"을 나눠 쓰는데, `ListFragments` 한 번이 `MaxResults` 값만큼 점을 씁니다. `MaxResults`를 1000으로 두면 초당 10번까지 부를 수 있다는 뜻입니다.
+할당량도 있습니다. fragment 메타데이터 API는 스트림당 초당 10,000 "점"을 나눠 쓰는데, `ListFragments` 한 번이 `MaxResults` 값만큼 점을 씁니다. `MaxResults`를 1000으로 두면, 같은 한도를 쓰는 다른 호출이 없을 때 초당 10번까지 부를 수 있다는 뜻입니다. 이 점수는 `GetHLSMediaPlaylist`(플레이어가 재생 목록을 받을 때) 같은 다른 메타데이터 호출과 스트림 단위로 함께 씁니다.
 
 ### ③ GetHLSStreamingSessionURL: 재생 주소 받기
 
@@ -229,9 +229,12 @@ KVS는 스트림을 관리하는 API(만들기, 설명 보기)와 영상 데이�
   "ContainerFormat": "FRAGMENTED_MP4",
   "DiscontinuityMode": "ALWAYS",
   "DisplayFragmentTimestamp": "ALWAYS",
+  "MaxMediaPlaylistFragmentResults": 2000,
   "Expires": 3600
 }
 ```
+
+구간은 2026-01-01 02:00~02:30 UTC, 30분입니다. `MaxMediaPlaylistFragmentResults`를 빼면 `ON_DEMAND`에서는 기본값 1,000개가 적용되고, 구간 **앞쪽의 오래된 fragment부터** 1,000개만 목록에 들어갑니다. fragment가 1초라면 30분은 1,800개라서, 기본값으로는 앞의 16분 40초만 담깁니다. 그래서 예시에는 30분 창을 다 담도록 2,000을 넣었습니다(최댓값은 5,000). fragment가 1,000개를 넘지 않는 구간이라면 빼도 됩니다.
 
 응답은 `HLSStreamingSessionURL` 하나입니다. 이것이 마스터 재생 목록 주소이고, 그대로 플레이어에 넘깁니다. 매개변수를 하나씩 보겠습니다.
 
@@ -253,13 +256,13 @@ KVS는 스트림을 관리하는 API(만들기, 설명 보기)와 영상 데이�
 - `NEVER`: 넣지 않습니다. 보낸 쪽 시각이 정확해서 시간축을 그대로 따르게 할 때 씁니다. 보낸 쪽 시각 기준의 기본값입니다.
 - `ON_DISCONTINUITY`: 50ms보다 큰 틈이나 겹침이 있을 때만 넣습니다.
 
-**DisplayFragmentTimestamp**: `ALWAYS`면 fragment 시작 시각을 미디어 재생 목록에 넣습니다(기본값 `NEVER`). 플레이어는 보통 재생 위치를 "세션 시작부터 몇 초"로만 알려 주는데, 이 시각이 목록에 있으면 일부 플레이어는 재생 위치를 실제 시각으로 알려 줄 수 있습니다. 앞에서 본 `EXT-X-PROGRAM-DATE-TIME`이 하던 역할입니다.
+**DisplayFragmentTimestamp**: `ALWAYS`면 fragment 시작 시각을 미디어 재생 목록에 넣습니다(기본값 `NEVER`). 플레이어는 보통 재생 위치를 "세션 시작부터 몇 초"로만 알려 주는데, 이 시각이 목록에 있으면 일부 플레이어는 재생 위치를 날짜·시각으로 알려 줄 수 있습니다. 앞에서 본 `EXT-X-PROGRAM-DATE-TIME`이 하던 역할입니다. 들어가는 값은 선택한 기준의 시각이라, `SERVER_TIMESTAMP`를 골랐다면 KVS가 fragment를 받은 시각입니다.
 
 **Expires**: 세션이 끝나기까지의 초입니다. 300(5분)부터 43200(12시간)까지이고 **기본값은 300**입니다. 만료되면 그 세션으로 재생 목록이나 조각을 새로 받을 수 없습니다. 이미 받은 조각이 다 떨어지면 재생이 멈춥니다.
 
-**MaxMediaPlaylistFragmentResults**: 미디어 재생 목록에 담을 fragment 최대 개수입니다. `ON_DEMAND`의 기본값은 1,000, 최댓값은 5,000입니다. 문서에 따르면 5,000개는 1초 fragment로 80분 남짓, 10초 fragment로 13시간 남짓입니다. 이보다 긴 구간은 `LIVE_REPLAY`로 봅니다.
+**MaxMediaPlaylistFragmentResults**: 미디어 재생 목록에 담을 fragment 최대 개수입니다. `ON_DEMAND`의 기본값은 1,000, 최댓값은 5,000입니다. 상한을 넘으면 구간 앞쪽의 오래된 fragment부터 상한만큼만 담깁니다. 문서에 따르면 5,000개는 1초 fragment로 80분 남짓, 10초 fragment로 13시간 남짓입니다. 이보다 긴 구간은 나눠서 받거나 `LIVE_REPLAY`로 봅니다.
 
-받을 수 있는 영상에도 조건이 있습니다. 영상 트랙은 H.264(AVC) 또는 H.265(HEVC) 형식의 코덱 설정(codec private data)을 담아야 하고, 오디오 트랙이 있으면 AAC여야 합니다. 구간에 fragment가 하나도 없으면(`LIVE`라면 최근 30초 안에 없으면) `ResourceNotFoundException`(404)이 돌아옵니다.
+받을 수 있는 영상에도 조건이 있습니다. 영상 트랙은 H.264(AVC) 또는 H.265(HEVC) 형식의 코덱 설정(codec private data)을 담아야 하고, 오디오 트랙이 있으면 AAC여야 합니다([KVS 재생 요구 사항](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/video-playback-requirements.html)). 이것은 "KVS가 HLS로 내어 줄 수 있다"는 조건일 뿐입니다. "브라우저에서 hls.js를 실행할 수 있다", "이 브라우저가 실제 영상 코덱을 디코딩할 수 있다"는 따로 확인해야 하는 별개의 조건입니다. 예를 들어 KVS가 H.265 스트림을 HLS로 내어 줘도, H.265를 디코딩하지 못하는 브라우저에서는 재생되지 않습니다. 구간에 fragment가 하나도 없으면(`LIVE`라면 최근 30초 안에 없으면) `ResourceNotFoundException`(404)이 돌아옵니다.
 
 ### 그다음은 플레이어의 일
 
@@ -278,7 +281,7 @@ https://b-1234abcd.kinesisvideo.<region>.amazonaws.com/hls/v1/getHLSMasterPlayli
 
 <figure class="diagram">
 {% include figures/kvs-hls-playback/replay-flow.svg %}
-<figcaption>다시 보기는 서명한 API 세 번으로 세션 URL을 받고, 그다음부터는 플레이어가 URL 속 토큰만으로 재생 목록과 조각을 HTTP로 받는다</figcaption>
+<figcaption>이 화면은 세 종류의 서명 API로 녹화 구간과 세션 URL을 얻고(②는 목록을 보여 주기 위한 단계), 그다음부터는 플레이어가 URL 속 토큰만으로 재생 목록과 조각을 HTTP로 받는다</figcaption>
 </figure>
 
 이 그림에서 점선이 이 글의 뒷부분 두 주제를 가릅니다. 점선 위는 "AWS 자격 증명을 가진 사람만 할 수 있는 일"이고, 점선 아래는 "**URL을 가진 사람이면 누구나** 할 수 있는 일"입니다. 그래서 점선 아래에서는 브라우저 보안 정책(CSP)과 URL 관리가 중요해집니다.
@@ -336,28 +339,36 @@ hls.js README도 이 점을 경고합니다. 자체 재생이 꼭 필요한 경�
 
 <figure class="diagram">
 {% include figures/kvs-hls-playback/play-path.svg %}
-<figcaption>재생 길은 canPlayType이 아니라 MSE가 있는지로 고른다. 길마다 KVS 주소를 여는 주체가 달라서 CSP에 필요한 항목도 다르다</figcaption>
+<figcaption>먼저 hls.js를 쓸 수 있는지(MSE가 있고 Hls.isSupported()가 참인지) 보고, 안 되면 자체 HLS를, 그것도 안 되면 오류를 낸다. 길마다 KVS 주소를 여는 주체가 달라서 CSP에 필요한 항목도 다르다</figcaption>
 </figure>
 
 ## 그때 정한 것
 
 이제 원래 문제로 돌아갑니다. 다시 보기를 만들면서 정한 것을 다섯 가지로 정리합니다.
 
-### 1. MSE가 있으면 hls.js 먼저, 없을 때만 자체 HLS
+### 1. hls.js를 쓸 수 있으면 먼저, 안 되면 자체 HLS
 
-순서를 뒤집었습니다. `MediaSource`나 `ManagedMediaSource`가 있으면 hls.js로 재생하고, 둘 다 없을 때(MSE가 없는 오래된 iPhone Safari)만 자체 HLS를 씁니다. `canPlayType`은 마지막 단계에서 "자체 HLS도 안 되면 포기"를 판단하는 데만 씁니다.
+순서를 뒤집었습니다. 판단은 세 단계입니다.
 
-hls.js는 기능을 덜어 낸 light 빌드(1.7.4)를 쓰고, 다시 보기를 **처음 열 때만** 불러오게 했습니다. 실시간 보기만 쓰는 사용자는 이 코드를 받지 않습니다. light 빌드에는 대체 오디오·자막, DRM(EME), 광고 삽입, CMCD 같은 기능이 빠져 있는데, 녹화된 영상 한 트랙을 재생하는 데는 필요 없습니다.
+1. **hls.js를 쓸 수 있나?** 먼저 `MediaSource`나 `ManagedMediaSource`가 있는지 봅니다. 이것은 MSE가 아예 없는 브라우저(MSE가 없는 오래된 iPhone Safari 등)에서 hls.js를 내려받는 낭비를 피하려는 1차 거름입니다. 있으면 hls.js를 불러와 `Hls.isSupported()`로 한 번 더 확인하고, 참이면 hls.js로 재생합니다.
+2. **자체 HLS는 되나?** MSE가 없거나 `Hls.isSupported()`가 거짓이면 `canPlayType`으로 자체 HLS를 시도합니다. 여기서는 "maybe"라도 해 보는 수밖에 없습니다.
+3. **둘 다 안 되면** 오류를 냅니다.
+
+`canPlayType`은 hls.js를 쓸 수 없을 때의 판단에만 씁니다.
+
+hls.js는 기능을 덜어 낸 light 빌드(1.7.4)를 쓰고, 다시 보기를 **처음 열 때만** 불러오게 했습니다. 실시간 보기만 쓰는 사용자는 이 코드를 받지 않습니다. light 빌드에는 대체 오디오·자막, DRM(EME), 광고 삽입, CMCD 같은 기능이 빠져 있습니다. 이 사례에서는 소리 없이 영상만 보는 다시 보기를 확인했고, 그 범위에서는 light 빌드로 충분했습니다. 카메라가 하나여도 미디어 트랙이 하나라는 뜻은 아니고, KVS는 fMP4일 때 트랙마다 미디어 재생 목록을 따로 줍니다. 소리까지 재생하려면 실제로 받은 마스터 재생 목록의 오디오 구성을 확인하고 full 빌드를 검토하는 편이 안전합니다. 우리는 소리를 들어 보는 시험은 하지 않았습니다.
 
 뼈대는 이렇습니다. 이 글을 위해 새로 쓴 최소 예시이고, 실행 미확인입니다. 재생 주소는 `getReplayUrl()`이 위의 ①~③을 거쳐 받아 온다고 가정합니다.
 
 ```js
-// 재생 길 고르기: MSE가 있으면 hls.js, 없을 때만 브라우저 자체 HLS (실행 미확인)
+// 재생 길 고르기: hls.js를 쓸 수 있으면 hls.js, 아니면 브라우저 자체 HLS, 둘 다 안 되면 오류 (실행 미확인)
+// video는 호출하는 쪽이 <video controls playsinline>로 준비한다고 가정한다.
+// onError는 hls.js의 치명적 오류만 받는다. getReplayUrl()·import 실패와 자체 HLS 오류는 다루지 않는다.
 export async function playReplay(video, getReplayUrl, onError) {
   const url = await getReplayUrl(); // 재생마다 새로 받는다. 기록하지 않는다.
 
   const hasMse = 'MediaSource' in window || 'ManagedMediaSource' in window;
-  if (hasMse) {
+  if (hasMse) { // MSE가 아예 없으면 hls.js를 내려받지 않는다
     const { default: Hls } = await import('hls.js/light'); // 처음 열 때만 불러온다
     if (Hls.isSupported()) {
       const hls = new Hls();
@@ -371,12 +382,12 @@ export async function playReplay(video, getReplayUrl, onError) {
       hls.attachMedia(video);
       return {
         stop: () => hls.destroy(),
-        recordedAt: () => hls.playingDate, // EXT-X-PROGRAM-DATE-TIME 기준 실제 시각
+        recordedAt: () => hls.playingDate, // PROGRAM-DATE-TIME 기준 시각(SERVER_TIMESTAMP면 서버 수신 기준)
       };
     }
   }
 
-  // MSE가 없을 때만 여기로 온다. "maybe"라도 해 보는 수밖에 없다.
+  // MSE가 없거나 Hls.isSupported()가 false일 때 여기로 온다. "maybe"라도 해 보는 수밖에 없다.
   if (video.canPlayType('application/vnd.apple.mpegurl')) {
     video.src = url;
     return {
@@ -394,9 +405,10 @@ export async function playReplay(video, getReplayUrl, onError) {
 
 몇 가지 짚어 둡니다.
 
-- `'MediaSource' in window`로 먼저 거르는 이유는, MSE가 없는 브라우저에서 hls.js를 내려받는 낭비를 피하려는 것입니다. 최종 판단은 `Hls.isSupported()`가 합니다. 이 함수는 MSE가 있고 기본 코덱(H.264와 AAC)을 받을 수 있는지까지 봅니다.
+- `'MediaSource' in window`로 먼저 거르는 이유는, MSE가 없는 브라우저에서 hls.js를 내려받는 낭비를 피하려는 것입니다. hls.js를 쓸지는 [`Hls.isSupported()`](https://github.com/video-dev/hls.js/blob/v1.7.4/src/is-supported.ts)가 정합니다. 1.7.4 소스를 보면 이 함수는 MSE와 `SourceBuffer` API가 있는지 확인한 뒤, 영상(H.264, AV1, VP9)이나 소리(AAC, FLAC) 후보 형식 가운데 **하나라도** 브라우저가 받겠다고 하는지 봅니다. 그래서 참이라는 답은 "hls.js를 실행할 수 있다"는 뜻이지, H.264와 AAC를 둘 다 지원한다거나 이 KVS 영상의 실제 코덱이 디코딩된다는 보장은 아닙니다.
+- 이 뼈대는 재생 길을 고르고 주소를 붙이는 데까지만 합니다. 호출하는 쪽이 `<video controls playsinline>`처럼 사용자가 재생을 누를 수 있는 요소를 주거나, 사용자 동작에서 `video.play()`를 부른다고 가정합니다. 또 `getReplayUrl()`이나 hls.js 불러오기(`import`)의 실패, 자체 HLS 길의 `<video>` 오류는 `onError`로 전달되지 않습니다. 실제 코드에서는 `try`/`catch`와 `video`의 `error` 이벤트로 함께 처리합니다.
 - 오류 처리는 일부러 단순하게 두었습니다. hls.js 문서는 치명적인 미디어 오류에는 `hls.recoverMediaError()`를 시도하고, 네트워크 오류는 바로 다시 시작하지 말라고 권합니다. 실제 코드에서는 오류 종류에 따라 다시 시도할지 정하면 됩니다.
-- `hls.playingDate`는 hls.js API 문서 기준 "재생 중인 화질의 Program Date Time이 있으면 그것을 기준으로 한, `media.currentTime`에 해당하는 날짜·시각"입니다. 재생 목록에 녹화 시각이 들어 있어야 값이 나오므로 `DisplayFragmentTimestamp: "ALWAYS"`와 짝을 이룹니다.
+- `hls.playingDate`는 hls.js API 문서 기준 "재생 중인 화질의 Program Date Time이 있으면 그것을 기준으로 한, `media.currentTime`에 해당하는 날짜·시각"입니다. 재생 목록에 시각이 들어 있어야 값이 나오므로 `DisplayFragmentTimestamp: "ALWAYS"`와 짝을 이룹니다. `SERVER_TIMESTAMP` 기준이면 이 값도 서버가 받은 시각 기준입니다.
 - `import('hls.js/light')`가 되는 이유는 hls.js 1.7.4의 `package.json`이 `./light` 경로를 light 빌드로 내보내기 때문입니다. 번들러 없이 쓴다면 light 빌드 파일을 직접 가리키면 됩니다.
 
 ### 2. 다시 보기 목록 만들기
@@ -410,7 +422,12 @@ fragment 목록을 그대로 보여 줄 수는 없습니다. 1초짜리 fragment
 5. 녹화 하나를 누르면 그 시작부터 끝까지를 `ON_DEMAND`로 재생합니다. 마지막 녹화가 아직 이어지는 중이면 끝을 지금 시각으로 잡습니다. 서버 시각 기준의 끝 시각은 과거여야 하기 때문입니다.
 6. 6시간보다 오래된 영상은 **"이 시각부터 보기"**로 봅니다. 사용자가 고른 시각부터 **30분**(지금을 넘지 않게)을 재생합니다.
 
-재생 요청의 매개변수는 위 ③의 예시 그대로입니다.
+이 규칙에는 서로 부딪히는 곳이 두 군데 있습니다. 적용하기 전에 알아 둘 점입니다.
+
+- **1번의 쪽 수 상한과 4번의 "가장 최근 12개".** `ListFragments`는 쪽을 넘어서도 순서가 없어서, 가장 최근 fragment가 마지막 쪽에 올 수도 있습니다. 상한 때문에 뒤쪽을 버리면 받은 것만 정렬해도 전체에서 가장 최근 12개라는 보장이 깨지고, 녹화 한 덩어리가 중간에 끊겨 보일 수도 있습니다. 그래서 상한에 닿았다면 목록을 "일부만 받은 결과"로 표시하고 최신 보장을 하지 않거나, 처음부터 짧은 최근 범위(예: 최근 1시간)를 쪽이 끝날 때까지 다 받은 뒤 필요할 때 범위를 넓히는 편이 정확합니다.
+- **5번의 "시작부터 끝까지"와 fragment 개수 상한.** `ON_DEMAND` 목록에는 `MaxMediaPlaylistFragmentResults`(기본 1,000, 최대 5,000)만큼의 fragment만 앞에서부터 담깁니다. 1초 fragment라면 5,000개는 80분 남짓이라, 6시간 안의 연속 녹화가 그보다 길면 한 번에 끝까지 담을 수 없습니다. 그런 녹화는 구간을 나눠 재생하거나 `LIVE_REPLAY`를 씁니다.
+
+재생 요청의 매개변수는 위 ③의 예시와 같고, 아래 표가 그때 고른 값입니다. ③ 예시의 `MaxMediaPlaylistFragmentResults`(2,000)는 30분 창이 기본 상한에 잘리지 않도록 이 글에서 덧붙인 값입니다. 직접 적용할 때는 재생할 구간 길이와 fragment 길이에 맞춰 정합니다.
 
 | 매개변수 | 고른 값 | 이유 |
 |---|---|---|
@@ -418,8 +435,8 @@ fragment 목록을 그대로 보여 줄 수는 없습니다. 1초짜리 fragment
 | `FragmentSelectorType` | `SERVER_TIMESTAMP` | 장비 시계에 기대지 않는다. 목록도 같은 기준으로 만들었다 |
 | `ContainerFormat` | `FRAGMENTED_MP4` | 기본값이자 권장값. hls.js가 바꾸지 않고 바로 넣는다 |
 | `DiscontinuityMode` | `ALWAYS` | 서버 시각의 작은 틈·겹침에 플레이어가 멈추거나 떨지 않게 한다. 30초 이하 틈을 이어 붙인 녹화도 끊김 표시 덕에 바로 이어 재생된다 |
-| `DisplayFragmentTimestamp` | `ALWAYS` | 재생 위치를 실제 녹화 시각으로 보여 준다(`playingDate`) |
-| `Expires` | `3600` | 1시간이면 30분 창을 다 보고도 남는다. 재생할 때마다 새로 받는다 |
+| `DisplayFragmentTimestamp` | `ALWAYS` | 재생 위치를 서버 수신 기준 시각으로 보여 준다(`playingDate`) |
+| `Expires` | `3600` | 30분 창을 정상 속도로 볼 때를 가정한 값이다. 1시간보다 긴 녹화나 오래 멈춰 두는 경우에는 새로 받거나 구간을 나눠야 한다. 재생할 때마다 새로 받는다 |
 
 ### 3. CSP의 media-src에 blob:과 KVS 주소
 
@@ -491,24 +508,24 @@ media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com
 ## 확인한 것
 
 - Chrome에서 hls.js 길로 다시 보기가 재생되었습니다.
-- 화면에 띄운 녹화 시각(`playingDate`, 곧 재생 목록의 Program Date Time)이 영상 속에 찍힌 시계와 일치했습니다. `SERVER_TIMESTAMP`와 `DisplayFragmentTimestamp: "ALWAYS"` 조합으로 "언제 찍힌 장면인지"를 정확히 보여 줄 수 있다는 뜻입니다.
+- 이 시험에서는 화면에 띄운 시각(`playingDate`, 곧 재생 목록의 Program Date Time)이 영상 속에 찍힌 시계와 일치했습니다. 다만 여기서 표시하는 값은 `SERVER_TIMESTAMP` 기준, 곧 KVS가 받은 시각입니다. 촬영 시각과의 차이는 전송 지연이나 보내는 쪽 버퍼링에 따라 달라질 수 있어서, 이 관찰이 촬영 시각을 언제나 정확히 보여 준다는 뜻은 아닙니다.
 - 다시 보기 동안 CSP 위반 보고는 0건이었습니다.
 - 서명 없이 `GetDataEndpoint`를 부르면 403이 돌아왔습니다. 점선 위 단계는 자격 증명 없이는 넘을 수 없습니다.
 - MSE가 없는 Safari(자체 HLS 길)에서는 시험하지 못했습니다.
 
 ## 주의할 점
 
-**`canPlayType`의 "maybe"를 "된다"로 읽지 않습니다.** "maybe"는 해 봐야 안다는 뜻입니다. 재생 길은 MSE(`MediaSource`, `ManagedMediaSource`)와 `Hls.isSupported()`로 고르고, `canPlayType`은 MSE가 없을 때의 마지막 판단에만 씁니다.
+**`canPlayType`의 "maybe"를 "된다"로 읽지 않습니다.** "maybe"는 해 봐야 안다는 뜻입니다. 재생 길은 MSE(`MediaSource`, `ManagedMediaSource`)와 `Hls.isSupported()`로 hls.js를 쓸 수 있는지 먼저 보고, `canPlayType`은 hls.js를 쓸 수 없을 때의 판단에만 씁니다.
 
-**`ListFragments` 결과는 정렬되어 오지 않습니다.** 쪽을 넘어서도 순서가 없습니다. 모든 쪽을 다 받은 뒤 정렬합니다. 방금 들어온 fragment는 1초쯤 늦게 보일 수 있습니다.
+**`ListFragments` 결과는 정렬되어 오지 않습니다.** 쪽을 넘어서도 순서가 없습니다. "가장 최근"이나 "연속 구간"을 말하려면 그 범위의 쪽을 끝까지 다 받은 뒤 정렬해야 합니다. 쪽 수에 상한을 두었다면 상한에 닿은 결과는 일부일 수 있다고 보고 다룹니다. 방금 들어온 fragment는 1초쯤 늦게 보일 수 있습니다.
 
 **재생 구간에는 한도가 있습니다.** `TimestampRange`는 24시간 안쪽이어야 하고, 서버 시각 기준이면 끝이 과거여야 합니다. 구간에 fragment가 없으면 404가 오니, "녹화 없음"으로 바꿔 보여 줄 준비를 합니다.
 
-**`ON_DEMAND` 재생 목록에는 fragment 개수 상한이 있습니다.** `MaxMediaPlaylistFragmentResults` 기본값은 1,000, 최댓값은 5,000입니다. fragment 길이 × 개수보다 긴 구간을 요청하면 목록이 거기서 끝납니다. 구간 길이(이 글에서는 30분 창)를 정할 때 fragment 길이를 함께 보고, 필요하면 값을 올리거나 `LIVE_REPLAY`를 씁니다.
+**`ON_DEMAND` 재생 목록에는 fragment 개수 상한이 있습니다.** `MaxMediaPlaylistFragmentResults` 기본값은 1,000, 최댓값은 5,000입니다. fragment 길이 × 개수보다 긴 구간을 요청하면 앞쪽의 오래된 fragment부터 상한만큼만 담기고 목록이 거기서 끝납니다. 구간 길이(이 글에서는 30분 창)를 정할 때 fragment 길이를 함께 보고, 필요하면 값을 올리거나, 5,000개를 넘는 구간은 나누거나 `LIVE_REPLAY`를 씁니다.
 
-**재생 주소는 플레이어 하나에 하나입니다.** 문서는 세션 주소를 여러 플레이어가 나눠 쓰지 말라고 하고, 나눠 쓰면 KVS가 그 세션을 제한할 수 있다고 합니다. 세션당 요청 한도도 있습니다. 재생 목록은 초당 5회, 초기화 조각은 초당 5회, 미디어 조각은 초당 20회이고 늘릴 수 없습니다. 세션 수 자체에는 한도가 없으니 재생할 때마다 새로 받는 편이 맞습니다.
+**재생 주소는 플레이어 하나에 하나입니다.** 문서는 세션 주소를 여러 플레이어가 나눠 쓰지 말라고 하고, 나눠 쓰면 KVS가 그 세션을 제한할 수 있다고 합니다. 세션당 요청 한도도 있습니다. 재생 목록은 초당 5회, 초기화 조각은 초당 5회, 미디어 조각은 초당 20회이고 늘릴 수 없습니다. 문서는 동시에 쓰는 세션 수 자체에는 한도가 없다고 하니, 재생할 때마다 새로 받는 편이 맞습니다. 다만 이것이 시청자 수에 한도가 없다는 뜻은 아닙니다. 세션 발급(`GetHLSStreamingSessionURL`)은 스트림당 초당 25회이고, 모든 세션과 다른 API가 스트림 단위 할당량을 함께 씁니다. 조각을 받는 쪽(fragment-media)은 스트림당 초당 500점, 재생 목록·`ListFragments` 같은 메타데이터 쪽은 초당 10,000점입니다. 문서도 이 때문에 재생 앱이 한 스트림에 너무 많은 세션을 동시에 쓰지 않게 하라고 적습니다.
 
-**`Expires` 기본값은 5분입니다.** 값을 정하지 않으면 5분 뒤에 새 조각을 못 받아 재생이 멈춥니다. 보려는 구간보다 넉넉하게 잡되, 주소가 권한이라는 점을 생각해 필요 이상으로 길게 두지 않습니다.
+**`Expires` 기본값은 5분입니다.** 값을 정하지 않으면 5분 뒤에 새 조각을 못 받아 재생이 멈춥니다. 보려는 구간보다 넉넉하게 잡되, 주소가 권한이라는 점을 생각해 필요 이상으로 길게 두지 않습니다. 사용자가 중간에 오래 멈춰 두거나 긴 녹화를 이어 보면 만료를 넘길 수 있으니, 그때는 주소를 새로 받아 이어 붙이거나 구간을 나눕니다.
 
 **CSP에 `blob:`을 잊지 않습니다.** hls.js는 `<video>`에 `blob:` 주소를 붙입니다. `media-src`에 `blob:`이 없으면 재생 목록과 조각은 다 받아 놓고 `<video>`에서 막힙니다. 자체 HLS 길을 쓴다면 KVS 주소도 `media-src`에 필요합니다.
 
@@ -521,9 +538,9 @@ media-src 'self' blob: https://*.kinesisvideo.<region>.amazonaws.com
 ## 정리
 
 - 다시 보기는 지연보다 **되감기와 건너뛰기**가 중요해서 WebRTC가 아니라 HLS가 맞습니다.
-- HLS는 **조각**과, 조각 주소를 적은 텍스트 **재생 목록(.m3u8)**뿐입니다. 플레이어는 목록을 받아 조각을 HTTP로 차례로 받아 이어 붙입니다. `TARGETDURATION`은 조각 길이 상한, `EXTINF`는 다음 조각 길이, `PROGRAM-DATE-TIME`은 실제 시각, `DISCONTINUITY`는 끊김, `ENDLIST`는 끝입니다.
-- KVS는 녹화를 fragment로 저장하고, `GetDataEndpoint` → `ListFragments` → `GetHLSStreamingSessionURL`로 재생 주소를 내어 줍니다. 그 뒤 플레이어는 서명 없이 **주소 속 토큰**만으로 영상을 받습니다.
-- 브라우저는 자체 HLS 또는 **MSE 위의 hls.js**로 재생합니다. `canPlayType`의 "maybe"는 "해 봐야 안다"는 뜻이라 길을 고르는 근거가 될 수 없고, MSE가 있으면 hls.js를 먼저 씁니다.
+- HLS는 **조각**과, 조각 주소를 적은 텍스트 **재생 목록(.m3u8)**뿐입니다. 플레이어는 목록을 받아 조각을 HTTP로 차례로 받아 이어 붙입니다. `TARGETDURATION`은 조각 길이 상한, `EXTINF`는 다음 조각 길이, `PROGRAM-DATE-TIME`은 미디어 시각과 절대 시각의 연결, `DISCONTINUITY`는 끊김, `ENDLIST`는 끝입니다.
+- KVS는 녹화를 fragment로 저장하고, `GetDataEndpoint` → `GetHLSStreamingSessionURL`로 재생 주소를 내어 줍니다. 녹화 목록이 필요한 화면은 그 사이에 `ListFragments`를 씁니다. 그 뒤 플레이어는 서명 없이 **주소 속 토큰**만으로 영상을 받습니다.
+- 브라우저는 자체 HLS 또는 **MSE 위의 hls.js**로 재생합니다. `canPlayType`의 "maybe"는 "해 봐야 안다"는 뜻이라 길을 고르는 근거가 될 수 없고, hls.js를 쓸 수 있으면(`Hls.isSupported()`) hls.js를 먼저 씁니다.
 - hls.js는 `<video>`에 `blob:` 주소를 붙이므로 CSP `media-src`에 `blob:`이 필요합니다.
 - 재생 주소는 만료 전까지 쓸 수 있는 **권한**이라 기록·저장·캐시하지 않고 재생마다 새로 받습니다.
 
@@ -536,6 +553,10 @@ RTSP를 쓰는 IP 카메라 영상을 다시 압축하지 않고 그대로 보�
 ## 참고
 
 - [RFC 8216: HTTP Live Streaming](https://www.rfc-editor.org/rfc/rfc8216)
+- [RFC 8835: Transports for WebRTC](https://www.rfc-editor.org/rfc/rfc8835.html)
+- [RFC 8834: Media Transport and Use of RTP in WebRTC](https://www.rfc-editor.org/rfc/rfc8834.html)
+- [Amazon Kinesis Video Streams: 재생 요구 사항](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/video-playback-requirements.html)
+- [hls.js 1.7.4 README](https://github.com/video-dev/hls.js/blob/v1.7.4/README.md), [is-supported.ts](https://github.com/video-dev/hls.js/blob/v1.7.4/src/is-supported.ts)
 - [Amazon Kinesis Video Streams: Play back video with HLS](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/hls-playback.html)
 - [GetHLSStreamingSessionURL API](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_reader_GetHLSStreamingSessionURL.html)
 - [HLSTimestampRange](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_reader_HLSTimestampRange.html)
