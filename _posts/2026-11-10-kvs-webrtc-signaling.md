@@ -11,7 +11,7 @@ description: "장비를 껐다 켜면 브라우저가 70초 뒤에야 다시 붙
 > 2. **시그널링: SDP offer/answer와 KVS 신호 채널** ← 지금 글
 > 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
 > 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
-> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
+> 5. [암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})
 > 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
 > 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
 
@@ -27,7 +27,7 @@ description: "장비를 껐다 켜면 브라우저가 70초 뒤에야 다시 붙
 - 그때 겪은 두 사례(오래된 answer, 대답하지 않는 서비스)와 고친 방법
 - 연결된 뒤 시그널링을 닫는 이유와 주의할 점
 
-이 글에 미리 나오는 용어 네 개는 한 줄씩만 짚고 갑니다. **NAT**는 집이나 회사 공유기 같은 경계 장치가 안쪽 주소(와 포트)를 바깥 주소로 바꾸는 기능이고, **STUN**은 바깥에서 보이는 내 주소를 확인하거나 피어 사이 연결을 검사하는 프로토콜입니다. 주소를 알아낼 때는 STUN 서버에 요청합니다. **TURN**은 직접 연결이 안 될 때 패킷을 대신 옮겨 주는 중계 프로토콜과 그것을 제공하는 서버이고, **ICE**는 가능한 주소 후보를 모아 실제로 통하는 길을 골라내는 절차입니다. 이것들이 실제로 길을 찾는 원리는 [3]({% post_url 2026-11-10-webrtc-nat-stun %})·[4]({% post_url 2026-11-10-webrtc-turn-ice %})편에서, SDP에 든 암호 지문이 어떻게 쓰이는지는 5편에서 따로 다룹니다. 이 글에서는 "그 값들을 어떻게 서로에게 전하나"까지만 봅니다.
+이 글에 미리 나오는 용어 네 개는 한 줄씩만 짚고 갑니다. **NAT**는 집이나 회사 공유기 같은 경계 장치가 안쪽 주소(와 포트)를 바깥 주소로 바꾸는 기능이고, **STUN**은 바깥에서 보이는 내 주소를 확인하거나 피어 사이 연결을 검사하는 프로토콜입니다. 주소를 알아낼 때는 STUN 서버에 요청합니다. **TURN**은 직접 연결이 안 될 때 패킷을 대신 옮겨 주는 중계 프로토콜과 그것을 제공하는 서버이고, **ICE**는 가능한 주소 후보를 모아 실제로 통하는 길을 골라내는 절차입니다. 이것들이 실제로 길을 찾는 원리는 [3]({% post_url 2026-11-10-webrtc-nat-stun %})·[4]({% post_url 2026-11-10-webrtc-turn-ice %})편에서, SDP에 든 암호 지문이 어떻게 쓰이는지는 [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})에서 따로 다룹니다. 이 글에서는 "그 값들을 어떻게 서로에게 전하나"까지만 봅니다.
 
 ## 시그널링은 왜 필요한가
 
@@ -119,8 +119,8 @@ a=candidate:1 1 udp 2122260223 192.0.2.10 54321 typ host
 |---|---|---|
 | `a=ice-ufrag`, `a=ice-pwd` | ICE 연결 확인에 쓰는 사용자 이름 조각과 비밀번호. 피어는 상대 주소 후보로 확인 패킷(STUN 요청)을 보낼 때 이 값으로 자기를 증명합니다 | [3]({% post_url 2026-11-10-webrtc-nat-stun %})·[4]({% post_url 2026-11-10-webrtc-turn-ice %})편 |
 | `a=ice-options:trickle` | 주소 후보를 SDP에 다 담지 않고 **찾는 대로 따로 흘려보낼 수 있다**(trickle ICE, [RFC 8838](https://www.rfc-editor.org/rfc/rfc8838.html)) | 아래 |
-| `a=fingerprint:sha-256 …` | 이 피어가 암호화 연결(DTLS)에 쓸 **인증서의 해시**. 연결을 맺을 때 상대가 내민 인증서가 이 지문과 맞는지 확인합니다 | 5편 |
-| `a=setup:actpass` | DTLS 핸드셰이크를 누가 먼저 걸지. offer는 반드시 `actpass`("어느 쪽이든 좋다")를 쓰고, answer는 `active` 또는 `passive`로 정합니다(JSEP 5.2.1, 5.3.1) | 5편 |
+| `a=fingerprint:sha-256 …` | 이 피어가 암호화 연결(DTLS)에 쓸 **인증서의 해시**. 연결을 맺을 때 상대가 내민 인증서가 이 지문과 맞는지 확인합니다 | [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %}) |
+| `a=setup:actpass` | DTLS 핸드셰이크를 누가 먼저 걸지. offer는 반드시 `actpass`("어느 쪽이든 좋다")를 쓰고, answer는 `active` 또는 `passive`로 정합니다(JSEP 5.2.1, 5.3.1) | [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %}) |
 | `a=candidate:1 1 udp 2122260223 192.0.2.10 54321 typ host` | 주소 후보 하나. 순서대로 식별자, 구성 요소 번호, 전송 프로토콜, 우선순위, IP, 포트, 종류(`host` 내 컴퓨터 주소, `srflx` NAT 바깥 주소, `relay` TURN 중계 주소) | [3]({% post_url 2026-11-10-webrtc-nat-stun %})·[4]({% post_url 2026-11-10-webrtc-turn-ice %})편 |
 
 여기서 눈여겨볼 점이 하나 있습니다. SDP의 `o=` 줄은 **작성자가 만든 세션과 그 세션 기술의 버전**을 식별합니다([RFC 8866 5.2절](https://www.rfc-editor.org/rfc/rfc8866.html#section-5.2)). 하지만 이것은 "이 answer가 상대의 어느 offer에 대한 답인가"를 직접 가리키는 요청 ID가 아닙니다. answer의 `o=`는 answer를 만든 쪽의 세션 값이고, offer의 세션 값을 되돌려 적지 않습니다. 그래서 받은 answer를 어느 offer와 짝지을지는 시그널링 계층이 책임져야 합니다. 이 사실이 뒤의 첫 번째 사례에서 그대로 문제가 됩니다.

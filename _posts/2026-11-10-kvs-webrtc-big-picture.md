@@ -11,7 +11,7 @@ description: "현장 장비 카메라를 브라우저에서 실시간으로 보�
 > 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
 > 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
 > 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
-> 5. 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP (예정)
+> 5. [암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})
 > 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
 > 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
 
@@ -114,7 +114,7 @@ KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TU
 
 ### 3층, 미디어: 고른 길로 암호화된 영상이 흐른다
 
-길이 정해지면 비로소 영상과 소리가 흐릅니다. WebRTC 미디어는 **SRTP**(암호화된 RTP)로 나갑니다. RTP는 실시간 음성·영상을 작은 패킷으로 나누고 순서 번호와 시각 정보를 붙여 보통 UDP로 나르는 형식이고, SRTP는 그 RTP를 암호화한 것입니다. 암호화 키는 시그널링으로 보내지 않고, 두 기기가 고른 길 위에서 **DTLS 핸드셰이크**(DTLS는 UDP처럼 패킷 단위로 오가는 통신에 쓰는 TLS 계열 보안 절차입니다)로 직접 정합니다(DTLS-SRTP, [RFC 5764](https://www.rfc-editor.org/rfc/rfc5764)). WebRTC 보안 구조([RFC 8827](https://www.rfc-editor.org/rfc/rfc8827))는 미디어 암호화를 선택 사항이 아니라 필수로 둡니다. 그래서 TURN 중계를 거치더라도 중계 서버는 암호화된 패킷을 넘길 뿐입니다. 이 층은 5편에서 다룹니다.
+길이 정해지면 비로소 영상과 소리가 흐릅니다. WebRTC 미디어는 **SRTP**(암호화된 RTP)로 나갑니다. RTP는 실시간 음성·영상을 작은 패킷으로 나누고 순서 번호와 시각 정보를 붙여 보통 UDP로 나르는 형식이고, SRTP는 그 RTP를 암호화한 것입니다. 암호화 키는 시그널링으로 보내지 않고, 두 기기가 고른 길 위에서 **DTLS 핸드셰이크**(DTLS는 UDP처럼 패킷 단위로 오가는 통신에 쓰는 TLS 계열 보안 절차입니다)로 직접 정합니다(DTLS-SRTP, [RFC 5764](https://www.rfc-editor.org/rfc/rfc5764)). WebRTC 보안 구조([RFC 8827](https://www.rfc-editor.org/rfc/rfc8827))는 미디어 암호화를 선택 사항이 아니라 필수로 둡니다. 그래서 TURN 중계를 거치더라도 중계 서버는 암호화된 패킷을 넘길 뿐입니다. 이 층은 [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})에서 다룹니다.
 
 ### 시리즈 지도
 
@@ -122,7 +122,7 @@ KVS는 이 층에서 **STUN과 TURN 서버를 리전마다 제공**합니다. TU
 |---|---|---|---|
 | 시그널링 | SDP offer/answer, ICE 후보 (몇 KB) | 신호 채널, 서명한 WebSocket 주소 | [2편]({% post_url 2026-11-10-kvs-webrtc-signaling %}) |
 | 길 찾기 | STUN 요청·응답, 연결 시험 | 리전별 STUN, TURN(`GetIceServerConfig`) | [3편]({% post_url 2026-11-10-webrtc-nat-stun %}), [4편]({% post_url 2026-11-10-webrtc-turn-ice %}) |
-| 미디어 | DTLS 핸드셰이크, SRTP 영상·소리 | TURN 중계(직접 길이 없을 때) | 5편 |
+| 미디어 | DTLS 핸드셰이크, SRTP 영상·소리 | TURN 중계(직접 길이 없을 때) | [5편]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %}) |
 | 녹화·다시 보기 | 저장 세션 → 스트림, HLS 조각 | WebRTC 수집, 비디오 스트림, HLS | 6편, 7편 |
 
 ## KVS WebRTC의 역할 이름: 신호 채널, 마스터, 뷰어

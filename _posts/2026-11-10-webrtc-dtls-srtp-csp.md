@@ -7,13 +7,13 @@ description: "WebRTC 영상이 DTLS-SRTP로 암호화되는 원리(지문, a=set
 ---
 
 > **시리즈: AWS KVS로 실시간 영상 보내기**
-> 1. KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다
-> 2. 시그널링: SDP offer/answer와 KVS 신호 채널
-> 3. NAT와 STUN: 왜 두 기기는 바로 못 붙나
-> 4. TURN과 ICE: 끝내 못 붙으면 중계한다
+> 1. [KVS 큰 그림: 영상은 '땡겨오는' 게 아니라 만나서 흐른다]({% post_url 2026-11-10-kvs-webrtc-big-picture %})
+> 2. [시그널링: SDP offer/answer와 KVS 신호 채널]({% post_url 2026-11-10-kvs-webrtc-signaling %})
+> 3. [NAT와 STUN: 왜 두 기기는 바로 못 붙나]({% post_url 2026-11-10-webrtc-nat-stun %})
+> 4. [TURN과 ICE: 끝내 못 붙으면 중계한다]({% post_url 2026-11-10-webrtc-turn-ice %})
 > 5. **암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP** ← 지금 글
-> 6. 녹화: KVS WebRTC 수집과 저장 세션
-> 7. 다시 보기: HLS 원리와 KVS 재생
+> 6. 녹화: KVS WebRTC 수집과 저장 세션 (예정)
+> 7. 다시 보기: HLS 원리와 KVS 재생 (예정)
 
 현장 장비의 카메라 영상을 관제 웹 대시보드에서 실시간으로 보는 기능을 AI 에이전트와 같이 만들었습니다. 영상은 Amazon Kinesis Video Streams(KVS)의 WebRTC 기능으로 보냅니다. 장비 쪽 보조 컴퓨터가 영상을 보내는 쪽(마스터), 브라우저가 받는 쪽(뷰어)입니다.
 
@@ -93,7 +93,7 @@ WebRTC는 보통 UDP 포트 하나로 ICE 확인용 STUN 패킷, DTLS 핸드셰�
 | 20–63 | DTLS (핸드셰이크) |
 | 128–191 | RTP·RTCP (여기서는 SRTP·SRTCP) |
 
-현재 규칙에는 이 밖의 범위도 있습니다. 예를 들어 64–79는 TURN 서버에서 온 패킷이면 TURN의 채널 데이터(ChannelData)로 봅니다. TURN 중계를 쓰면 TURN 서버와 오가는 바깥 껍질이 하나 더 생기고, 그 껍질을 벗긴 안쪽 패킷이 다시 위 표대로 나뉩니다. 중계는 4편에서 다뤘습니다. 옛 RFC 5764 표에서 STUN이 0–1이었던 것도 지금은 0–3으로 바뀌었으니, 오래된 글의 표를 옮길 때 주의합니다.
+현재 규칙에는 이 밖의 범위도 있습니다. 예를 들어 64–79는 TURN 서버에서 온 패킷이면 TURN의 채널 데이터(ChannelData)로 봅니다. TURN 중계를 쓰면 TURN 서버와 오가는 바깥 껍질이 하나 더 생기고, 그 껍질을 벗긴 안쪽 패킷이 다시 위 표대로 나뉩니다. 중계는 [4편]({% post_url 2026-11-10-webrtc-turn-ice %})에서 다뤘습니다. 옛 RFC 5764 표에서 STUN이 0–1이었던 것도 지금은 0–3으로 바뀌었으니, 오래된 글의 표를 옮길 때 주의합니다.
 
 세 형식의 첫 바이트가 겹치지 않게 생겼기 때문에 가능한 일입니다. 순서도 정해져 있습니다. RFC 8827 6.3절은 ICE로 상대에게 닿는지 확인하기 전에는 ICE 아닌 패킷을 보내면 안 된다고 정합니다. 그래서 미디어 길에서는 **STUN 확인 → DTLS 핸드셰이크 → SRTP 미디어** 순서로 진행됩니다. 위 그림의 미디어 층이 이 순서입니다.
 
@@ -330,7 +330,7 @@ Content-Security-Policy: default-src 'self'; img-src 'self' data:; connect-src '
 
 ### KVS 뷰어가 거치는 연결 세 종류
 
-브라우저가 KVS로 영상을 받기까지 하는 HTTP·WebSocket 호출을 순서대로 보면 이렇습니다. 앞 편에서 본 흐름을 "어느 주소로 가나"만 남겨 다시 적었습니다.
+브라우저가 KVS로 영상을 받기까지 하는 HTTP·WebSocket 호출을 순서대로 보면 이렇습니다. [1편]({% post_url 2026-11-10-kvs-webrtc-big-picture %})에서 본 흐름을 "어느 주소로 가나"만 남겨 다시 적었습니다.
 
 1. **제어 API 호출**: `DescribeSignalingChannel`로 채널 정보를 찾고, [`GetSignalingChannelEndpoint`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_GetSignalingChannelEndpoint.html)로 이 채널에 붙을 주소를 받습니다. 리전의 고정 호스트 `https://kinesisvideo.<region>.amazonaws.com`에 HTTPS POST를 보냅니다. 다른 출처로 보내는 요청이라고 모두 사전 요청이 생기지는 않습니다. 이 호출은 본문이 JSON이고 SigV4 서명용 `Authorization` 같은 헤더가 붙습니다. [Fetch 표준](https://fetch.spec.whatwg.org/#cors-safelisted-request-header)이 "단순 요청"으로 보는 헤더·Content-Type 범위를 벗어나므로, 브라우저는 본 요청 전에 CORS 사전 요청(OPTIONS)을 먼저 보냅니다.
 2. **ICE 서버 설정 받기**: 1번에서 받은 HTTPS 엔드포인트에 [`GetIceServerConfig`](https://docs.aws.amazon.com/kinesisvideostreams/latest/dg/API_signaling_GetIceServerConfig.html)를 호출합니다. TURN 서버 주소(`Uris`)와 그 서버에 쓸 임시 사용자 이름·비밀번호, 유효 시간(`Ttl`)을 받습니다. 이 호스트는 채널마다 따로 발급되는 `<무엇>.kinesisvideo.<region>.amazonaws.com` 형태입니다.
