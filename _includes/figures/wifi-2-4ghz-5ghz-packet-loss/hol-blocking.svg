@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-wide" viewBox="0 0 480 324" role="img" aria-labelledby="hol-title hol-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="hol-title">TCP에서 메시지 하나가 사라지면 뒤의 메시지까지 멈췄다가 한꺼번에 넘어가는 모습</title>
-  <desc id="hol-desc">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 한꺼번에 앱에 넘긴다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
+  <desc id="hol-desc">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 짧은 간격으로 연달아 앱에 넘긴다. 메시지 하나를 세그먼트 하나로 단순화한 도식이다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
 
   <text class="d-muted" x="12" y="65">보낸 쪽</text>
   <text class="d-muted" x="12" y="155">받는 쪽 TCP</text>
@@ -64,7 +64,7 @@
 </svg>
 <svg class="diagram-svg diagram-narrow" viewBox="0 0 320 314" role="img" aria-labelledby="hol-title-n hol-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="hol-title-n">TCP에서 메시지 하나가 사라지면 뒤의 메시지까지 멈췄다가 한꺼번에 넘어가는 모습</title>
-  <desc id="hol-desc-n">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 한꺼번에 앱에 넘긴다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
+  <desc id="hol-desc-n">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 짧은 간격으로 연달아 앱에 넘긴다. 메시지 하나를 세그먼트 하나로 단순화한 도식이다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
 
   <text class="d-muted" x="8" y="55">보냄</text>
   <text class="d-muted" x="8" y="145">TCP</text>
@@ -72,6 +72,9 @@
   <path class="d-line" d="M50 50 H312"/>
   <path class="d-line" d="M50 140 H312"/>
   <path class="d-line" d="M50 230 H312"/>
+  <path class="d-line" d="M64 32 V36 H96 V32"/>
+  <text class="d-muted" x="80" y="24" text-anchor="middle">200 ms</text>
+  <text class="d-muted d-small" x="312" y="24" text-anchor="end">시간 →</text>
   <text class="d-muted" x="236" y="28" text-anchor="middle">재전송</text>
   <path class="d-line" d="M64 62 L76 128"/>
   <path class="d-line" d="M96 62 L108 128"/>

@@ -1,8 +1,8 @@
 <svg class="diagram-svg diagram-wide" viewBox="0 0 480 372" role="img" aria-labelledby="ch-title ch-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="ch-title">2.4 GHz 채널이 겹치는 모습과 2.4 GHz·5 GHz의 겹치지 않는 20 MHz 채널 수 비교</title>
-  <desc id="ch-desc">2.4 GHz 채널 1번부터 13번까지 중심이 5 MHz씩 떨어져 있지만 한 채널은 약 20 MHz를 차지해 이웃 채널과 크게 겹친다. 1번, 6번, 11번은 서로 25 MHz 떨어져 있어 겹치지 않는다. 아래는 겹치지 않는 20 MHz 채널 수 비교로, 2.4 GHz는 3개, 5 GHz는 미국 기준 23개다.</desc>
+  <title id="ch-title">2.4 GHz 채널이 겹치는 모습과 2.4 GHz·5 GHz의 겹치지 않는 20 MHz 채널 수 예</title>
+  <desc id="ch-desc">2.4 GHz 채널 1번부터 13번까지 중심이 5 MHz씩 떨어져 있지만 한 채널은 약 20 MHz를 차지해 이웃 채널과 크게 겹친다. 1번, 6번, 11번은 서로 25 MHz 떨어져 겹치지 않아 널리 쓰는 비중첩 채널 계획이다. 아래는 겹치지 않는 20 MHz 채널 수의 예로, 2.4 GHz는 3개, 5 GHz는 Meraki 문서의 미국 채널 계획 예에서 23개다. 5 GHz 개수는 나라·장비·DFS에 따라 다르다.</desc>
 
-  <text class="d-strong" x="240" y="28" text-anchor="middle">2.4 GHz: 서로 안 겹치는 채널은 1 · 6 · 11</text>
+  <text class="d-strong" x="240" y="28" text-anchor="middle">2.4 GHz: 널리 쓰는 비중첩 채널 1 · 6 · 11</text>
   <path class="d-line" stroke-dasharray="4 4" d="M65 150 Q115 -6 165 150"/>
   <path class="d-line" stroke-dasharray="4 4" d="M90 150 Q140 -6 190 150"/>
   <path class="d-line" stroke-dasharray="4 4" d="M115 150 Q165 -6 215 150"/>
@@ -31,7 +31,7 @@
   <text class="d-muted" x="365" y="174" text-anchor="middle">12</text>
   <text class="d-muted" x="390" y="174" text-anchor="middle">13</text>
   <text class="d-muted" x="240" y="200" text-anchor="middle">중심 간격 5 MHz, 한 채널 폭 약 20 MHz</text>
-  <text class="d-strong" x="240" y="246" text-anchor="middle">겹치지 않는 20 MHz 채널 수</text>
+  <text class="d-strong" x="240" y="246" text-anchor="middle">겹치지 않는 20 MHz 채널 수 (예)</text>
   <text class="d-muted" x="12" y="284">2.4 GHz</text>
   <rect class="d-box" x="96" y="266" width="13" height="26"/><rect class="d-line" x="96" y="266" width="13" height="26"/>
   <rect class="d-box" x="112" y="266" width="13" height="26"/><rect class="d-line" x="112" y="266" width="13" height="26"/>
@@ -61,13 +61,13 @@
   <rect class="d-box" x="416" y="312" width="13" height="26"/><rect class="d-line" x="416" y="312" width="13" height="26"/>
   <rect class="d-box" x="432" y="312" width="13" height="26"/><rect class="d-line" x="432" y="312" width="13" height="26"/>
   <rect class="d-box" x="448" y="312" width="13" height="26"/><rect class="d-line" x="448" y="312" width="13" height="26"/>
-  <text class="d-muted" x="240" y="370" text-anchor="middle">미국 기준 23개 · 일부는 레이더와 공유(DFS)</text>
+  <text class="d-muted" x="240" y="370" text-anchor="middle">미국 계획 예 23개 · 나라·장비·DFS마다 다름</text>
 </svg>
-<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 400" role="img" aria-labelledby="ch-title-n ch-desc-n" xmlns="http://www.w3.org/2000/svg">
-  <title id="ch-title-n">2.4 GHz 채널이 겹치는 모습과 2.4 GHz·5 GHz의 겹치지 않는 20 MHz 채널 수 비교</title>
-  <desc id="ch-desc-n">2.4 GHz 채널 1번부터 13번까지 중심이 5 MHz씩 떨어져 있지만 한 채널은 약 20 MHz를 차지해 이웃 채널과 크게 겹친다. 1번, 6번, 11번은 서로 25 MHz 떨어져 있어 겹치지 않는다. 아래는 겹치지 않는 20 MHz 채널 수 비교로, 2.4 GHz는 3개, 5 GHz는 미국 기준 23개다.</desc>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 424" role="img" aria-labelledby="ch-title-n ch-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="ch-title-n">2.4 GHz 채널이 겹치는 모습과 2.4 GHz·5 GHz의 겹치지 않는 20 MHz 채널 수 예</title>
+  <desc id="ch-desc-n">2.4 GHz 채널 1번부터 13번까지 중심이 5 MHz씩 떨어져 있지만 한 채널은 약 20 MHz를 차지해 이웃 채널과 크게 겹친다. 1번, 6번, 11번은 서로 25 MHz 떨어져 겹치지 않아 널리 쓰는 비중첩 채널 계획이다. 아래는 겹치지 않는 20 MHz 채널 수의 예로, 2.4 GHz는 3개, 5 GHz는 Meraki 문서의 미국 채널 계획 예에서 23개다. 5 GHz 개수는 나라·장비·DFS에 따라 다르다.</desc>
 
-  <text class="d-strong" x="160" y="28" text-anchor="middle">안 겹치는 채널은 1 · 6 · 11</text>
+  <text class="d-strong" x="160" y="28" text-anchor="middle">비중첩 채널 계획: 1 · 6 · 11</text>
   <path class="d-line" stroke-dasharray="4 4" d="M35.8 150 Q69.8 10 103.8 150"/>
   <path class="d-line" stroke-dasharray="4 4" d="M52.8 150 Q86.8 10 120.8 150"/>
   <path class="d-line" stroke-dasharray="4 4" d="M69.8 150 Q103.8 10 137.8 150"/>
@@ -88,12 +88,12 @@
   <text class="d-muted" x="256.8" y="174" text-anchor="middle">13</text>
   <text class="d-muted" x="160" y="200" text-anchor="middle">중심 간격 5 MHz, 한 채널 폭 약 20 MHz</text>
   <text class="d-muted" x="160" y="222" text-anchor="middle">실선이 1 · 6 · 11, 점선은 그 사이</text>
-  <text class="d-strong" x="160" y="266" text-anchor="middle">겹치지 않는 20 MHz 채널 수</text>
+  <text class="d-strong" x="160" y="266" text-anchor="middle">겹치지 않는 20 MHz 채널 수 (예)</text>
   <text class="d-muted" x="12" y="296">2.4 GHz: 3개</text>
   <rect class="d-box" x="12.0" y="308" width="10" height="24"/><rect class="d-line" x="12.0" y="308" width="10" height="24"/>
   <rect class="d-box" x="24.9" y="308" width="10" height="24"/><rect class="d-line" x="24.9" y="308" width="10" height="24"/>
   <rect class="d-box" x="37.8" y="308" width="10" height="24"/><rect class="d-line" x="37.8" y="308" width="10" height="24"/>
-  <text class="d-muted" x="12" y="360">5 GHz: 23개 (미국 기준)</text>
+  <text class="d-muted" x="12" y="360">5 GHz: 23개 (미국 계획 예)</text>
   <rect class="d-box" x="12.0" y="372" width="10" height="24"/><rect class="d-line" x="12.0" y="372" width="10" height="24"/>
   <rect class="d-box" x="24.9" y="372" width="10" height="24"/><rect class="d-line" x="24.9" y="372" width="10" height="24"/>
   <rect class="d-box" x="37.8" y="372" width="10" height="24"/><rect class="d-line" x="37.8" y="372" width="10" height="24"/>
@@ -117,4 +117,5 @@
   <rect class="d-box" x="270.0" y="372" width="10" height="24"/><rect class="d-line" x="270.0" y="372" width="10" height="24"/>
   <rect class="d-box" x="282.9" y="372" width="10" height="24"/><rect class="d-line" x="282.9" y="372" width="10" height="24"/>
   <rect class="d-box" x="295.8" y="372" width="10" height="24"/><rect class="d-line" x="295.8" y="372" width="10" height="24"/>
+  <text class="d-muted" x="12" y="418">개수는 나라·장비·DFS마다 다름</text>
 </svg>
