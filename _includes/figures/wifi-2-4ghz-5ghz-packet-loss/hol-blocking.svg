@@ -1,0 +1,125 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 324" role="img" aria-labelledby="hol-title hol-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="hol-title">TCP에서 메시지 하나가 사라지면 뒤의 메시지까지 멈췄다가 한꺼번에 넘어가는 모습</title>
+  <desc id="hol-desc">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 한꺼번에 앱에 넘긴다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
+
+  <text class="d-muted" x="12" y="65">보낸 쪽</text>
+  <text class="d-muted" x="12" y="155">받는 쪽 TCP</text>
+  <text class="d-muted" x="12" y="245">앱(화면)</text>
+  <path class="d-line" d="M112 60 H468"/>
+  <path class="d-line" d="M112 150 H468"/>
+  <path class="d-line" d="M112 240 H468"/>
+  <path class="d-line" d="M130 42 V46 H182 V42"/>
+  <text class="d-muted" x="156" y="34" text-anchor="middle">200 ms</text>
+  <text class="d-muted d-small" x="468" y="34" text-anchor="end">시간 →</text>
+  <text class="d-muted" x="392" y="38" text-anchor="middle">재전송</text>
+  <path class="d-line" d="M130 72 L150 138"/>
+  <path class="d-line" d="M182 72 L202 138"/>
+  <path class="d-line" stroke-dasharray="4 4" d="M234 72 L242 96"/>
+  <text class="d-strong d-accent" x="244" y="112" text-anchor="middle">✗</text>
+  <path class="d-line" d="M286 72 L306 138"/>
+  <path class="d-line" d="M338 72 L358 138"/>
+  <path class="d-line" d="M392 72 L412 138"/>
+  <circle class="d-box" cx="130" cy="60" r="11"/><circle class="d-line" cx="130" cy="60" r="11"/>
+  <text x="130" y="65" text-anchor="middle">1</text>
+  <circle class="d-box" cx="182" cy="60" r="11"/><circle class="d-line" cx="182" cy="60" r="11"/>
+  <text x="182" y="65" text-anchor="middle">2</text>
+  <circle class="d-box" cx="234" cy="60" r="11"/><circle class="d-line" cx="234" cy="60" r="11"/>
+  <text x="234" y="65" text-anchor="middle">3</text>
+  <circle class="d-box" cx="286" cy="60" r="11"/><circle class="d-line" cx="286" cy="60" r="11"/>
+  <text x="286" y="65" text-anchor="middle">4</text>
+  <circle class="d-box" cx="338" cy="60" r="11"/><circle class="d-line" cx="338" cy="60" r="11"/>
+  <text x="338" y="65" text-anchor="middle">5</text>
+  <circle class="d-box" cx="392" cy="60" r="11"/><circle class="d-line" cx="392" cy="60" r="11"/>
+  <text x="392" y="65" text-anchor="middle">3</text>
+  <circle class="d-box" cx="150" cy="150" r="11"/><circle class="d-line" cx="150" cy="150" r="11"/>
+  <text x="150" y="155" text-anchor="middle">1</text>
+  <circle class="d-box" cx="202" cy="150" r="11"/><circle class="d-line" cx="202" cy="150" r="11"/>
+  <text x="202" y="155" text-anchor="middle">2</text>
+  <circle class="d-box" cx="306" cy="150" r="11"/><circle class="d-line" cx="306" cy="150" r="11"/>
+  <text x="306" y="155" text-anchor="middle">4</text>
+  <circle class="d-box" cx="358" cy="150" r="11"/><circle class="d-line" cx="358" cy="150" r="11"/>
+  <text x="358" y="155" text-anchor="middle">5</text>
+  <circle class="d-box" cx="412" cy="150" r="11"/><circle class="d-line" cx="412" cy="150" r="11"/>
+  <text x="412" y="155" text-anchor="middle">3</text>
+  <text class="d-muted" x="332" y="182" text-anchor="middle">3이 없어 4·5 대기</text>
+  <path class="d-line" d="M150 162 V228"/>
+  <path class="d-line" d="M145 222 L150 228 L155 222"/>
+  <path class="d-line" d="M202 162 V228"/>
+  <path class="d-line" d="M197 222 L202 228 L207 222"/>
+  <path class="d-line" d="M412 162 V228"/>
+  <path class="d-line" d="M407 222 L412 228 L417 222"/>
+  <circle class="d-box" cx="150" cy="240" r="11"/><circle class="d-line" cx="150" cy="240" r="11"/>
+  <text x="150" y="245" text-anchor="middle">1</text>
+  <circle class="d-box" cx="202" cy="240" r="11"/><circle class="d-line" cx="202" cy="240" r="11"/>
+  <text x="202" y="245" text-anchor="middle">2</text>
+  <circle class="d-box" cx="412" cy="240" r="11"/><circle class="d-line" cx="412" cy="240" r="11"/>
+  <text x="412" y="245" text-anchor="middle">3</text>
+  <circle class="d-box" cx="436" cy="240" r="11"/><circle class="d-line" cx="436" cy="240" r="11"/>
+  <text x="436" y="245" text-anchor="middle">4</text>
+  <circle class="d-box" cx="460" cy="240" r="11"/><circle class="d-line" cx="460" cy="240" r="11"/>
+  <text x="460" y="245" text-anchor="middle">5</text>
+  <path class="d-line" d="M214 256 V262 H400 V256"/>
+  <text class="d-muted" x="307" y="284" text-anchor="middle">멈춤: 새 위치가 안 옴</text>
+  <text class="d-strong d-accent" x="468" y="310" text-anchor="end">한꺼번에 받음 → 아이콘이 뜀</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 314" role="img" aria-labelledby="hol-title-n hol-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="hol-title-n">TCP에서 메시지 하나가 사라지면 뒤의 메시지까지 멈췄다가 한꺼번에 넘어가는 모습</title>
+  <desc id="hol-desc-n">보내는 쪽이 200 ms마다 메시지 1부터 5를 보낸다. 1과 2는 도착해 바로 앱에 넘어간다. 3은 가는 길에 사라진다. 4와 5는 받는 쪽 TCP에 도착하지만 3이 비어 있어 앱에 넘어가지 못하고 기다린다. 보내는 쪽이 3을 다시 보내 도착하면 TCP가 3, 4, 5를 한꺼번에 앱에 넘긴다. 앱은 2를 받은 뒤 한동안 새 위치를 받지 못해 아이콘이 멈추고, 그다음 세 위치를 거의 동시에 받아 아이콘이 앞으로 뛴다.</desc>
+
+  <text class="d-muted" x="8" y="55">보냄</text>
+  <text class="d-muted" x="8" y="145">TCP</text>
+  <text class="d-muted" x="8" y="235">화면</text>
+  <path class="d-line" d="M50 50 H312"/>
+  <path class="d-line" d="M50 140 H312"/>
+  <path class="d-line" d="M50 230 H312"/>
+  <text class="d-muted" x="236" y="28" text-anchor="middle">재전송</text>
+  <path class="d-line" d="M64 62 L76 128"/>
+  <path class="d-line" d="M96 62 L108 128"/>
+  <path class="d-line" stroke-dasharray="4 4" d="M128 62 L134 82"/>
+  <text class="d-strong d-accent" x="136" y="98" text-anchor="middle">✗</text>
+  <path class="d-line" d="M160 62 L172 128"/>
+  <path class="d-line" d="M192 62 L204 128"/>
+  <path class="d-line" d="M236 62 L250 128"/>
+  <circle class="d-box" cx="64" cy="50" r="11"/><circle class="d-line" cx="64" cy="50" r="11"/>
+  <text x="64" y="55" text-anchor="middle">1</text>
+  <circle class="d-box" cx="96" cy="50" r="11"/><circle class="d-line" cx="96" cy="50" r="11"/>
+  <text x="96" y="55" text-anchor="middle">2</text>
+  <circle class="d-box" cx="128" cy="50" r="11"/><circle class="d-line" cx="128" cy="50" r="11"/>
+  <text x="128" y="55" text-anchor="middle">3</text>
+  <circle class="d-box" cx="160" cy="50" r="11"/><circle class="d-line" cx="160" cy="50" r="11"/>
+  <text x="160" y="55" text-anchor="middle">4</text>
+  <circle class="d-box" cx="192" cy="50" r="11"/><circle class="d-line" cx="192" cy="50" r="11"/>
+  <text x="192" y="55" text-anchor="middle">5</text>
+  <circle class="d-box" cx="236" cy="50" r="11"/><circle class="d-line" cx="236" cy="50" r="11"/>
+  <text x="236" y="55" text-anchor="middle">3</text>
+  <circle class="d-box" cx="76" cy="140" r="11"/><circle class="d-line" cx="76" cy="140" r="11"/>
+  <text x="76" y="145" text-anchor="middle">1</text>
+  <circle class="d-box" cx="108" cy="140" r="11"/><circle class="d-line" cx="108" cy="140" r="11"/>
+  <text x="108" y="145" text-anchor="middle">2</text>
+  <circle class="d-box" cx="172" cy="140" r="11"/><circle class="d-line" cx="172" cy="140" r="11"/>
+  <text x="172" y="145" text-anchor="middle">4</text>
+  <circle class="d-box" cx="204" cy="140" r="11"/><circle class="d-line" cx="204" cy="140" r="11"/>
+  <text x="204" y="145" text-anchor="middle">5</text>
+  <circle class="d-box" cx="250" cy="140" r="11"/><circle class="d-line" cx="250" cy="140" r="11"/>
+  <text x="250" y="145" text-anchor="middle">3</text>
+  <text class="d-muted" x="178" y="172" text-anchor="middle">3이 없어 4·5 대기</text>
+  <path class="d-line" d="M76 152 V218"/>
+  <path class="d-line" d="M71 212 L76 218 L81 212"/>
+  <path class="d-line" d="M108 152 V218"/>
+  <path class="d-line" d="M103 212 L108 218 L113 212"/>
+  <path class="d-line" d="M250 152 V218"/>
+  <path class="d-line" d="M245 212 L250 218 L255 212"/>
+  <circle class="d-box" cx="76" cy="230" r="11"/><circle class="d-line" cx="76" cy="230" r="11"/>
+  <text x="76" y="235" text-anchor="middle">1</text>
+  <circle class="d-box" cx="108" cy="230" r="11"/><circle class="d-line" cx="108" cy="230" r="11"/>
+  <text x="108" y="235" text-anchor="middle">2</text>
+  <circle class="d-box" cx="250" cy="230" r="11"/><circle class="d-line" cx="250" cy="230" r="11"/>
+  <text x="250" y="235" text-anchor="middle">3</text>
+  <circle class="d-box" cx="274" cy="230" r="11"/><circle class="d-line" cx="274" cy="230" r="11"/>
+  <text x="274" y="235" text-anchor="middle">4</text>
+  <circle class="d-box" cx="298" cy="230" r="11"/><circle class="d-line" cx="298" cy="230" r="11"/>
+  <text x="298" y="235" text-anchor="middle">5</text>
+  <path class="d-line" d="M120 246 V252 H238 V246"/>
+  <text class="d-muted" x="179" y="274" text-anchor="middle">멈춤</text>
+  <text class="d-strong d-accent" x="312" y="300" text-anchor="end">한꺼번에 → 뜀</text>
+</svg>
