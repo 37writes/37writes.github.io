@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 660" role="img" aria-labelledby="tls13-hs-title tls13-hs-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="tls13-hs-title">TLS 1.3 전체 핸드셰이크: 왕복 한 번 뒤 응용 데이터, mTLS는 메시지만 더해진다</title>
-  <desc id="tls13-hs-desc">왼쪽은 클라이언트, 오른쪽은 서버다. 1. 클라이언트가 ClientHello를 보낸다. 여기에는 지원하는 버전과 암호 목록, 키 교환용 key_share, 접속할 이름 SNI, 원하는 응용 프로토콜 ALPN이 들어 있다. 2. 서버가 ServerHello와 자기 key_share를 보낸다. 이때부터 양쪽은 같은 비밀을 계산할 수 있고, 이후 메시지는 모두 암호화된다. 서버는 같은 묶음에 EncryptedExtensions(ALPN 결과 등), mTLS일 때만 CertificateRequest, Certificate(서버 인증서), CertificateVerify(핸드셰이크 기록에 대한 서명), Finished를 보낸다. 3. 클라이언트는 서버 인증서를 검증한 뒤, mTLS일 때만 자기 Certificate와 CertificateVerify를 보내고 Finished를 보낸다. 4. 그 뒤 응용 데이터가 오간다. 클라이언트가 응용 데이터를 보내기 전까지 왕복은 한 번이다. 별표가 붙은 메시지는 mTLS일 때만 있다.</desc>
+  <title id="tls13-hs-title">TLS 1.3 전체 핸드셰이크(TCP 연결 뒤, 인증서 기반, HelloRetryRequest·0-RTT 제외): 왕복 한 번 뒤 응용 데이터, mTLS는 메시지만 더해진다</title>
+  <desc id="tls13-hs-desc">TCP 연결이 맺어진 뒤의 인증서 기반 전체 핸드셰이크이며, HelloRetryRequest와 0-RTT는 그리지 않았다. 왼쪽은 클라이언트, 오른쪽은 서버다. 1. 클라이언트가 ClientHello를 보낸다. 여기에는 지원하는 버전과 암호 목록, 키 교환용 key_share, 접속할 이름 SNI, 원하는 응용 프로토콜 ALPN이 들어 있다. 2. 서버가 ServerHello와 자기 key_share를 보낸다. 이때부터 양쪽은 같은 비밀을 계산할 수 있고, 이후 메시지는 모두 암호화된다. 서버는 같은 묶음에 EncryptedExtensions(ALPN 결과 등), mTLS일 때만 CertificateRequest, Certificate(서버 인증서), CertificateVerify(핸드셰이크 기록에 대한 서명), Finished를 보낸다. 3. 클라이언트는 서버 인증서를 검증한 뒤, mTLS일 때만 자기 Certificate와 CertificateVerify를 보내고 Finished를 보낸다. 4. 그 뒤 응용 데이터가 오간다. 클라이언트가 응용 데이터를 보내기 전까지 왕복은 한 번이다. 별표가 붙은 메시지는 mTLS일 때만 있다.</desc>
 
   <text class="d-strong" x="56" y="30" text-anchor="middle">클라이언트</text>
   <text class="d-strong" x="304" y="30" text-anchor="middle">서버</text>
@@ -43,5 +43,5 @@
   <path class="d-line" d="M63 604 L56 610 L63 616"/>
 
   <text class="d-small d-accent" x="16" y="644">* mTLS일 때만</text>
-  <text class="d-small" x="344" y="644" text-anchor="end">왕복 1번 뒤 응용 데이터</text>
+  <text class="d-small" x="344" y="644" text-anchor="end">TLS 왕복 1번 (HRR·0-RTT 제외)</text>
 </svg>

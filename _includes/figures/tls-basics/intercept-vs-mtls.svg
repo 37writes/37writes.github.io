@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 470" role="img" aria-labelledby="tls-intercept-title tls-intercept-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="tls-intercept-title">TLS 가로채기 프록시: 서버 인증만 하는 TLS는 사내 CA를 믿으면 통과하고, mTLS는 깨진다</title>
-  <desc id="tls-intercept-desc">위 그림은 일반 TLS다. PC와 프록시 사이에는 프록시가 사내 CA로 서명한 가짜 인증서로 TLS를 하나 맺고, 프록시와 서버 사이에는 진짜 서버 인증서로 TLS를 따로 맺는다. 두 연결 사이 프록시 안에서는 평문이 보인다. PC가 사내 CA를 믿어야 연결이 되므로 CA를 신뢰 목록에 더한다. 아래 그림은 mTLS다. 서버가 CertificateRequest로 클라이언트 인증서와 서명을 요구한다. 그러나 서버와 TLS를 맺는 쪽은 프록시이고, 프록시에는 장치의 개인키가 없다. 그래서 CertificateVerify 서명을 만들 수 없고 서버가 연결을 끊는다. 해결은 그 주소를 가로채기에서 빼거나 프록시 없는 길로 직접 연결하는 것이다.</desc>
+  <title id="tls-intercept-title">TLS 가로채기 프록시: 장치 개인키나 서명 권한이 없는 프록시가 TLS를 두 연결로 끊으면, 서버 인증만 하는 TLS는 사내 CA를 믿을 때 통과하고 mTLS는 깨진다</title>
+  <desc id="tls-intercept-desc">이 그림의 프록시는 장치의 개인키나 서명 권한을 받지 않은 채 TLS를 두 연결로 끊는 일반적인 가로채기 프록시다. 위 그림은 일반 TLS다. PC와 프록시 사이에는 프록시가 사내 CA로 서명한 가짜 인증서로 TLS를 하나 맺고, 프록시와 서버 사이에는 진짜 서버 인증서로 TLS를 따로 맺는다. 두 연결 사이 프록시 안에서는 평문이 보인다. PC가 사내 CA를 믿어야 연결이 되므로 CA를 신뢰 목록에 더한다. 아래 그림은 mTLS다. 서버가 CertificateRequest로 클라이언트 인증서와 서명을 요구한다. 그러나 서버와 TLS를 맺는 쪽은 프록시이고, 이 프록시에는 장치의 개인키도 서명 권한도 없다. 그래서 CertificateVerify 서명을 만들 수 없고 서버가 연결을 끊는다. 해결은 그 주소를 가로채기에서 빼거나 프록시 없는 길로 직접 연결하는 것이다.</desc>
 
   <text class="d-strong" x="16" y="28">① 서버만 확인하는 TLS</text>
   <rect class="d-box" x="16" y="44" width="88" height="44" rx="8"/>
@@ -29,7 +29,7 @@
   <path class="d-line" d="M224 288 H256"/>
   <text class="d-small" x="16" y="338">서버: CertificateRequest로 인증서·서명 요구</text>
   <text class="d-small" x="16" y="360">서버와 TLS를 맺는 쪽은 프록시</text>
-  <text class="d-small" x="16" y="382">프록시에는 장치의 개인키가 없다</text>
+  <text class="d-small" x="16" y="382">이 프록시에는 장치 개인키·서명 권한이 없다</text>
   <text class="d-small d-accent" x="16" y="404">CertificateVerify를 못 만든다 → 서버가 끊음</text>
   <text class="d-muted" x="16" y="432">해결: 그 주소는 가로채기 예외,</text>
   <text class="d-muted" x="16" y="454">또는 프록시 없는 길로 직접 연결</text>

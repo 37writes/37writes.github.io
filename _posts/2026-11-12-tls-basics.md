@@ -6,16 +6,17 @@ tags: [tls, tls-1-3, x509, mtls, certificate, sni, alpn, aws-iot-core]
 description: "TLS가 지켜 주는 기밀성·무결성·인증, TLS 1.3 핸드셰이크 한 바퀴, 인증서와 호스트 이름 검증, IoT 장치가 쓰는 mTLS, SNI·ALPN, 사내 프록시의 TLS 가로채기가 mTLS를 깨는 이유를 localhost 실험 결과와 함께 정리합니다."
 ---
 
-실시간 위치 대시보드를 AI 에이전트와 함께 만들었습니다. 장치가 자기 위치를 클라우드의 MQTT 브로커(AWS IoT Core)로 보내고, 브라우저 화면이 그 값을 받아 지도 위에 그립니다. 만드는 동안 "인증서", "TLS", "mTLS", "8883", "443" 같은 말을 정말 자주 봤습니다. 그런데 돌아보니 같은 시스템 안에서 TLS가 **네 군데에서 서로 다른 모양으로** 쓰이고 있었습니다.
+실시간 위치 대시보드를 AI 에이전트와 함께 만들었습니다. 장치가 자기 위치를 클라우드의 MQTT 브로커(AWS IoT Core)로 보내고, 브라우저 화면이 그 값을 받아 지도 위에 그립니다. 만드는 동안 "인증서", "TLS", "mTLS", "8883", "443" 같은 말을 정말 자주 봤습니다. 그런데 돌아보니 같은 시스템 안에서 TLS(와 UDP용 친척인 DTLS)가 **여러 군데에서 서로 다른 모양으로** 쓰이고 있었습니다.
 
 | 어디서 | 길 | TLS가 하는 일 | "누구냐"는 어떻게 증명하나 |
 |---|---|---|---|
 | 장치 → MQTT 브로커 | MQTT over TLS, 포트 8883 | 암호화 + 서버 확인 + **장치 확인** | 장치 인증서와 개인키로 TLS 안에서 증명(mTLS) |
 | 브라우저 → MQTT 브로커 | MQTT over WebSocket(WSS), 포트 443 | 암호화 + 서버 확인 | 로그인으로 받은 임시 권한으로 만든 SigV4 서명 URL(TLS 위 응용 층) |
 | 장치 → 자격 증명 공급자 | HTTPS, 포트 443 | 암호화 + 서버 확인 + 장치 확인 | 같은 장치 인증서로 mTLS → 1시간짜리 임시 AWS 권한을 받음 |
-| 영상 | WebRTC: UDP 위 DTLS-SRTP, UDP가 막히면 TURN over TLS(TCP 443) | 암호화 + 상대 확인 | DTLS 인증서 지문을 시그널링으로 미리 건넴 |
+| 영상: 피어 사이 미디어 | WebRTC, UDP 위 DTLS-SRTP | 암호화 + 상대 확인 | DTLS 인증서 지문을 시그널링으로 미리 건넴 |
+| 영상: UDP가 막힐 때의 대체 경로 | 클라이언트 ↔ TURN 서버, TLS over TCP 443 | 이 구간 암호화 + TURN 서버 확인 | 미디어는 이 길 안에서도 여전히 DTLS-SRTP로 보호 |
 
-> 넷 다 "TLS를 쓴다"는데 무엇이 같고 무엇이 다른가? 인증서는 왜 서버만 내기도 하고 장치도 내기도 하나? 옛 사내 PC에서는 왜 443 연결만 인증서 오류가 나고 8883은 멀쩡했나?
+> 모두 "TLS를 쓴다"는데 무엇이 같고 무엇이 다른가? 인증서는 왜 서버만 내기도 하고 장치도 내기도 하나? 옛 사내 PC에서는 왜 443 연결만 인증서 오류가 나고 8883은 멀쩡했나?
 
 이 글은 그 질문을 다시 짚는 정리입니다. TLS가 무엇을 약속하는지, TLS 1.3 핸드셰이크가 한 바퀴 도는 동안 무슨 일이 일어나는지, 인증서 검증이 정확히 무엇을 확인하는지, 장치가 인증서를 내는 mTLS가 어떻게 동작하는지를 RFC와 AWS 공식 문서로 봅니다. 그리고 localhost에서 실험용 CA를 만들어 **검증 실패, mTLS 실패, 가로채기 프록시가 mTLS를 깨는 장면**을 직접 재현한 결과를 붙입니다.
 
@@ -24,10 +25,10 @@ description: "TLS가 지켜 주는 기밀성·무결성·인증, TLS 1.3 핸드�
 긴 글이라 결론의 뼈대를 먼저 적습니다.
 
 1. **TLS는 세 가지를 약속합니다.** 엿볼 수 없게(기밀성), 바꾸면 들키게(무결성), 상대가 맞는지 확인되게(인증). 인증은 보통 서버만 하고, 클라이언트 인증은 선택입니다. 데이터 길이, 접속 IP, 많은 경우 접속하려는 이름(SNI)은 숨기지 않습니다.
-2. **TLS 1.3 핸드셰이크는 왕복 한 번입니다.** 첫 메시지에 키 교환 재료를 미리 실어 보내기 때문입니다. TLS 1.2는 두 번이었습니다.
+2. **TLS 1.3 전체 핸드셰이크는 왕복 한 번입니다**(TCP 연결 뒤, 인증서 기반, HelloRetryRequest·0-RTT 제외). 첫 메시지에 키 교환 재료를 미리 실어 보내기 때문입니다. TLS 1.2의 전체 핸드셰이크는 두 번이었습니다.
 3. **인증서 검증은 두 가지 확인입니다.** "믿는 CA까지 서명이 이어지는가(체인)"와 "이 인증서가 내가 접속하려던 이름의 것인가(호스트 이름)". 둘 중 하나라도 빼면 검증이 아닙니다.
 4. **mTLS는 같은 확인을 반대 방향으로도 합니다.** 장치는 인증서를 보내고, 그 인증서의 개인키로 핸드셰이크 기록에 서명해 "이 인증서의 주인이 나"임을 증명합니다. 개인키 자체는 전선 위로 나가지 않습니다.
-5. **TLS 가로채기 프록시는 서버 확인만 하는 TLS는 통과시킬 수 있지만 mTLS는 깨뜨립니다.** 프록시에는 장치의 개인키가 없기 때문입니다.
+5. **장치의 개인키나 서명 권한이 없는 가로채기 프록시가 TLS를 두 연결로 끊으면, 서버 확인만 하는 TLS는 통과할 수 있지만 mTLS는 깨집니다.** 그 프록시는 서버와의 핸드셰이크에서 장치로서 서명할 수 없기 때문입니다.
 
 ## TLS가 약속하는 것과 약속하지 않는 것
 
@@ -47,7 +48,7 @@ TLS 1.3 명세(RFC 8446)는 첫 절에서 TLS가 안전한 통로에 기대하�
 | 무결성 | 중간 장비가 몰래 한 글자 바꾸는 것 | AEAD 암호의 인증 태그 |
 | 인증 | 엉뚱한 서버가 진짜인 척하는 것(DNS가 속았거나 중간에서 가로챈 경우) | 인증서 + 개인키 서명 |
 
-셋 중 가장 덜 눈에 띄지만 가장 중요한 것은 **인증**입니다. 아무리 강한 암호로 잠가도, 잠긴 통로의 반대편이 공격자라면 소용이 없습니다. 그래서 TLS 오류의 대부분은 암호가 아니라 인증서, 즉 "상대가 맞는가"에서 납니다.
+셋 중 가장 덜 눈에 띄지만 가장 중요한 것은 **인증**입니다. 아무리 강한 암호로 잠가도, 잠긴 통로의 반대편이 공격자라면 소용이 없습니다. 이 글에서 겪고 재현한 오류도 암호보다는 인증서, 즉 "상대가 맞는가"에 몰려 있었습니다.
 
 ### 약속하지 않는 것
 
@@ -55,7 +56,7 @@ RFC 8446은 TLS가 숨기지 않는 것도 분명히 적습니다. "TLS는 보�
 
 - **상대가 "좋은 사람"인지는 모릅니다.** 인증서는 "이 서버가 그 이름의 주인이다"까지만 말합니다. 그 이름의 주인이 악성 사이트여도 TLS는 정상입니다.
 - **빨리 오게 해 주지 않습니다.** 오히려 연결마다 핸드셰이크 왕복이 더해집니다. 이 글 뒤에서 재연결 한 번의 왕복 수를 셉니다.
-- **메타데이터는 남습니다.** 어떤 IP의 몇 번 포트로 붙는지는 그 아래 IP·TCP 층에 그대로 보입니다. 그리고 **접속하려는 이름(SNI)은 TLS 1.3에서도 기본적으로 평문**입니다. 2026년 3월에 나온 ECH(Encrypted Client Hello, RFC 9849)는 TLS 1.3에서도 SNI가 평문으로 남는다는 점을 "암호화되지 않은 채 남은 정보 중 아마 가장 민감한 것"이라고 부르며, ClientHello 전체(SNI, ALPN 포함)를 암호화하는 방법을 정의합니다. 다만 ECH를 써도 DNS 조회와 서버 IP로 상대를 짐작할 여지는 남는다고 같은 문서가 적고 있습니다. ECH는 양쪽이 지원해야 쓰는 확장이라 이 글의 예시에서는 다루지 않습니다.
+- **메타데이터는 남습니다.** 어떤 IP의 몇 번 포트로 붙는지는 그 아래 IP·TCP 층에 그대로 보입니다. 그리고 **접속하려는 이름(SNI)은 TLS 1.3에서도 기본적으로 평문**입니다. 2026년 3월에 나온 ECH(Encrypted Client Hello, RFC 9849)는 TLS 1.3에서도 SNI가 평문으로 남는다는 점을 "암호화되지 않은 채 남은 정보 중 아마 가장 민감한 것"이라고 부르며, 실제 목적지 이름(SNI)과 ALPN 등을 담은 안쪽 ClientHello(ClientHelloInner)를 암호화해, 공개해도 되는 정보만 담은 바깥 ClientHello(ClientHelloOuter) 안에 실어 보내는 방법을 정의합니다. 평문 ClientHello가 아예 사라지는 것이 아니라, 진짜 내용이 암호화된 안쪽으로 옮겨 가는 구조입니다. 다만 ECH를 써도 DNS 조회와 서버 IP로 상대를 짐작할 여지는 남는다고 같은 문서가 적고 있습니다. ECH는 양쪽이 지원해야 쓰는 확장이라 이 글의 예시에서는 다루지 않습니다.
 
 ## 층에서의 자리: TCP 위, 응용 아래
 
@@ -73,7 +74,7 @@ MQTT 5 명세는 TCP/IP 포트 8883과 1883이 IANA에 각각 TLS를 쓰는 MQTT
 
 **DTLS**는 UDP처럼 순서가 바뀌고 잃어버릴 수 있는 길 위에서 TLS와 같은 보안을 주려고 만든 변형입니다(DTLS 1.3은 RFC 9147). WebRTC 영상은 이 DTLS로 키를 나누고 SRTP로 영상을 보냅니다. DTLS 핸드셰이크와 "인증서 지문"으로 상대를 확인하는 방식은 [WebRTC 암호화와 브라우저 보안: DTLS-SRTP, 그리고 CSP]({% post_url 2026-11-10-webrtc-dtls-srtp-csp %})에서 자세히 다뤘습니다. 이 글은 TCP 위 TLS에 집중합니다.
 
-**QUIC**은 TLS를 바깥에 덧씌우지 않고 안에 품습니다. RFC 9001은 QUIC이 TLS 1.3의 핸드셰이크로 키를 정하되, 레코드 보호는 QUIC 자기 방식으로 한다고 설명합니다. 그래서 HTTP/3에서는 TCP 핸드셰이크와 TLS 핸드셰이크가 한 번으로 합쳐집니다.
+**QUIC**은 TLS를 바깥에 덧씌우지 않고 안에 품습니다. RFC 9001은 QUIC이 TLS 1.3의 핸드셰이크로 키를 정하되, 레코드 보호는 QUIC 자기 방식으로 한다고 설명합니다. 그래서 HTTP/3에서는 QUIC의 전송 연결 수립과 TLS 1.3 핸드셰이크가 하나로 통합되고, 따로 TCP 핸드셰이크를 하지 않습니다.
 
 버전도 정리해 둡니다. TLS 1.0과 1.1은 RFC 8996으로 공식 폐기되었습니다. 지금 쓰는 것은 TLS 1.2와 1.3이고, AWS IoT Core도 문서에서 TLS 1.2와 1.3을 지원한다고 적습니다. Python `ssl` 모듈은 3.10부터 기본 최소 버전이 TLS 1.2입니다.
 
@@ -83,7 +84,7 @@ TLS 연결은 두 부분으로 나뉩니다. 처음에 상대를 확인하고 �
 
 <figure class="diagram">
 {% include figures/tls-basics/tls13-handshake.svg %}
-<figcaption>TLS 1.3 전체 핸드셰이크. ServerHello 다음부터는 전부 암호화되고, 클라이언트는 왕복 한 번 뒤 응용 데이터를 보낼 수 있다. 별표 메시지는 mTLS일 때만 더해지며 왕복 수는 늘지 않는다</figcaption>
+<figcaption>TLS 1.3 전체 핸드셰이크(TCP 연결 뒤, 인증서 기반, HelloRetryRequest·0-RTT 제외). ServerHello 다음부터는 전부 암호화되고, 클라이언트는 왕복 한 번 뒤 응용 데이터를 보낼 수 있다. 별표 메시지는 mTLS일 때만 더해지며 왕복 수는 늘지 않는다</figcaption>
 </figure>
 
 RFC 8446은 이 과정을 세 단계로 나눕니다. 키 교환(ClientHello, ServerHello), 서버 매개변수(EncryptedExtensions, CertificateRequest), 인증(Certificate, CertificateVerify, Finished)입니다. 하나씩 봅니다.
@@ -102,6 +103,8 @@ RFC 8446은 이 과정을 세 단계로 나눕니다. 키 교환(ClientHello, Se
 
 서버는 클라이언트가 보낸 후보 중에서 버전, 암호 묶음, 키 교환 그룹을 고르고 **자기 key_share**를 돌려줍니다. 이제 양쪽은 각자 가진 비밀값과 상대 공개값으로 **같은 공유 비밀**을 계산합니다(ECDHE). 이 비밀은 전선 위로 한 번도 지나가지 않았습니다. 엿보는 쪽은 공개값 두 개만 봤고, 그것만으로는 공유 비밀을 계산할 수 없습니다.
 
+다만 이 공유 비밀이 곧바로 AES 키가 되는 것은 아닙니다. RFC 8446 7.1절의 키 스케줄은 HKDF라는 키 파생 함수로 공유 비밀과 그때까지의 핸드셰이크 기록(transcript)을 섞어, 핸드셰이크용과 응용 데이터용, 그리고 클라이언트가 보낼 때와 서버가 보낼 때 쓸 키를 따로따로 만들어 냅니다.
+
 여기서부터가 TLS 1.3의 큰 변화입니다. RFC 8446은 **ServerHello 다음의 모든 핸드셰이크 메시지가 암호화된다**고 적습니다. TLS 1.2에서는 서버 인증서가 평문으로 지나갔기 때문에 중간에서 누구나 어떤 인증서가 오가는지 볼 수 있었습니다. TLS 1.3에서는 서버 인증서도 암호화된 채로 갑니다.
 
 ### 3. 서버의 나머지 묶음: 확장, 인증서, 서명, Finished
@@ -112,20 +115,22 @@ RFC 8446은 이 과정을 세 단계로 나눕니다. 키 교환(ClientHello, Se
 - **CertificateRequest:** mTLS일 때만. "너도 인증서를 내라."
 - **Certificate:** 서버 인증서와, 신뢰하는 루트까지 이어 줄 중간 인증서들.
 - **CertificateVerify:** 서버가 **인증서의 개인키로, 지금까지 오간 핸드셰이크 전체에 대해 만든 서명**입니다. 인증서는 공개 문서라 누구나 복사해 보낼 수 있습니다. 그 인증서의 개인키를 가진 쪽만 이 서명을 만들 수 있으므로, 이 서명이 "인증서의 주인이 지금 이 연결의 상대"라는 증거가 됩니다. 서명 대상에 이번 연결의 무작위값과 키 교환 값이 다 들어 있어서, 예전 연결의 서명을 다시 써먹을 수도 없습니다.
-- **Finished:** 핸드셰이크 전체에 대한 MAC입니다. 중간에서 누가 목록 하나를 지우거나 바꿨다면 양쪽의 기록이 달라져 여기서 맞지 않게 됩니다.
+- **Finished:** 핸드셰이크 전체에 대한 MAC입니다. MAC은 **같은 비밀키를 가진 쪽만 만들고 확인할 수 있는 검증값**이고, 여기서 쓰는 키는 방금 나눈 공유 비밀에서 파생한 것이라 두 끝만 가지고 있습니다. 중간에서 누가 목록 하나를 지우거나 바꿨다면 양쪽의 기록이 달라져 여기서 맞지 않게 됩니다.
+
+서명과 MAC을 둘 다 보내는 이유도 여기서 보입니다. 서명(CertificateVerify)은 개인키 주인만 만들 수 있고 공개키로 누구나 확인할 수 있어서 "이 인증서의 주인이 나"를 증명합니다. MAC(Finished)은 키를 나눈 두 끝만 만들고 확인할 수 있어서 "키를 나눈 상대와 내가 본 핸드셰이크 기록이 똑같다"를 확인합니다.
 
 ### 4. 클라이언트의 확인과 Finished
 
 클라이언트는 서버 인증서를 검증하고(체인과 이름, 아래에서 자세히), CertificateVerify 서명과 Finished를 확인합니다. 다 맞으면 자기 Finished를 보냅니다. mTLS라면 그 앞에 자기 Certificate와 CertificateVerify를 붙입니다. 그리고 곧바로 응용 데이터를 보낼 수 있습니다.
 
-정리하면 클라이언트가 첫 응용 데이터를 보내기까지 **왕복 한 번(1-RTT)**입니다. 클라이언트 인증 메시지는 원래 보내야 하는 Finished와 같은 묶음에 실려 가므로 **mTLS를 해도 TLS 1.3의 왕복 수는 늘지 않습니다.**
+정리하면 TCP 연결이 맺어진 뒤 클라이언트가 첫 응용 데이터를 보내기까지 **왕복 한 번(1-RTT)**입니다(HelloRetryRequest가 없을 때). 클라이언트 인증 메시지는 원래 보내야 하는 Finished와 같은 묶음에 실려 가므로 **mTLS를 해도 TLS 1.3의 왕복 수는 늘지 않습니다.**
 
 ### 실제 사이트에서 보기
 
 `openssl s_client`로 공개 사이트 하나에 붙어 보면 이 결과가 그대로 보입니다(OpenSSL 4.1.0, 출력 중 필요한 줄만).
 
 ```bash
-echo | openssl s_client -connect example.com:443 -servername example.com -alpn h2,http/1.1
+echo | openssl s_client -connect example.com:443 -servername example.com -verify_hostname example.com -alpn h2,http/1.1
 ```
 
 ```text
@@ -144,6 +149,7 @@ Verify return code: 0 (ok)
 - `Peer signature type`은 CertificateVerify 서명 방식입니다. 서버 인증서가 P-256 타원곡선 키라 ECDSA 서명이 왔습니다.
 - `Negotiated TLS1.3 group`은 key_share로 고른 키 교환 그룹입니다. 이름에 X25519와 ML-KEM768이 함께 들어 있는 것이 보입니다. 이 그룹의 표준화 상태는 이 글에서 따로 확인하지 않았기 때문에, 관찰된 이름만 적어 둡니다.
 - `TLS_AES_256_GCM_SHA384`가 실제 데이터를 지키는 암호 묶음, `h2`가 ALPN으로 고른 HTTP/2입니다.
+- `Verify return code: 0`이 이름 확인까지 포함하려면 `-verify_hostname`을 줘야 합니다. `-servername`은 SNI로 보낼 이름일 뿐 호스트 이름 검증 옵션이 아닙니다.
 
 ### 키 교환과 전방 비밀성
 
@@ -193,24 +199,26 @@ TLS 1.2의 전체 핸드셰이크(RFC 5246 그림 1)는 이렇게 흘러갑니�
 
 ### 재개(PSK)와 0-RTT
 
-TLS 1.3은 한 번 붙었던 서버에 다시 붙을 때를 위한 길도 둡니다. 핸드셰이크가 끝나면 서버가 NewSessionTicket을 보내 주고, 다음 연결에서 클라이언트가 그 티켓(PSK)을 내밀면 인증서 검증을 다시 하지 않고 재개할 수 있습니다. 보통 이때도 (EC)DHE를 함께 해서 전방 비밀성을 지킵니다. 왕복 수는 여전히 1-RTT입니다.
+TLS 1.3은 한 번 붙었던 서버에 다시 붙을 때를 위한 길도 둡니다. 핸드셰이크가 끝나면 서버가 NewSessionTicket을 보내 주고, 양쪽은 이번 연결의 비밀(resumption_master_secret)과 티켓에 붙은 값(ticket_nonce)에서 **PSK**를 각자 파생해 보관합니다. 티켓은 그 PSK를 가리키는 이름표이지 PSK 자체가 아닙니다. 다음 연결에서 클라이언트는 ClientHello에 티켓을 넣어 "그때의 PSK로 하자"고 알리고, 그 PSK로 계산한 **binder** 값을 붙여 PSK를 실제로 가지고 있음을 증명합니다. 그러면 인증서 검증을 다시 하지 않고 재개할 수 있습니다.
+
+RFC 8446은 PSK를 쓰는 방식을 둘로 나눕니다. PSK만 쓰는 방식(psk_ke)은 전방 비밀성이 없고, PSK와 (EC)DHE를 함께 쓰는 방식(psk_dhe_ke)은 전방 비밀성을 줍니다. 왕복 수는 어느 쪽이든 1-RTT입니다.
 
 여기에 **0-RTT**(early data)라는 선택이 더 있습니다. 재개할 때 ClientHello와 함께 응용 데이터를 바로 실어 보내는 방식입니다. 대신 RFC 8446은 분명한 경고를 붙입니다. 0-RTT 데이터는 **전방 비밀성이 없고**, **연결 사이의 재전송(replay)을 막아 준다는 보장이 없습니다.** 공격자가 0-RTT로 온 "송금해 줘" 요청을 녹화해 다른 연결에 다시 보낼 수 있다는 뜻입니다. 그래서 0-RTT는 몇 번 반복돼도 괜찮은 요청에만 쓰라고 하고, 8절에서 재전송을 줄이는 방법을 따로 다룹니다. 장치가 명령을 보내는 길에서는 쓰지 않는 편이 맞습니다.
 
 ### 재연결 한 번은 왕복 몇 번인가
 
-이 원리를 가지고 장치가 MQTT 연결을 잃었다가 다시 붙을 때의 비용을 세어 볼 수 있습니다. 측정값이 아니라 **프로토콜이 요구하는 왕복 수**입니다(DNS 조회가 새로 필요하면 그만큼 더 듭니다).
+이 원리를 가지고 장치가 MQTT 연결을 잃었다가 다시 붙을 때의 비용을 세어 볼 수 있습니다. 측정값이 아니라 **프로토콜이 요구하는 왕복 수**입니다. TLS는 인증서 기반 전체 핸드셰이크로 보고, HelloRetryRequest·재전송·처리 시간은 뺐습니다(DNS 조회가 새로 필요하면 그만큼 더 듭니다).
 
 | 단계 | 왕복 | 메모 |
 |---|---|---|
 | TCP 연결(SYN → SYN-ACK → ACK) | 1 | ACK와 함께 ClientHello를 바로 보낼 수 있다 |
 | TLS 1.3 핸드셰이크 | 1 | TLS 1.2면 2 |
 | MQTT CONNECT → CONNACK | 1 | 브로커가 접속을 받아들였다는 확인 |
-| **합계(CONNACK까지)** | **3** | TLS 1.2면 4 |
+| **합계(CONNACK까지)** | **3** | TLS 1.2 전체 핸드셰이크면 4 |
 
 MQTT 5 명세는 클라이언트가 CONNECT를 보낸 직후 CONNACK을 기다리지 않고 다른 패킷을 보내도 된다고 적습니다. 그래서 첫 PUBLISH는 왕복 두 번 뒤에 CONNECT와 함께 출발할 수 있습니다. 다만 브로커가 접속을 거절하면 그 PUBLISH는 버려지므로, "제대로 붙었다"를 확인하는 시점은 여전히 왕복 세 번 뒤입니다.
 
-왕복 시간이 50 ms인 길이라면 계산상 150 ms 남짓을 재연결에 쓰는 셈입니다. 연결이 자주 끊기는 장치라면 이 비용이 끊길 때마다 더해집니다. AWS IoT Core 문서는 MQTT 연결 유지 시간을 보장하지 않으며(X.509 인증서 방식은 보통 1~2주, SigV4 방식은 최대 24시간으로 안내), 장치가 다시 연결하도록 만들어야 한다고 적고 있습니다. 재연결은 드문 사고가 아니라 설계에 넣어야 하는 일입니다.
+왕복 시간이 50 ms인 길이라면 계산상 150 ms 남짓을 재연결에 쓰는 셈입니다. 연결이 자주 끊기는 장치라면 이 비용이 끊길 때마다 더해집니다. AWS IoT Core 문서는 MQTT 연결 지속 시간을 보장하지 않습니다. 최대 지속 시간 표에 X.509 인증서 방식 1~2주, SigV4 방식 24시간이 있지만 이것도 보장값이 아니라고 표시하고, 실제로는 몇 분 만에 끊길 수도 있으니 장치가 다시 연결하도록 만들라고 안내합니다. 재연결은 드문 사고가 아니라 설계에 넣어야 하는 일입니다.
 
 ## 인증서와 신뢰: 무엇을 확인하나
 
@@ -232,7 +240,7 @@ X.509 인증서(RFC 5280)는 대략 이런 내용을 담은 문서에 발급자(
 
 체인 검증만 하고 이름을 보지 않으면 어떻게 될까요? 공격자가 자기 도메인 `attacker.example`의 인증서를 정상적으로 발급받습니다. 이 인증서도 믿는 루트 CA까지 서명이 완벽하게 이어집니다. 그리고 DNS를 속이거나 중간에서 가로채 `api.example.com`으로 가는 연결에 그 인증서를 냅니다. 체인만 보는 클라이언트는 통과시킵니다. **"믿을 만한 누군가의 인증서"가 아니라 "내가 가려던 그 이름의 인증서"인지를 확인해야** 인증이 됩니다.
 
-RFC 9525는 서비스 이름을 확인할 때 인증서의 SAN 안 DNS 이름만 보고, 옛날처럼 Subject의 Common Name(CN)을 쓰면 안 된다(MUST NOT)고 정리합니다. 그래서 요즘 인증서를 직접 만들 때는 SAN을 꼭 넣어야 합니다.
+RFC 9525는 DNS 이름으로 접속할 때는 인증서 SAN의 DNS 이름(dNSName)과, IP 주소를 직접 지정해 접속할 때는 SAN의 IP 주소(iPAddress)와 대조하도록 정리합니다. 옛날처럼 Subject의 Common Name(CN)을 서비스 식별에 쓰면 안 된다(MUST NOT)고도 적습니다. 그래서 요즘 인증서를 직접 만들 때는 SAN을 꼭 넣어야 합니다. 이 글의 실험 서버 인증서에 `DNS:localhost`와 `IP:127.0.0.1`을 함께 넣은 것도 그래서입니다.
 
 `openssl s_client`로도 이 확인이 보입니다. 같은 example.com 인증서를 받으면서 "나는 다른 이름에 접속하려 했다"고 알려 주면 이렇게 됩니다.
 
@@ -245,7 +253,7 @@ verify error:num=62:hostname mismatch
 Verify return code: 62 (hostname mismatch)
 ```
 
-`openssl s_client`는 검증에 실패해도 기본으로는 연결을 끊지 않고 결과만 알려 줍니다. 시험용 도구라서 그렇습니다. 프로그램에서 쓰는 라이브러리는 이런 실패에서 연결을 끊어야 합니다.
+`openssl s_client`는 검증에 실패해도 기본으로는 연결을 끊지 않고 결과만 알려 줍니다. 시험용 도구라서 그렇습니다. 실패하면 바로 끊게 하려면 `-verify_return_error`를 더합니다. 위 명령에 이 옵션을 붙이면 `certificate verify failed` 오류와 함께 종료 코드 1로 끝났습니다. 프로그램에서 쓰는 라이브러리는 이런 실패에서 연결을 끊어야 합니다.
 
 ### 유효 기간과 장치 시계
 
@@ -275,7 +283,7 @@ AWS IoT Core의 X.509 클라이언트 인증서 문서도 같은 점을 듭니�
 
 AWS IoT Core 문서에 적힌 흐름을 순서대로 정리하면 이렇습니다.
 
-1. **TLS 단계:** 장치가 붙으면 AWS IoT가 클라이언트 인증서를 요구하고, 인증서가 등록되어 있는지, 상태가 무엇인지, 어느 AWS 계정의 것인지 레지스트리에서 확인합니다. 그리고 개인키를 가지고 있는지 증명을 요구합니다(앞의 CertificateVerify). 인증서는 **등록되어 있고, ACTIVE 상태이고, 만료되지 않았어야** 합니다. AWS IoT는 장치가 **SNI를 보내야** 연결을 받습니다.
+1. **TLS 단계:** 장치가 붙으면 AWS IoT가 클라이언트 인증서를 요구하고, 인증서가 등록되어 있는지, 상태가 무엇인지, 어느 AWS 계정의 것인지 레지스트리에서 확인합니다. 그리고 개인키를 가지고 있는지 증명을 요구합니다(앞의 CertificateVerify). 인증서는 **등록되어 있고, ACTIVE 상태이고, 만료되지 않았어야** 합니다. SNI는 일반 연결에서는 필수가 아니지만 강하게 권장되고, 몇몇 기능에서는 반드시 보내야 합니다(아래 SNI 절).
 2. **권한 단계:** 인증서에 붙은 **IoT 정책**이 그 장치가 무엇을 할 수 있는지 정합니다. 어떤 접속 이름(client id)으로 붙을 수 있는지, 어떤 토픽에 게시·구독할 수 있는지가 여기서 정해집니다.
 
 제 시스템에서는 장치 인증서의 정책을 이렇게 좁혀 두었습니다(이름은 일반화).
@@ -286,7 +294,7 @@ AWS IoT Core 문서에 적힌 흐름을 순서대로 정리하면 이렇습니�
 | 게시 | 자기 장치의 위치 토픽에만 |
 | 구독·수신 | 자기 장치의 명령 토픽에만 |
 
-TLS가 "이 장치가 그 인증서의 주인이 맞다"를 확인하고, 정책이 "그 인증서의 주인은 여기까지만 할 수 있다"를 정합니다. 인증과 권한이 다른 층에서 따로 이뤄지는 구조입니다. 그래서 장치 하나의 키가 새어도 피해는 그 장치의 이름과 토픽 안에 머뭅니다.
+TLS가 "이 장치가 그 인증서의 주인이 맞다"를 확인하고, 정책이 "그 인증서의 주인은 여기까지만 할 수 있다"를 정합니다. 인증과 권한이 다른 층에서 따로 이뤄지는 구조입니다. 그래서 장치 하나의 키가 새어도 **MQTT 쪽** 접근은 그 장치의 client id와 토픽 안으로 좁혀집니다. 다만 이것이 피해의 전부는 아닙니다. 바로 다음에 볼 것처럼 같은 인증서로 임시 AWS 권한도 받게 해 두었다면, 그 IAM 역할이 가진 권한까지 피해 범위에 들어갑니다.
 
 인증서를 막는 방법도 두 단계입니다. AWS 문서에 따르면 AWS IoT는 연결을 인증할 때 인증서가 활성 상태인지 확인합니다. **비활성화(deactivate)**는 일시적으로 쓰지 못하게 하는 것이고 다시 활성화할 수 있습니다. **폐기(revoke)**는 이후의 모든 사용을 막습니다.
 
@@ -297,10 +305,11 @@ TLS가 "이 장치가 그 인증서의 주인이 맞다"를 확인하고, 정책
 장치가 MQTT 말고 다른 AWS 서비스(영상 스트리밍 같은 것)도 불러야 할 때가 있습니다. 가장 쉬운 방법은 장치에 IAM 액세스 키를 넣는 것이지만, 그러면 장치마다 오래 사는 비밀이 하나씩 생깁니다. AWS IoT Core의 **자격 증명 공급자(credentials provider)**는 이 문제를 mTLS로 풉니다.
 
 1. 장치가 자기 계정의 자격 증명 공급자 주소로 **같은 장치 인증서를 써서 mTLS HTTPS 요청**을 보냅니다. 경로에는 미리 만들어 둔 **역할 별칭(role alias)** 이름이 들어갑니다.
-2. 공급자는 인증서를 확인하고(유효하지 않으면 예외를 돌려줌), 역할 별칭이 가리키는 IAM 역할을 대신 맡아 **임시 자격 증명**(accessKeyId, secretAccessKey, sessionToken, expiration)을 돌려줍니다.
-3. 유효 시간은 기본 3600초(1시간)이고 900~43200초 사이로 정할 수 있습니다.
+2. 공급자는 인증서가 유효한지 확인하고(유효하지 않으면 예외를 돌려줌), 그 인증서에 붙은 IoT 정책이 해당 역할 별칭에 대해 `iot:AssumeRoleWithCertificate`를 허용하는지 봅니다. 인증서가 유효하기만 하면 역할을 맡을 수 있는 것이 아닙니다.
+3. 역할 별칭이 가리키는 IAM 역할은 자격 증명 공급자 서비스(`credentials.iot.amazonaws.com`)를 신뢰하도록 설정되어 있어야 합니다. 조건이 맞으면 공급자가 그 역할을 대신 맡아 **임시 자격 증명**(accessKeyId, secretAccessKey, sessionToken, expiration)을 돌려줍니다.
+4. 유효 시간은 기본 3600초(1시간)이고 900~43200초 사이로 정할 수 있습니다. 단, 역할 별칭이 참조하는 IAM 역할의 최대 세션 시간을 넘을 수 없습니다.
 
-AWS 문서는 이 방식으로 장치에 AWS 액세스 키를 저장할 필요가 없어진다고 설명합니다. 장치가 가진 비밀은 여전히 개인키 하나뿐이고, 인증서를 비활성화하면 그 인증서로는 새 임시 권한을 받지 못합니다. 이미 받아 둔 임시 권한이 만료 전에 어떻게 되는지는 이 글에서 따로 확인하지 않았습니다.
+AWS 문서는 이 방식으로 장치에 AWS 액세스 키를 저장할 필요가 없어진다고 설명합니다. 장치가 오래 보관하는 비밀은 여전히 개인키 하나입니다. 다만 받아 온 secretAccessKey와 sessionToken도 유효 시간 동안은 비밀이므로 같은 원칙으로 다뤄야 합니다. 인증서를 비활성화하면 그 인증서로는 새 임시 권한을 받지 못합니다. 이미 받아 둔 임시 권한이 만료 전에 어떻게 되는지는 이 글에서 따로 확인하지 않았습니다.
 
 ### 브라우저는 다르게 증명한다
 
@@ -326,9 +335,11 @@ mTLS에서는 개인키가 곧 장치의 신분입니다. 제 시스템에서는
 
 ### SNI: 어느 이름으로 왔나
 
-한 IP에 웹사이트가 여럿 있으면, 서버는 TLS 핸드셰이크 때 어느 사이트의 인증서를 내야 할지 알아야 합니다. 그런데 HTTP의 `Host` 헤더는 TLS가 끝난 뒤에야 옵니다. 그래서 ClientHello에 이름을 미리 적어 보내는 확장이 **SNI**입니다. RFC 6066은 SNI가 한 네트워크 주소에서 여러 "가상" 서버를 운영할 수 있게 하려고 있다고 설명하고, 이름 자리에 IP 주소 리터럴은 넣을 수 없다고 정합니다. RFC 8446 9.2절은 서버가 server_name을 요구할 수 있다(MAY)고 적고, AWS IoT Core는 실제로 SNI를 요구합니다. 자격 증명 공급자 문서도 SNI에 전체 엔드포인트 주소를 넣으라고 적습니다.
+한 IP에 웹사이트가 여럿 있으면, 서버는 TLS 핸드셰이크 때 어느 사이트의 인증서를 내야 할지 알아야 합니다. 그런데 HTTP의 `Host` 헤더는 TLS가 끝난 뒤에야 옵니다. 그래서 ClientHello에 이름을 미리 적어 보내는 확장이 **SNI**입니다. RFC 6066은 SNI가 한 네트워크 주소에서 여러 "가상" 서버를 운영할 수 있게 하려고 있다고 설명하고, 이름 자리에 IP 주소 리터럴은 넣을 수 없다고 정합니다. RFC 8446 9.2절은 서버가 server_name을 요구할 수 있다(MAY)고 적습니다.
 
-Python에서는 `wrap_socket(..., server_hostname="이름")` 하나가 두 일을 같이 합니다. 그 이름을 **SNI로 보내고**, 받은 인증서를 **그 이름과 대조**합니다. 이 글의 실험에서 실제 접속 주소는 `127.0.0.1`로 두고 `server_hostname`만 바꿔 이름 확인을 시험한 것도 이 때문입니다.
+AWS IoT Core의 Transport security 문서는 SNI 전송이 필수는 아니지만 강하게 권장한다고 적고, 다중 계정 등록·사용자 지정 도메인·VPC 엔드포인트·TLS 정책 설정 같은 기능을 쓰려면 SNI에 전체 엔드포인트 주소를 넣어야 한다고 적습니다. 자격 증명 공급자 문서도 SNI에 전체 엔드포인트 주소를 넣으라고 적습니다. AWS 문서 중 X.509 클라이언트 인증서 페이지는 SNI를 요구한다(requires)고 쓰고 있어 페이지마다 표현이 조금 다릅니다. 그래서 장치에서는 늘 정확한 엔드포인트 이름으로 SNI를 보내는 쪽이 안전합니다.
+
+Python에서는 이 글처럼 `create_default_context()`로 인증서 검증과 `check_hostname`을 켜 둔 경우, `wrap_socket(..., server_hostname="이름")` 하나가 두 일을 같이 합니다. 그 이름을 **SNI로 보내고**, 받은 인증서를 **그 이름과 대조**합니다. `check_hostname`이 꺼져 있으면 이름 대조는 하지 않습니다. 이 글의 실험에서 실제 접속 주소는 `127.0.0.1`로 두고 `server_hostname`만 바꿔 이름 확인을 시험한 것도 이 때문입니다.
 
 ### ALPN: TLS 위에서 무엇을 말할 건가
 
@@ -349,7 +360,7 @@ No ALPN negotiated
 
 ### AWS IoT Core: 443 하나로 MQTT와 HTTPS 가르기
 
-AWS IoT Core는 같은 엔드포인트에서 포트, 인증 방식, ALPN 조합으로 프로토콜을 가릅니다. "Device communication protocols" 문서의 표에서 이 글과 관련된 줄만 옮기면 이렇습니다.
+AWS IoT Core는 같은 엔드포인트에서 포트, 인증 방식, ALPN 조합으로 프로토콜을 가릅니다. "Device communication protocols" 문서의 표에서 이 글과 관련된 줄만 옮기면 이렇습니다. 이 표는 데이터 통신 엔드포인트 기준이고, 앞에서 본 자격 증명 공급자는 별도의 엔드포인트를 씁니다.
 
 | 프로토콜 | 인증 | 포트 | ALPN |
 |---|---|---|---|
@@ -371,31 +382,28 @@ AWS IoT Core는 같은 엔드포인트에서 포트, 인증 방식, ALPN 조합�
 
 ### 가로채기의 동작
 
-회사 망에는 보안 검사를 위해 암호화된 연결을 열어 보는 프록시가 있는 경우가 있습니다. 동작은 한 문장으로 요약됩니다. **연결을 중간에서 둘로 끊고, 각각 따로 TLS를 맺습니다.**
+회사 망에는 보안 검사를 위해 암호화된 연결을 열어 보는 프록시가 있는 경우가 있습니다. 동작은 한 문장으로 요약됩니다. **연결을 중간에서 둘로 끊고, 각각 따로 TLS를 맺습니다.** PC 쪽에는 **사내 루트 CA**로 서명한 "그 사이트인 척" 인증서를 즉석에서 만들어 내고, 진짜 서버 쪽에는 프록시가 클라이언트가 되어 따로 붙습니다. 두 연결 사이, 프록시 안에서는 평문이 보입니다.
 
-- PC ↔ 프록시: 프록시가 "그 사이트인 척" 인증서를 즉석에서 만들어 냅니다. 이 인증서는 **사내 루트 CA**로 서명되어 있습니다.
-- 프록시 ↔ 진짜 서버: 프록시가 클라이언트가 되어 진짜 서버와 TLS를 맺고, 진짜 인증서를 검증합니다.
-
-두 연결 사이, 프록시 안에서는 평문이 보입니다. 그래서 회사 PC에는 사내 루트 CA가 미리 깔려 있고, OS의 신뢰 저장소를 쓰는 브라우저는 문제없이 붙습니다. 그런데 **자기 신뢰 저장소를 따로 들고 다니는 프로그램**(AWS CLI의 Python 묶음, Node 등)은 사내 CA를 모르니 `CERTIFICATE_VERIFY_FAILED`를 냅니다. 이 부분의 원리와 AWS CLI 해결 과정은 [AWS CLI CERTIFICATE_VERIFY_FAILED 해결기]({% post_url 2026-10-14-aws-cli-certificate-verify-failed %})에서 이미 자세히 썼습니다.
+회사 PC의 OS 신뢰 저장소에는 사내 루트 CA가 깔려 있어 브라우저는 문제없이 붙습니다. 자기 신뢰 저장소를 따로 들고 다니는 프로그램(AWS CLI의 Python 묶음, Node 등)은 사내 CA를 모르니 `CERTIFICATE_VERIFY_FAILED`를 냅니다. 신뢰 저장소의 차이와 CLI 쪽 해결 과정은 [AWS CLI CERTIFICATE_VERIFY_FAILED 해결기]({% post_url 2026-10-14-aws-cli-certificate-verify-failed %})에서 자세히 썼으니, 이 글은 그 글에 없던 mTLS 쪽에 집중합니다.
 
 <figure class="diagram">
 {% include figures/tls-basics/intercept-vs-mtls.svg %}
-<figcaption>가로채기 프록시는 연결을 둘로 끊는다. 서버만 확인하는 TLS는 PC가 사내 CA를 믿으면 통과하지만, mTLS에서는 서버와 TLS를 맺는 프록시가 장치 개인키로 만든 서명을 낼 수 없어 연결이 끊긴다</figcaption>
+<figcaption>장치 개인키나 서명 권한이 없는 가로채기 프록시가 연결을 둘로 끊는 경우. 서버만 확인하는 TLS는 PC가 사내 CA를 믿으면 통과하지만, mTLS에서는 서버와 TLS를 맺는 프록시가 장치 개인키로 만든 서명을 낼 수 없어 연결이 끊긴다</figcaption>
 </figure>
 
 ### 왜 CA를 더하고, 검증을 끄지 않나
 
-옛 사내 PC에서 CLI와 Node에 사내 루트 CA를 알려 주는 방법으로 해결했습니다. AWS CLI는 `ca_bundle` 설정을, Node는 `NODE_EXTRA_CA_CERTS` 환경 변수를 썼습니다. 둘은 성격이 다릅니다. CLI 글에서 정리한 대로 `ca_bundle`은 기본 묶음을 **대신하는** 파일이라, 사내 CA만 넣으면 프록시를 거치지 않는 연결이 깨질 수 있습니다. `NODE_EXTRA_CA_CERTS`는 이름대로 기본 목록에 **더합니다.**
-
-`--no-verify-ssl`, `strict-ssl=false`, Python의 `CERT_NONE` 같은 **검증 끄기는 쓰지 않았습니다.** 앞에서 본 세 약속 중 "인증"을 통째로 버리는 일이기 때문입니다. 검증을 끄면 사내 프록시뿐 아니라 그 길에 끼어든 **아무나**의 인증서를 받아들입니다. 암호화는 여전히 되지만, 잠긴 통로 반대편이 누구인지 모르는 상태가 됩니다. Python 문서도 `CERT_NONE`은 검증 오류를 무시한다고, 그리고 `CERT_REQUIRED`만 켜고 `check_hostname`을 끄면 충분하지 않다고 경고합니다.
+옛 사내 PC에서는 사내 루트 CA를 각 프로그램에 알려 주는 것으로 풀었습니다. AWS CLI의 `ca_bundle`은 기본 묶음을 **대신하고**, Node의 `NODE_EXTRA_CA_CERTS`는 기본 목록에 **더한다**는 차이만 짚어 둡니다(자세한 내용은 위 CLI 글). `--no-verify-ssl`, `strict-ssl=false`, Python의 `CERT_NONE` 같은 검증 끄기는 쓰지 않았습니다. 세 약속 중 "인증"을 버려서, 사내 프록시뿐 아니라 그 길에 끼어든 아무나의 인증서를 받아들이게 되기 때문입니다.
 
 ### 왜 mTLS는 깨지나
 
-서버만 확인하는 TLS는 PC가 사내 CA를 믿기만 하면 통과합니다. 서버 쪽에서 보면 프록시는 "평범한 클라이언트 하나"일 뿐이니까요. mTLS는 다릅니다.
+여기서 말하는 프록시는 **장치의 개인키나 서명 권한을 받지 않은 채 TLS를 두 연결로 끊는** 일반적인 가로채기 프록시입니다. 장치 키를 위임받은 TLS 종단, 서버가 프록시 자체의 신원을 믿도록 따로 설계한 게이트웨이, TLS를 열지 않고 바이트만 넘기는 터널은 이 설명에 들어가지 않습니다.
+
+이런 프록시 앞에서 서버만 확인하는 TLS는 PC가 사내 CA를 믿기만 하면 통과합니다. 서버 쪽에서 보면 프록시는 "평범한 클라이언트 하나"일 뿐이니까요. mTLS는 다릅니다.
 
 1. 진짜 서버가 CertificateRequest로 클라이언트 인증서를 요구합니다.
 2. 그런데 진짜 서버와 TLS를 맺는 쪽은 장치가 아니라 **프록시**입니다.
-3. 프록시에는 장치의 개인키가 없습니다. 장치 인증서(공개 문서)를 어떻게든 옮겨 보낸다 해도, CertificateVerify는 **프록시와 서버 사이 핸드셰이크 기록**에 대한 서명이어야 합니다. 장치가 서명한 것은 장치와 프록시 사이 기록이라 쓸 수 없고, 새 서명은 개인키 없이 만들 수 없습니다.
+3. 이 프록시에는 장치의 개인키가 없습니다. 장치 인증서(공개 문서)를 어떻게든 옮겨 보낸다 해도, CertificateVerify는 **프록시와 서버 사이 핸드셰이크 기록**에 대한 서명이어야 합니다. 장치가 서명한 것은 장치와 프록시 사이 기록이라 쓸 수 없고, 새 서명은 개인키 없이 만들 수 없습니다.
 4. 서버는 인증서 없이 온 클라이언트를 끊습니다.
 
 이것은 버그가 아니라 mTLS가 막으려는 바로 그 상황입니다. 가로채기 프록시는 구조상 "중간자"이고, mTLS는 중간자가 장치인 척하지 못하게 하는 장치입니다. 그래서 해결은 TLS 설정이 아니라 **길**에서 해야 합니다. 그 주소를 가로채기 예외로 두거나, 프록시 없는 길로 직접 연결하는 것입니다. 제 경우에는 프록시가 없는 Mac 환경으로 옮긴 뒤 직접 연결로 장치 시뮬레이터의 mTLS가 통과했습니다.
@@ -404,7 +412,7 @@ AWS IoT Core는 같은 엔드포인트에서 포트, 인증 방식, ALPN 조합�
 
 옛 사내 PC에서는 443 연결은 인증서 오류가 났는데 8883 MQTT 연결은 영향이 없었습니다. 그 환경의 프록시가 **443만 열어 보고 8883은 열어 보지 않았기** 때문입니다. 이것은 그 망의 설정이지 일반 법칙이 아닙니다. 8883을 아예 막는 망도 있고, 모든 포트를 검사하는 망도 있습니다. "8883은 가로채기에 안전하다"고 기대하면 안 됩니다.
 
-영상 쪽도 같은 위험을 짐작할 수 있습니다. UDP가 막힌 망에서 WebRTC는 TURN 서버까지 TCP 443 위 TLS로 갑니다([TURN과 ICE]({% post_url 2026-11-10-webrtc-turn-ice %}) 참고). 이 443이 가로채진다면 그 연결도 영향을 받을 수 있습니다. 다만 저는 이것을 실제로 시험하지 않았으므로 가능성으로만 적어 둡니다.
+영상 쪽도 같은 위험을 짐작할 수 있습니다. 이 시스템에서 UDP가 막히면 대체 경로는 클라이언트와 TURN 서버 사이의 TLS over TCP 443이고, 미디어는 그 안에서도 DTLS-SRTP로 따로 보호됩니다([TURN과 ICE]({% post_url 2026-11-10-webrtc-turn-ice %}) 참고). 이 443이 가로채진다면 클라이언트와 TURN 사이 구간이 영향을 받을 수 있습니다. 다만 저는 이것을 실제로 시험하지 않았으므로 가능성으로만 적어 둡니다.
 
 ## 자주 보는 오류와 원인
 
@@ -415,7 +423,7 @@ AWS IoT Core는 같은 엔드포인트에서 포트, 인증 방식, ALPN 조합�
 | `unable to get local issuer certificate` | 체인이 믿는 루트까지 이어지나 | 신뢰 저장소에 그 루트가 없음(사내 CA, 자체 CA), 서버가 중간 인증서를 안 보냄 |
 | `Hostname mismatch, certificate is not valid for '…'` | SAN에 접속 이름이 있나 | 다른 이름으로 접속, IP로 접속, 인증서에 SAN이 없음 |
 | `certificate has expired` | 현재 시각이 유효 기간 안인가 | 정말 만료, 또는 **장치 시계가 틀림** |
-| `TLSV13_ALERT_CERTIFICATE_REQUIRED` | (서버가 보낸 경고) 클라이언트 인증서가 왔나 | mTLS 서버에 인증서 없이 접속, 가로채기 프록시가 중간에 있음 |
+| `TLSV13_ALERT_CERTIFICATE_REQUIRED` | (서버가 보낸 경고) 클라이언트 인증서가 왔나 | mTLS 서버에 인증서 없이 접속(가로채기 프록시가 중간에 있으면 프록시가 이 경고를 받음) |
 | `TLSV1_ALERT_UNKNOWN_CA` | (상대가 보낸 경고) 내 인증서의 CA를 상대가 믿나 | 상대가 모르는 CA로 발급된 인증서를 냄 |
 | `HANDSHAKE_FAILURE` | 버전·암호·인증 조건이 맞나 | 공통 버전·암호 묶음이 없음, TLS 1.2 mTLS에서 인증서를 안 냄 등 여러 원인이 같은 모양 |
 | `KEY_VALUES_MISMATCH` | (연결 전, 내 쪽) 인증서와 개인키가 짝인가 | 다른 장치의 키 파일, 재발급 뒤 옛 키를 씀 |
@@ -426,16 +434,178 @@ AWS IoT Core에서는 TLS가 인증서를 확인한 다음 정책이 권한을 �
 
 ## 직접 해 보기: localhost에서 TLS와 mTLS 재현
 
-AWS에 접속하지 않고, 내 컴퓨터 안에서 실험용 CA를 만들어 위의 상황을 재현해 봤습니다. 서버, 클라이언트, 가로채기 프록시를 전부 Python 표준 `ssl` 모듈로 새로 짰습니다. Python 3.10.13(OpenSSL 3.1.4)과 Python 3.14.10(OpenSSL 4.1.0) 두 환경에서 같은 결과가 나왔고, 오류 이름만 버전에 따라 조금 달랐습니다.
+AWS에 접속하지 않고, 내 컴퓨터 안에서 실험용 CA를 만들어 위의 상황을 재현해 봤습니다. 서버, 클라이언트, 가로채기 프록시를 전부 Python 표준 `ssl` 모듈로 새로 짰습니다. Python 3.10.13(OpenSSL 3.1.4)과 Python 3.14.10(OpenSSL 4.1.0) 두 환경에서 같은 결과가 나왔고, 오류 이름만 버전에 따라 조금 달랐습니다. 본문에는 결과를 가르는 설정 몇 줄과 출력만 옮기고, 스크립트 다섯 개의 전문은 이 절 끝에 접어 두었습니다.
 
-### 실험용 CA와 인증서 만들기
+### 실행 전제와 방법 (macOS)
 
-빈 임시 폴더에서 실행합니다. 유효 기간은 7일로 짧게 두고, 실험이 끝나면 폴더째 지웁니다.
+- **OpenSSL:** 인증서 생성 스크립트는 Homebrew의 OpenSSL 4.1.0으로 확인했습니다. 먼저 `openssl version`을 봅니다. `LibreSSL …`로 나오면 macOS 기본 `/usr/bin/openssl`이고, 이 스크립트는 LibreSSL 3.3.6에서 `ca.srl: No such file or directory`로 실패했습니다. 그래서 스크립트가 처음에 버전을 확인하고 OpenSSL이 아니면 멈춥니다.
+- **쉘:** 스크립트는 파일로 저장한 뒤 `sh 파일이름`으로 실행합니다. 내용을 zsh 창에 그대로 붙여 넣으면 `$EC` 변수가 sh처럼 공백에서 나뉘지 않아 실패합니다. 첫 줄의 `#!/bin/sh`는 붙여 넣은 쉘을 바꿔 주지 않습니다.
+- **Python:** `python3`가 3.10 이상이어야 합니다. 포트 7443, 7883, 8443, 8883, 9443이 비어 있어야 합니다.
+- **폴더:** 스크립트 다섯 개는 한 폴더에 두고, 인증서는 빈 임시 폴더에 만듭니다. 실험이 끝나면 임시 폴더째 지웁니다.
+
+```sh
+openssl version                          # OpenSSL 4.1.0에서 확인 (LibreSSL이면 Homebrew openssl을 PATH 앞에)
+cd "$(mktemp -d)"                        # 인증서·개인키는 빈 임시 폴더에
+sh "<스크립트 폴더>/make_certs.sh"
+sh "<스크립트 폴더>/run_all.sh" "<스크립트 폴더>"
+```
+
+`run_all.sh`는 **출력을 눈으로 보는 관찰용**이지 자동 합격 테스트가 아닙니다. 실패를 재현하는 경우에도 클라이언트는 오류 문구를 찍고 정상 종료합니다. 대신 인자가 없거나, 스크립트·인증서 파일이 없거나, 서버가 5초 안에 듣기 시작하지 않으면 종료 코드 1로 멈춥니다. 경로는 모두 따옴표로 감싸 두어, 공백이 들어간 폴더에서 돌려도 같은 결과가 나오는 것을 확인했습니다.
+
+### 만든 인증서
+
+| 파일 | 역할 |
+|---|---|
+| `ca` | 서버와 장치를 둘 다 서명하는 "우리" CA |
+| `server` | `localhost`용 서버 인증서(SAN에 `localhost`, `127.0.0.1`) |
+| `device` | 장치 인증서 `device-001`(클라이언트 인증 용도) |
+| `other-ca`, `rogue` | 서버가 모르는 CA와 그 CA가 발급한 장치 인증서 |
+| `proxy-ca`, `proxy-localhost` | 가로채기 프록시가 쓰는 CA와 가짜 `localhost` 인증서 |
+| `expired.crt` | 유효 기간이 이미 지난 서버 인증서 |
+
+유효 기간은 7일로 짧게 두었고, 개인키가 다른 사용자에게 읽히지 않게 `umask 077`로 만듭니다.
+
+> **확장을 빠뜨리면 Python 3.13+에서 막힙니다.** 처음에는 CA에 확장을 따로 주지 않고 만들었는데, Python 3.14에서 `CA cert does not include key usage extension`, `Missing Authority Key Identifier`로 검증이 실패했습니다. Python 3.13부터 `create_default_context()`가 엄격한 X.509 검사(`VERIFY_X509_STRICT`)를 기본으로 켜기 때문입니다. 그래서 CA에는 basicConstraints·keyUsage·subjectKeyIdentifier를, 말단 인증서에는 authorityKeyIdentifier 등을 명시했습니다. 직접 만든 사설 CA가 새 Python에서 갑자기 거절된다면 이 확장부터 확인해 볼 만합니다.
+{: .prompt-tip }
+
+### 결과를 가르는 설정 몇 줄
+
+세 스크립트에서 TLS 동작을 정하는 줄만 모으면 이렇습니다.
+
+```python
+# 서버 (tls_server.py 중): 포트 8883은 --mtls로 띄운다
+ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+ctx.load_cert_chain(certfile="server.crt", keyfile="server.key")  # 서버의 신분증과 개인키
+if mtls:
+    ctx.verify_mode = ssl.CERT_REQUIRED          # 클라이언트 인증서를 반드시 요구
+    ctx.load_verify_locations(cafile="ca.crt")   # 이 CA가 서명한 인증서만 받는다
+
+# 클라이언트 (tls_client.py 중)
+ctx = ssl.create_default_context(cafile="ca.crt")       # 검증 + 호스트 이름 확인이 켜진 상태
+if cert:
+    ctx.load_cert_chain(certfile=cert, keyfile=key)     # mTLS: 내 인증서와 개인키
+tls = ctx.wrap_socket(raw, server_hostname=host)        # SNI로 보내고, 이름 확인 대상으로도 쓴다
+
+# 가로채기 프록시 (intercept_proxy.py 중)
+front = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)         # 클라이언트 쪽: 서버인 척
+front.load_cert_chain("proxy-localhost.crt", "proxy-localhost.key")  # 클라이언트 인증서는 요청하지 않는다
+back = ssl.create_default_context(cafile="ca.crt")      # 서버 쪽: 클라이언트인 척, 장치 인증서·개인키는 없다
+```
+
+- **서버를 mTLS로 바꾸는 데는 두 줄이면 됩니다.** `verify_mode = CERT_REQUIRED`로 클라이언트 인증서를 요구하고, `load_verify_locations`로 어떤 CA를 믿을지 정합니다. Python 문서도 서버 쪽 `CERT_REQUIRED`는 클라이언트 인증서 인증을 필수로 만들며, 이때 `load_verify_locations`로 CA를 알려 줘야 한다고 설명합니다.
+- **클라이언트는 `ssl.create_default_context()`가 중요합니다.** Python 문서에 따르면 이 함수는 `verify_mode`를 `CERT_REQUIRED`로, `check_hostname`을 켠 상태로 돌려줍니다. 직접 `SSLContext`를 만들고 이 둘을 빠뜨리는 실수를 막아 줍니다. 실험에서는 실제 주소 `127.0.0.1`로 접속하면서 `--host`로 "접속하려는 이름"만 바꿔 이름 확인을 시험합니다.
+- **프록시는 연결을 둘로 끊습니다.** 실제 사내 프록시는 사이트마다 인증서를 즉석에서 만들지만, 실험에서는 `localhost` 하나만 흉내 내면 되니 미리 만든 가짜 인증서 하나를 씁니다. 이 프록시 코드는 한 줄 응답과 인증 실패를 관찰하려는 **최소 실험 코드**라서 종료 경쟁, half-close, 타임아웃은 다루지 않습니다. 일반 용도의 프록시로 쓰면 안 됩니다.
+
+포트 8883은 MQTTS 관례를 따라 mTLS 서버에 붙였을 뿐, 이 실험 서버는 MQTT가 아니라 한 줄 인사만 보냅니다.
+
+### A. 서버 확인: 체인, 이름, 유효 기간
+
+| 경우 | 클라이언트가 본 것 | 서버 로그 |
+|---|---|---|
+| A1 정상 | `connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt` | `OK ... alpn=mqtt client=(no client cert)` |
+| A2 서버 CA를 모름 | `verify failed: unable to get local issuer certificate` | `TLSV1_ALERT_UNKNOWN_CA` (클라이언트가 보낸 경고) |
+| A3 다른 이름으로 접속 | `verify failed: Hostname mismatch, certificate is not valid for 'device.example'.` | `BAD_CERTIFICATE` 경고 |
+| A4 만료된 서버 인증서 | `verify failed: certificate has expired` | `CERTIFICATE_EXPIRED` 경고 |
+
+A2는 사내 프록시 앞에서 CLI가 낸 오류와 같은 문구입니다. 원인도 같습니다. 클라이언트가 그 체인의 루트를 모릅니다. A3에서는 체인이 완벽해도 이름이 다르면 거절됩니다. 서버 로그를 보면 클라이언트가 거절하면서 **이유를 담은 경고를 서버에 보낸다**는 것도 보입니다.
+
+### B. mTLS: 장치 인증서
+
+가장 배울 것이 많은 B1의 출력입니다.
+
+```text
+## B1 mTLS no cert
+connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt
+failed: SSLError TLSV13_ALERT_CERTIFICATE_REQUIRED
+```
+
+| 경우 | 클라이언트가 본 것 | 서버 로그 |
+|---|---|---|
+| B1 인증서 없이 (TLS 1.3) | **일단 `connected`**, 첫 읽기에서 `CERTIFICATE_REQUIRED` | `PEER_DID_NOT_RETURN_A_CERTIFICATE` |
+| B1b 인증서 없이 (TLS 1.2) | 핸드셰이크 중에 `SSLV3_ALERT_HANDSHAKE_FAILURE` | `PEER_DID_NOT_RETURN_A_CERTIFICATE` |
+| B2 우리 CA의 장치 인증서 | 연결, 서버가 `hello device-001` | `OK ... client=device-001` |
+| B3 모르는 CA의 인증서 | 일단 `connected`, 첫 읽기에서 `TLSV1_ALERT_UNKNOWN_CA` | `CERTIFICATE_VERIFY_FAILED` |
+| B4 인증서와 다른 개인키 | 접속 전에 내 쪽 라이브러리가 `KEY_VALUES_MISMATCH`로 거절 | (연결 없음) |
+
+Python 3.14에서는 B1b가 `TLS_ALERT_HANDSHAKE_FAILURE`로 찍혔습니다. `SSLV3_`라는 접두어가 붙어도 SSLv3로 협상했다는 뜻은 아니고, 오류 이름의 접두어가 라이브러리 버전에 따라 다를 뿐입니다.
+
+**B1과 B3**에서 클라이언트는 `connected`를 찍은 다음에 실패했습니다. TLS 1.3 그림을 다시 보면 이유가 보입니다. 클라이언트는 자기 Finished를 보내는 순간 핸드셰이크가 끝났다고 봅니다. 서버는 그 Finished와 함께 온 클라이언트 인증서(또는 그 빈자리)를 **그다음에** 확인하고 경고를 보냅니다. 그래서 클라이언트 쪽에서는 "연결은 됐는데 첫 읽기·쓰기에서 끊김"으로 보입니다. TLS 1.2(B1b)에서는 서버가 Finished를 보내기 전에 확인하므로 핸드셰이크 도중에 실패합니다.
+
+실무로 옮기면 이렇습니다. **TLS 1.3에서 장치 인증서 문제는 "접속 성공 직후 끊김"으로 나타날 수 있습니다.** "연결은 된다"는 로그만 보고 인증서는 괜찮다고 판단하면 안 됩니다.
+
+B4는 연결조차 하지 않았습니다. `load_cert_chain`이 인증서의 공개키와 개인키가 짝인지 먼저 확인하기 때문입니다. 인증서를 재발급하고 옛 키 파일을 그대로 둔 경우가 이 모양입니다.
+
+### C. 가로채기 프록시
+
+프록시 CA를 믿는 클라이언트로 붙은 C2(서버만 확인하는 TLS)와 C3(뒤쪽 서버가 mTLS)의 출력, 그리고 프록시 로그입니다.
+
+```text
+## C2 proxy, proxy CA trusted
+connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=None
+server says: hello (no client cert)
+## C3 proxy + mTLS
+connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=None
+server says: (connection closed)
+### p-tls.log
+proxy saw plaintext: b'hello (no client cert)\n'
+### p-mtls.log
+proxy relay error: TLSV13_ALERT_CERTIFICATE_REQUIRED
+```
+
+| 경우 | 클라이언트가 본 것 | 프록시가 본 것 |
+|---|---|---|
+| C1 프록시 CA를 모름 | `unable to get local issuer certificate` | 클라이언트가 가짜 인증서를 거절(`UNKNOWN_CA`) |
+| C2 프록시 CA를 믿음 | 정상 연결, 인사도 받음 | **서버의 응답을 평문으로 봄** |
+| C3 프록시 CA를 믿음 + mTLS 서버 | `connected` 뒤 연결이 그냥 닫힘 | 서버에게서 `CERTIFICATE_REQUIRED`를 받음 |
+
+C1은 사내 CA를 모르는 프로그램, C2는 사내 CA를 신뢰 목록에 넣은 프로그램입니다. C2에서 연결은 "정상"이지만 프록시는 대화 내용을 다 봅니다. 사내 CA를 믿는다는 것은 그 회사의 프록시에게 이 권한을 준다는 뜻입니다.
+
+C3에서 장치에는 인증서와 개인키가 있었습니다. 하지만 이 실험 프록시는 앞쪽 연결에서 클라이언트 인증서를 요청하지 않으므로 장치는 인증서를 보내지 않았고, 개인키는 어떤 경우에도 TLS로 전달되지 않습니다. 뒤쪽에서 진짜 mTLS 서버와 연결하는 프록시에는 장치 자격이 없었고, 서버는 `certificate_required`로 끊었습니다. 즉 이 실험이 재현한 것은 **"앞쪽 일반 TLS는 성공했지만, 뒤쪽 mTLS에 낼 클라이언트 인증서가 없어 실패"**하는 장면입니다. 프록시가 장치 인증서를 받아 옮기더라도 CertificateVerify는 다시 쓸 수 없다는 점은 앞의 원리 설명에서 나온 결론이고, 이 실험에서 따로 재현하지는 않았습니다. 장치 쪽에서는 어느 경우든 이유를 알 수 없는 "연결 직후 닫힘"으로만 보입니다.
+
+C2와 C3에서 `alpn=None`이 찍힌 것은 **제가 만든 실험 프록시**가 ALPN을 설정하지 않았기 때문입니다. 실제 프록시가 ALPN을 어떻게 다루는지에 대한 일반적인 결론은 아닙니다. 다만 "중간에 무언가 끼어 있으면 협상 결과가 달라질 수 있다"는 점은 기억해 둘 만합니다.
+
+### paho-mqtt에서의 모양
+
+실제 장치 코드에서는 MQTT 라이브러리가 이 `SSLContext` 설정을 대신해 줍니다. paho-mqtt 2.1의 `tls_set()`은 인자로 `ca_certs`, `certfile`, `keyfile`, `cert_reqs`, `tls_version`, `ciphers`, `keyfile_password`, `alpn_protocols`를 받습니다. 모양은 이렇습니다.
+
+```python
+import ssl
+import paho.mqtt.client as mqtt
+
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="device-001")
+client.tls_set(
+    ca_certs="AmazonRootCA1.pem",        # 서버를 확인할 루트 CA
+    certfile="device.crt",               # 장치 인증서
+    keyfile="device.key",                # 장치 개인키 (권한 600)
+    cert_reqs=ssl.CERT_REQUIRED,         # 서버 인증서 검증 (기본값)
+)
+client.connect("<your-endpoint>", 8883, keepalive=30)
+
+# 8883이 막힌 망에서 443으로 붙을 때
+# client.tls_set(..., alpn_protocols=["x-amzn-mqtt-ca"])
+# client.connect("<your-endpoint>", 443, keepalive=30)
+```
+
+이 코드로 AWS에 접속해 보지는 않았습니다. 대신 같은 `tls_set()` 호출(CA만 실험용으로 바꾸고 ALPN `mqtt`)로 앞의 localhost mTLS 서버에 붙여 봤고, 서버 로그에 `OK TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt client=device-001`이 찍혔습니다. 즉 **TLS와 클라이언트 인증서까지는 이 호출로 맺어지는 것**을 확인했습니다. 실험 서버는 MQTT 브로커가 아니라서 그 뒤 MQTT 단계는 연결 끊김으로 끝났고, MQTT 동작은 시험하지 않았습니다.
+
+### 전체 실험 스크립트
+
+앞의 출력은 아래 다섯 파일을 그대로 돌린 결과입니다. 실행 방법은 위의 "실행 전제와 방법"을 따릅니다.
+
+<details markdown="1">
+<summary>전체 실험 스크립트 펼치기 (make_certs.sh, tls_server.py, tls_client.py, intercept_proxy.py, run_all.sh)</summary>
+
+**make_certs.sh**
 
 ```sh
 #!/bin/sh
 # make_certs.sh: 실험용 CA와 인증서를 지금 폴더에 만든다 (7일짜리, 실험 뒤 폴더째 지운다)
+# 실행: sh make_certs.sh  (zsh에 붙여 넣지 말 것. OpenSSL 4.1.0으로 확인, LibreSSL은 안 됨)
 set -e
+case "$(openssl version)" in
+  OpenSSL*) ;;
+  *) echo "OpenSSL이 필요합니다 (지금: $(openssl version)). Homebrew라면 brew install openssl 뒤 PATH 앞에 \$(brew --prefix openssl)/bin" >&2; exit 1 ;;
+esac
 umask 077                                   # 새 파일은 나만 읽고 쓰게 (개인키 보호)
 EC="-newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes"
 
@@ -443,10 +613,10 @@ mkca() {   # 이름 CN
   openssl req -x509 $EC -keyout "$1.key" -out "$1.crt" -days 7 -subj "/CN=$2" \
     -addext "basicConstraints=critical,CA:TRUE" \
     -addext "keyUsage=critical,keyCertSign,cRLSign" \
-    -addext "subjectKeyIdentifier=hash" 2>/dev/null
+    -addext "subjectKeyIdentifier=hash"
 }
 mkleaf() { # 이름 CN 서명할CA 용도(serverAuth|clientAuth) [SAN]
-  openssl req $EC -keyout "$1.key" -out "$1.csr" -subj "/CN=$2" 2>/dev/null
+  openssl req $EC -keyout "$1.key" -out "$1.csr" -subj "/CN=$2"
   {
     echo "basicConstraints=critical,CA:FALSE"
     echo "keyUsage=critical,digitalSignature"
@@ -455,7 +625,7 @@ mkleaf() { # 이름 CN 서명할CA 용도(serverAuth|clientAuth) [SAN]
     echo "authorityKeyIdentifier=keyid"
     [ -n "$5" ] && echo "subjectAltName=$5"
   } > "$1.ext"
-  openssl x509 -req -in "$1.csr" -CA "$3.crt" -CAkey "$3.key" -days 7 -extfile "$1.ext" -out "$1.crt" 2>/dev/null
+  openssl x509 -req -in "$1.csr" -CA "$3.crt" -CAkey "$3.key" -days 7 -extfile "$1.ext" -out "$1.crt"
 }
 
 mkca ca "Lab Test CA"                       # 서버와 장치를 둘 다 서명하는 실험용 CA
@@ -470,27 +640,11 @@ mkleaf proxy-localhost localhost proxy-ca serverAuth "DNS:localhost"
 
 # 이미 만료된 서버 인증서 (같은 서버 키, 유효 기간만 과거)
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key \
-  -not_before 20260101000000Z -not_after 20260201000000Z -extfile server.ext -out expired.crt 2>/dev/null
+  -not_before 20260101000000Z -not_after 20260201000000Z -extfile server.ext -out expired.crt
 echo "made: $(ls *.crt | tr '\n' ' ')"
 ```
 
-만든 것은 이렇습니다.
-
-| 파일 | 역할 |
-|---|---|
-| `ca` | 서버와 장치를 둘 다 서명하는 "우리" CA |
-| `server` | `localhost`용 서버 인증서(SAN에 `localhost`, `127.0.0.1`) |
-| `device` | 장치 인증서 `device-001`(클라이언트 인증 용도) |
-| `other-ca`, `rogue` | 서버가 모르는 CA와 그 CA가 발급한 장치 인증서 |
-| `proxy-ca`, `proxy-localhost` | 가로채기 프록시가 쓰는 CA와 가짜 `localhost` 인증서 |
-| `expired.crt` | 유효 기간이 이미 지난 서버 인증서 |
-
-> **확장을 빠뜨리면 Python 3.13+에서 막힙니다.** 처음에는 CA에 확장을 따로 주지 않고 만들었는데, Python 3.14에서 `CA cert does not include key usage extension`, `Missing Authority Key Identifier`로 검증이 실패했습니다. Python 3.13부터 `create_default_context()`가 엄격한 X.509 검사(`VERIFY_X509_STRICT`)를 기본으로 켜기 때문입니다. 그래서 CA에는 basicConstraints·keyUsage·subjectKeyIdentifier를, 말단 인증서에는 authorityKeyIdentifier 등을 명시했습니다. 직접 만든 사설 CA가 새 Python에서 갑자기 거절된다면 이 확장부터 확인해 볼 만합니다.
-{: .prompt-tip }
-
-### TLS 서버
-
-포트와 옵션을 받아 TLS 또는 mTLS 서버를 띄우고, 연결마다 협상 결과를 찍은 뒤 상대 이름으로 인사를 보냅니다.
+**tls_server.py**
 
 ```python
 # tls_server.py: localhost에서 TLS(또는 mTLS) 에코 서버를 띄운다
@@ -523,9 +677,7 @@ with socket.create_server(("127.0.0.1", port)) as srv:
             print(f"FAIL {type(e).__name__}: {getattr(e, 'reason', None) or e}", flush=True)
 ```
 
-mTLS로 바꾸는 데 필요한 것은 두 줄입니다. `verify_mode = CERT_REQUIRED`로 클라이언트 인증서를 요구하고, `load_verify_locations`로 어떤 CA를 믿을지 정합니다. Python 문서도 서버 쪽 `CERT_REQUIRED`는 클라이언트 인증서 인증을 필수로 만들며, 이때 `load_verify_locations`로 CA를 알려 줘야 한다고 설명합니다.
-
-### TLS 클라이언트
+**tls_client.py**
 
 ```python
 # tls_client.py: 서버에 TLS로 붙어 본다
@@ -554,9 +706,7 @@ except (ssl.SSLError, OSError) as e:
     print("failed:", type(e).__name__, getattr(e, "reason", None) or e)
 ```
 
-`ssl.create_default_context()`가 중요합니다. Python 문서에 따르면 이 함수는 `verify_mode`를 `CERT_REQUIRED`로, `check_hostname`을 켠 상태로 돌려줍니다. 직접 `SSLContext`를 만들고 이 둘을 빠뜨리는 실수를 막아 줍니다. 실험에서는 실제 주소 `127.0.0.1`로 접속하면서 `--host`로 "접속하려는 이름"만 바꿔서 이름 확인을 시험합니다.
-
-### 가로채기 프록시 흉내
+**intercept_proxy.py**
 
 ```python
 # intercept_proxy.py: 사내 TLS 가로채기 프록시를 흉내 낸다 (실험용)
@@ -568,9 +718,10 @@ import socket, ssl, sys, threading
 listen_port, upstream_port = int(sys.argv[1]), int(sys.argv[2])
 
 front = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)              # 클라이언트 쪽: 프록시가 서버인 척
-front.load_cert_chain("proxy-localhost.crt", "proxy-localhost.key")
+front.load_cert_chain("proxy-localhost.crt", "proxy-localhost.key")  # 클라이언트 인증서는 요청하지 않는다
 back = ssl.create_default_context(cafile="ca.crt")           # 서버 쪽: 프록시가 클라이언트인 척
-# back에는 장치 인증서·개인키가 없다. 프록시는 그것을 가질 수 없다.
+# back에는 장치 인증서·개인키가 없다 (장치 키나 서명 권한을 받지 않은 가로채기 프록시).
+# 한 줄 응답과 인증 실패를 보려는 최소 실험 코드다. 종료 경쟁·half-close·타임아웃은 다루지 않는다.
 
 def pump(src, dst):
     try:
@@ -598,176 +749,85 @@ with socket.create_server(("127.0.0.1", listen_port)) as srv:
         threading.Thread(target=pump, args=(u, c), daemon=True).start()
 ```
 
-실제 사내 프록시는 사이트마다 인증서를 즉석에서 만들지만, 실험에서는 `localhost` 하나만 흉내 내면 되니 미리 만든 가짜 인증서 하나를 씁니다.
-
-### 한 번에 돌리기
+**run_all.sh**
 
 ```sh
 #!/bin/sh
-# 모든 경우를 한 번에 돌린다. 인증서 폴더에서 실행: sh run_all.sh <스크립트 폴더>
-S=$1
-python3 -I $S/tls_server.py 8443 > s-tls.log 2>&1 & P1=$!
-python3 -I $S/tls_server.py 8883 --mtls > s-mtls.log 2>&1 & P2=$!
-python3 -I $S/tls_server.py 9443 --cert expired.crt > s-exp.log 2>&1 & P3=$!
-python3 -I $S/intercept_proxy.py 7443 8443 > p-tls.log 2>&1 & P4=$!
-python3 -I $S/intercept_proxy.py 7883 8883 > p-mtls.log 2>&1 & P5=$!
-sleep 1
-echo '## A1 TLS ok'; python3 -I $S/tls_client.py 8443
-echo '## A2 untrusted CA'; python3 -I $S/tls_client.py 8443 --ca other-ca.crt
-echo '## A3 hostname mismatch'; python3 -I $S/tls_client.py 8443 --host device.example
-echo '## A4 expired'; python3 -I $S/tls_client.py 9443
-echo '## B1 mTLS no cert'; python3 -I $S/tls_client.py 8883
-echo '## B1b mTLS no cert, TLS1.2'; python3 -I $S/tls_client.py 8883 --tls12
-echo '## B2 mTLS cert'; python3 -I $S/tls_client.py 8883 --cert device.crt --key device.key
-echo '## B3 mTLS other CA cert'; python3 -I $S/tls_client.py 8883 --cert rogue.crt --key rogue.key
-echo '## B4 mTLS cert + wrong key'; python3 -I $S/tls_client.py 8883 --cert device.crt --key rogue.key 2>&1 | tail -1
-echo '## C1 proxy, proxy CA unknown'; python3 -I $S/tls_client.py 7443
-echo '## C2 proxy, proxy CA trusted'; python3 -I $S/tls_client.py 7443 --ca proxy-ca.crt
-echo '## C3 proxy + mTLS'; python3 -I $S/tls_client.py 7883 --ca proxy-ca.crt --cert device.crt --key device.key
-sleep 0.5; kill $P1 $P2 $P3 $P4 $P5
-for f in s-tls s-mtls s-exp p-tls p-mtls; do echo "### $f.log"; cat $f.log; done
+# run_all.sh: 모든 경우를 한 번에 돌려 출력을 본다 (자동 합격 테스트가 아니라 관찰용).
+# 실행: 인증서 폴더에서  sh run_all.sh "<스크립트 폴더>"
+S=${1:?스크립트 폴더를 인자로 주세요}
+for f in tls_server.py tls_client.py intercept_proxy.py; do
+  [ -f "$S/$f" ] || { echo "없음: $S/$f" >&2; exit 1; }
+done
+for f in ca.crt server.crt device.crt rogue.crt proxy-ca.crt proxy-localhost.crt expired.crt; do
+  [ -f "$f" ] || { echo "없음: $f (먼저 sh make_certs.sh)" >&2; exit 1; }
+done
+PIDS=""
+trap 'kill $PIDS 2>/dev/null' EXIT INT TERM
+start() { # 로그파일 스크립트 인자...
+  log=$1; shift
+  python3 -I "$@" > "$log" 2>&1 & PIDS="$PIDS $!"
+}
+start s-tls.log  "$S/tls_server.py" 8443
+start s-mtls.log "$S/tls_server.py" 8883 --mtls
+start s-exp.log  "$S/tls_server.py" 9443 --cert expired.crt
+start p-tls.log  "$S/intercept_proxy.py" 7443 8443
+start p-mtls.log "$S/intercept_proxy.py" 7883 8883
+for log in s-tls.log s-mtls.log s-exp.log p-tls.log p-mtls.log; do   # 모두 듣기 시작했는지 확인
+  n=0
+  until grep -q -e '^listening' -e '^proxy 127' "$log" 2>/dev/null; do
+    n=$((n + 1)); [ $n -gt 50 ] && { echo "시작 실패: $log" >&2; cat "$log" >&2; exit 1; }
+    sleep 0.1
+  done
+done
+C="$S/tls_client.py"
+echo '## A1 TLS ok';                 python3 -I "$C" 8443
+echo '## A2 untrusted CA';           python3 -I "$C" 8443 --ca other-ca.crt
+echo '## A3 hostname mismatch';      python3 -I "$C" 8443 --host device.example
+echo '## A4 expired';                python3 -I "$C" 9443
+echo '## B1 mTLS no cert';           python3 -I "$C" 8883
+echo '## B1b mTLS no cert, TLS1.2';  python3 -I "$C" 8883 --tls12
+echo '## B2 mTLS cert';              python3 -I "$C" 8883 --cert device.crt --key device.key
+echo '## B3 mTLS other CA cert';     python3 -I "$C" 8883 --cert rogue.crt --key rogue.key
+echo '## B4 mTLS cert + wrong key';  python3 -I "$C" 8883 --cert device.crt --key rogue.key 2>&1 | tail -1
+echo '## C1 proxy, proxy CA unknown'; python3 -I "$C" 7443
+echo '## C2 proxy, proxy CA trusted'; python3 -I "$C" 7443 --ca proxy-ca.crt
+echo '## C3 proxy + mTLS';           python3 -I "$C" 7883 --ca proxy-ca.crt --cert device.crt --key device.key
+sleep 0.5
+for f in s-tls s-mtls s-exp p-tls p-mtls; do echo "### $f.log"; cat "$f.log"; done
 ```
 
-포트 8883은 MQTTS 관례를 따라 mTLS 서버에 붙였을 뿐, 이 실험 서버는 MQTT가 아니라 한 줄 인사만 보냅니다.
+</details>
 
-### A. 서버 확인: 체인, 이름, 유효 기간
+## 복기 질문
 
-```text
-## A1 TLS ok
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt
-server says: hello (no client cert)
-## A2 untrusted CA
-verify failed: unable to get local issuer certificate
-## A3 hostname mismatch
-verify failed: Hostname mismatch, certificate is not valid for 'device.example'.
-## A4 expired
-verify failed: certificate has expired
-```
+글을 덮기 전에 스스로 답해 볼 질문과 짧은 답입니다.
 
-| 경우 | 클라이언트가 본 것 | 서버 로그 |
-|---|---|---|
-| A1 정상 | TLS 1.3, ALPN `mqtt`로 연결 | `OK ... alpn=mqtt client=(no client cert)` |
-| A2 서버 CA를 모름 | `unable to get local issuer certificate` | `TLSV1_ALERT_UNKNOWN_CA` (클라이언트가 보낸 경고) |
-| A3 다른 이름으로 접속 | `Hostname mismatch` | `BAD_CERTIFICATE` 경고 |
-| A4 만료된 서버 인증서 | `certificate has expired` | `CERTIFICATE_EXPIRED` 경고 |
+**Q1. TLS가 약속하는 것과 약속하지 않는 것은?**
+기밀성·무결성·인증을 약속하고, 인증은 보통 서버만 합니다. 데이터 길이, IP와 포트, 기본 설정의 SNI는 숨기지 않습니다.
 
-A2는 사내 프록시 앞에서 CLI가 낸 오류와 같은 문구입니다. 원인도 같습니다. 클라이언트가 그 체인의 루트를 모릅니다. A3에서는 체인이 완벽해도 이름이 다르면 거절됩니다. 서버 로그를 보면 클라이언트가 거절하면서 **이유를 담은 경고를 서버에 보낸다**는 것도 보입니다.
+**Q2. TLS 1.3 전체 핸드셰이크가 왕복 한 번인 이유와 그 전제는?**
+ClientHello에 key_share를 미리 싣기 때문입니다. TCP 연결 뒤, 인증서 기반, HelloRetryRequest·0-RTT 제외일 때입니다. MQTT 재연결은 CONNACK까지 왕복 세 번이고, 끊김은 설계에 넣습니다.
 
-### B. mTLS: 장치 인증서
+**Q3. CertificateVerify와 Finished는 각각 무엇을 증명하나?**
+CertificateVerify는 개인키 서명으로 "인증서의 주인이 지금 상대"를, Finished는 공유 비밀에서 HKDF로 파생한 키의 MAC으로 "두 끝이 본 핸드셰이크가 같다"를 확인합니다.
 
-```text
-## B1 mTLS no cert
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt
-failed: SSLError TLSV13_ALERT_CERTIFICATE_REQUIRED
-## B1b mTLS no cert, TLS1.2
-failed: SSLError SSLV3_ALERT_HANDSHAKE_FAILURE
-## B2 mTLS cert
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt
-server says: hello device-001
-## B3 mTLS other CA cert
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt
-failed: SSLError TLSV1_ALERT_UNKNOWN_CA
-## B4 mTLS cert + wrong key
-ssl.SSLError: [X509: KEY_VALUES_MISMATCH] key values mismatch (_ssl.c:3921)
-```
+**Q4. 재개 티켓과 0-RTT에서 조심할 점은?**
+티켓은 PSK의 이름표이고 binder가 보유를 증명합니다. PSK만 쓰면 전방 비밀성이 없습니다. 0-RTT 데이터는 전방 비밀성도 재전송 방지도 없으니 반복돼도 괜찮은 요청에만 씁니다.
 
-(Python 3.14에서는 B1b가 `TLS_ALERT_HANDSHAKE_FAILURE`로 찍혔습니다.)
+**Q5. 인증서 검증은 무엇을 확인하고, 왜 끄면 안 되나?**
+체인, SAN과 접속 이름(또는 IP), 유효 기간입니다. 장치 시계가 틀리면 만료로 보입니다. 끄면 길에 끼어든 아무나를 받아들이므로, 필요한 CA는 신뢰 목록에 더하고 그 설정이 대신하는지 더하는지 확인합니다.
 
-| 경우 | 클라이언트가 본 것 | 서버 로그 |
-|---|---|---|
-| B1 인증서 없이 (TLS 1.3) | **일단 `connected`**, 첫 읽기에서 `CERTIFICATE_REQUIRED` | `PEER_DID_NOT_RETURN_A_CERTIFICATE` |
-| B1b 인증서 없이 (TLS 1.2) | 핸드셰이크 중에 `HANDSHAKE_FAILURE` | `PEER_DID_NOT_RETURN_A_CERTIFICATE` |
-| B2 우리 CA의 장치 인증서 | 연결, 서버가 `hello device-001` | `OK ... client=device-001` |
-| B3 모르는 CA의 인증서 | 일단 `connected`, 첫 읽기에서 `UNKNOWN_CA` | `CERTIFICATE_VERIFY_FAILED` |
-| B4 인증서와 다른 개인키 | 접속 전에 내 쪽 라이브러리가 거절 | (연결 없음) |
+**Q6. mTLS에서 장치 키가 새면 피해는 어디까지인가?**
+개인키는 전선에 나가지 않지만 파일이 새면 그 장치로 행세할 수 있습니다. 정책이 MQTT 범위를 좁혀도, 같은 인증서로 임시 AWS 권한을 받게 했다면 그 IAM 역할 권한까지 포함됩니다. 잃으면 새로 발급하고 옛 인증서를 폐기합니다.
 
-이 실험에서 가장 배울 것이 많은 줄은 **B1과 B3**입니다. 클라이언트는 `connected`를 찍은 다음에 실패했습니다. TLS 1.3 그림을 다시 보면 이유가 보입니다. 클라이언트는 자기 Finished를 보내는 순간 핸드셰이크가 끝났다고 봅니다. 서버는 그 Finished와 함께 온 클라이언트 인증서(또는 그 빈자리)를 **그다음에** 확인하고 경고를 보냅니다. 그래서 클라이언트 쪽에서는 "연결은 됐는데 첫 읽기·쓰기에서 끊김"으로 보입니다. TLS 1.2(B1b)에서는 서버가 Finished를 보내기 전에 확인하므로 핸드셰이크 도중에 실패합니다.
+**Q7. TLS 1.3 mTLS에서 "connected"가 인증 성공이 아닌 이유는?**
+서버가 클라이언트 Finished 뒤에 인증서를 확인하므로, 인증서 문제는 접속 직후 첫 읽기·쓰기에서 끊김으로 나타납니다(실험 B1, B3).
 
-실무로 옮기면 이렇습니다. **TLS 1.3에서 장치 인증서 문제는 "접속 성공 직후 끊김"으로 나타날 수 있습니다.** "연결은 된다"는 로그만 보고 인증서는 괜찮다고 판단하면 안 됩니다.
+**Q8. 가로채기 프록시는 왜 mTLS를 깨뜨리고, 어떻게 푸나?**
+장치 개인키나 서명 권한이 없는 프록시가 TLS를 두 연결로 끊으면, 서버 쪽 핸드셰이크에서 장치로서 서명할 수 없습니다. 설정이 아니라 길의 문제라 가로채기 예외나 직접 연결로 풉니다. 어떤 포트가 검사를 피했다는 관찰은 그 망에서만 맞습니다.
 
-B4는 연결조차 하지 않았습니다. `load_cert_chain`이 인증서의 공개키와 개인키가 짝인지 먼저 확인하기 때문입니다. 인증서를 재발급하고 옛 키 파일을 그대로 둔 경우가 이 모양입니다.
-
-### C. 가로채기 프록시
-
-```text
-## C1 proxy, proxy CA unknown
-verify failed: unable to get local issuer certificate
-## C2 proxy, proxy CA trusted
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=None
-server says: hello (no client cert)
-## C3 proxy + mTLS
-connected: TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=None
-server says: (connection closed)
-```
-
-프록시 로그는 이렇습니다.
-
-```text
-### p-tls.log
-proxy handshake error: TLSV1_ALERT_UNKNOWN_CA
-proxy saw plaintext: b'hello (no client cert)\n'
-### p-mtls.log
-proxy relay error: TLSV13_ALERT_CERTIFICATE_REQUIRED
-```
-
-| 경우 | 클라이언트가 본 것 | 프록시가 본 것 |
-|---|---|---|
-| C1 프록시 CA를 모름 | `unable to get local issuer certificate` | 클라이언트가 가짜 인증서를 거절(`UNKNOWN_CA`) |
-| C2 프록시 CA를 믿음 | 정상 연결, 인사도 받음 | **서버의 응답을 평문으로 봄** |
-| C3 프록시 CA를 믿음 + mTLS 서버 | `connected` 뒤 연결이 그냥 닫힘 | 서버에게서 `CERTIFICATE_REQUIRED`를 받음 |
-
-C1은 사내 CA를 모르는 프로그램, C2는 사내 CA를 신뢰 목록에 넣은 프로그램입니다. C2에서 연결은 "정상"이지만 프록시는 대화 내용을 다 봅니다. 사내 CA를 믿는다는 것은 그 회사의 프록시에게 이 권한을 준다는 뜻입니다.
-
-C3이 앞에서 설명한 장면입니다. 장치는 자기 인증서와 개인키를 가지고 있었지만, 그것을 받은 것은 프록시였습니다. 프록시가 진짜 서버에 다시 붙을 때는 낼 인증서가 없었고, 서버는 `certificate_required`로 끊었습니다. 장치 쪽에서는 이유를 알 수 없는 "연결 직후 닫힘"으로만 보입니다.
-
-C2와 C3에서 `alpn=None`이 찍힌 것은 **제가 만든 실험 프록시**가 ALPN을 설정하지 않았기 때문입니다. 실제 프록시가 ALPN을 어떻게 다루는지에 대한 일반적인 결론은 아닙니다. 다만 "중간에 무언가 끼어 있으면 협상 결과가 달라질 수 있다"는 점은 기억해 둘 만합니다.
-
-### paho-mqtt에서의 모양
-
-실제 장치 코드에서는 MQTT 라이브러리가 이 `SSLContext` 설정을 대신해 줍니다. paho-mqtt 2.1의 `tls_set()`은 인자로 `ca_certs`, `certfile`, `keyfile`, `cert_reqs`, `tls_version`, `ciphers`, `keyfile_password`, `alpn_protocols`를 받습니다. 모양은 이렇습니다.
-
-```python
-import ssl
-import paho.mqtt.client as mqtt
-
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="device-001")
-client.tls_set(
-    ca_certs="AmazonRootCA1.pem",        # 서버를 확인할 루트 CA
-    certfile="device.crt",               # 장치 인증서
-    keyfile="device.key",                # 장치 개인키 (권한 600)
-    cert_reqs=ssl.CERT_REQUIRED,         # 서버 인증서 검증 (기본값)
-)
-client.connect("<your-endpoint>", 8883, keepalive=30)
-
-# 8883이 막힌 망에서 443으로 붙을 때
-# client.tls_set(..., alpn_protocols=["x-amzn-mqtt-ca"])
-# client.connect("<your-endpoint>", 443, keepalive=30)
-```
-
-이 코드로 AWS에 접속해 보지는 않았습니다. 대신 같은 `tls_set()` 호출(CA만 실험용으로 바꾸고 ALPN `mqtt`)로 앞의 localhost mTLS 서버에 붙여 봤고, 서버 로그에 `OK TLSv1.3 TLS_AES_256_GCM_SHA384 alpn=mqtt client=device-001`이 찍혔습니다. 즉 **TLS와 클라이언트 인증서까지는 이 호출로 맺어지는 것**을 확인했습니다. 실험 서버는 MQTT 브로커가 아니라서 그 뒤 MQTT 단계는 연결 끊김으로 끝났고, MQTT 동작은 시험하지 않았습니다.
-
-## 주의할 점
-
-- **검증을 끄지 않습니다.** `CERT_NONE`, `verify=False`, `--no-verify-ssl`, `strict-ssl=false`는 "인증" 약속을 버립니다. 믿어야 할 CA가 있다면 그 CA를 신뢰 목록에 **더합니다.** 대신하는 설정(`ca_bundle` 같은)인지 더하는 설정인지도 확인합니다.
-- **호스트 이름 확인을 끄지 않습니다.** 체인만 맞고 이름이 다른 인증서는 공격자의 정상 인증서일 수 있습니다. 직접 인증서를 만들 때는 SAN을 넣습니다.
-- **개인키는 장치 안에만 둡니다.** 저장소에서 제외하고, 파일 600·폴더 700으로 두고, 로그에 찍지 않습니다. 잃으면 복구가 아니라 새로 발급하고 옛 인증서를 폐기합니다.
-- **만료와 교체를 계획합니다.** 장치 인증서뿐 아니라 장치가 믿는 루트 CA도 만료됩니다. 인증서 전체 고정은 피하고, 신뢰할 CA를 갱신할 길을 만들어 둡니다.
-- **장치 시계를 먼저 맞춥니다.** 시계가 틀리면 멀쩡한 인증서가 만료로 보입니다.
-- **TLS 1.3에서 "연결 성공"은 클라이언트 인증 성공이 아닙니다.** 첫 읽기·쓰기에서 끊기는지까지 봐야 합니다.
-- **가로채는 망에서는 mTLS를 설정으로 고칠 수 없습니다.** 예외 등록이나 직접 연결 같은 길의 문제로 다룹니다. 어떤 포트가 검사를 피했다는 관찰은 그 망에서만 맞는 이야기입니다.
-- **재연결 비용을 셉니다.** 재연결 한 번은 CONNACK까지 TCP·TLS 1.3·MQTT로 왕복 세 번 정도이고, 연결은 언젠가 끊기는 것을 전제로 설계합니다.
-- **0-RTT는 반복돼도 괜찮은 요청에만 씁니다.** 재전송 보장이 없습니다.
-
-## 정리
-
-- TLS는 **기밀성·무결성·인증**을 약속합니다. 인증은 보통 서버만 하고, 데이터 길이와 IP, 기본 설정의 SNI는 숨기지 않습니다.
-- TLS 1.3 핸드셰이크는 ClientHello에 key_share를 미리 실어 **왕복 한 번**으로 끝납니다. ServerHello 뒤로는 서버 인증서까지 암호화되고, (EC)DHE 임시 키 덕분에 전방 비밀성이 있습니다.
-- 인증서 검증은 **체인**(믿는 루트까지 이어지나)과 **이름**(SAN이 접속 이름과 맞나), 그리고 **유효 기간**입니다. 서명(CertificateVerify)이 "인증서의 주인이 지금 상대"임을 증명합니다.
-- **mTLS**는 이 확인을 장치 쪽에도 합니다. 개인키는 전선 위로 나가지 않고 서명만 나갑니다. AWS IoT Core에서는 인증서가 신원을, 인증서에 붙은 정책이 권한을 정하고, 같은 인증서로 임시 AWS 권한도 받을 수 있습니다.
-- **SNI**는 어느 이름으로 왔는지, **ALPN**은 그 위에서 무엇을 말할지 정합니다. AWS IoT Core는 443에서 ALPN `x-amzn-mqtt-ca`로 인증서 기반 MQTT를 가려 받습니다.
-- **가로채기 프록시**는 연결을 둘로 끊습니다. 서버만 확인하는 TLS는 사내 CA를 믿으면 통과하지만, **mTLS는 프록시가 장치 개인키를 가질 수 없어서 깨집니다.** localhost 실험에서도 프록시가 서버로부터 `certificate_required`를 받고 연결이 닫혔습니다.
-
-같은 시스템의 네 연결은 결국 "누가 누구를 어느 층에서 확인하느냐"의 차이였습니다. 장치는 TLS 안에서 인증서로, 브라우저는 TLS 위에서 서명 URL로, 영상은 DTLS 지문으로 상대를 확인합니다. 그 차이를 알고 나니, 같은 사내 프록시 아래에서 어떤 연결은 CA 하나로 풀리고 어떤 연결은 길을 바꿔야만 풀린 이유도 설명이 됐습니다.
+같은 시스템의 연결들은 결국 "누가 누구를 어느 층에서 확인하느냐"의 차이였습니다. 장치는 TLS 안에서 인증서로, 브라우저는 TLS 위에서 서명 URL로, 영상은 DTLS 지문으로 상대를 확인합니다. 그 차이를 알고 나니, 같은 사내 프록시 아래에서 어떤 연결은 CA 하나로 풀리고 어떤 연결은 길을 바꿔야만 풀린 이유도 설명이 됐습니다.
 
 ## 참고
 
