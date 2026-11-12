@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-wide" viewBox="0 0 480 380" role="img" aria-labelledby="qh-title qh-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="qh-title">MQTT QoS는 구간마다 따로 정해진다</title>
-  <desc id="qh-desc">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 응답하지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다.</desc>
+  <desc id="qh-desc">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 MQTT PUBACK을 보내지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다. 가능한 흐름의 한 예이며 PUBACK과 대시보드 쪽 전달의 순서를 정한 그림은 아니다.</desc>
 
   <rect class="d-box" x="10" y="12" width="120" height="44" rx="6"/><rect class="d-line" x="10" y="12" width="120" height="44" rx="6"/>
   <text class="d-strong" x="70" y="41" text-anchor="middle">장치</text>
@@ -19,13 +19,13 @@
   <path class="d-line" d="M240 182 H70 M70 182 l10 -6 M70 182 l10 6"/>
   <text class="d-mono" x="325" y="226" text-anchor="middle">PUBLISH QoS 0</text>
   <path class="d-line" d="M240 238 H410 M410 238 l-10 -6 M410 238 l-10 6"/>
-  <text class="d-muted" x="325" y="266" text-anchor="middle">응답 없음</text>
+  <text class="d-muted" x="325" y="266" text-anchor="middle">PUBACK 없음</text>
   <text class="d-muted" x="240" y="326" text-anchor="middle">✓ PUBACK = 브로커까지 왔다</text>
   <text class="d-muted" x="240" y="354" text-anchor="middle">✗ 대시보드 도착은 보장하지 않음 (구독 QoS 0)</text>
 </svg>
 <svg class="diagram-svg diagram-narrow" viewBox="0 0 320 420" role="img" aria-labelledby="qh-title-n qh-desc-n" xmlns="http://www.w3.org/2000/svg">
   <title id="qh-title-n">MQTT QoS는 구간마다 따로 정해진다</title>
-  <desc id="qh-desc-n">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 응답하지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다.</desc>
+  <desc id="qh-desc-n">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 MQTT PUBACK을 보내지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다. 가능한 흐름의 한 예이며 PUBACK과 대시보드 쪽 전달의 순서를 정한 그림은 아니다.</desc>
 
   <rect class="d-box" x="4" y="12" width="96" height="44" rx="6"/><rect class="d-line" x="4" y="12" width="96" height="44" rx="6"/>
   <text class="d-strong" x="52" y="41" text-anchor="middle">장치</text>
@@ -44,7 +44,7 @@
   <text class="d-mono" x="214" y="214" text-anchor="middle">PUBLISH</text>
   <text class="d-mono" x="214" y="234" text-anchor="middle">QoS 0</text>
   <path class="d-line" d="M160 246 H268 M268 246 l-10 -6 M268 246 l-10 6"/>
-  <text class="d-muted" x="214" y="274" text-anchor="middle">응답 없음</text>
+  <text class="d-muted" x="214" y="274" text-anchor="middle">PUBACK 없음</text>
   <text class="d-muted" x="12" y="336">✓ PUBACK = 브로커까지 왔다</text>
   <text class="d-muted" x="12" y="366">✗ 대시보드 도착은 보장 안 함</text>
   <text class="d-muted" x="12" y="396">(대시보드가 QoS 0으로 구독)</text>
