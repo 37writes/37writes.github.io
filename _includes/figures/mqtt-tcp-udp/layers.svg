@@ -1,0 +1,73 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 412" role="img" aria-labelledby="ly-title ly-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ly-title">위치·상태와 카메라 영상이 지나가는 통신 층</title>
+  <desc id="ly-desc">왼쪽 위치·상태 경로는 위에서부터 MQTT, TLS, TCP, IP, Wi-Fi 또는 LTE 순서로 쌓인다. 오른쪽 카메라 영상 경로는 WebRTC의 SRTP, DTLS, UDP, IP, Wi-Fi 또는 LTE 순서로 쌓인다. MQTT와 TCP는 같은 줄에서 고르는 관계가 아니라 MQTT가 TCP 위에 얹히는 위아래 관계다. 같은 줄에서 고르는 것은 전송 층의 TCP와 UDP다. TCP는 늦어도 빠짐없이 순서대로 넘기고, UDP는 빠진 것을 다시 보내지 않는다. 브라우저는 MQTT와 TLS 사이에 WebSocket이 한 층 더 들어간다.</desc>
+
+  <text class="d-strong" x="240" y="28" text-anchor="middle">MQTT는 TCP 위에서 돈다</text>
+  <text class="d-strong" x="196" y="68" text-anchor="middle">위치 · 상태</text>
+  <text class="d-strong" x="376" y="68" text-anchor="middle">카메라 영상</text>
+  <text class="d-muted" x="12" y="112">응용</text>
+  <rect class="d-box" x="118" y="84" width="156" height="44" rx="6"/><rect class="d-line" x="118" y="84" width="156" height="44" rx="6"/>
+  <text x="196" y="112" text-anchor="middle">MQTT</text>
+  <rect class="d-box" x="298" y="84" width="156" height="44" rx="6"/><rect class="d-line" x="298" y="84" width="156" height="44" rx="6"/>
+  <text x="376" y="112" text-anchor="middle">WebRTC (SRTP)</text>
+  <text class="d-muted" x="12" y="164">보안</text>
+  <rect class="d-box" x="118" y="136" width="156" height="44" rx="6"/><rect class="d-line" x="118" y="136" width="156" height="44" rx="6"/>
+  <text x="196" y="164" text-anchor="middle">TLS</text>
+  <rect class="d-box" x="298" y="136" width="156" height="44" rx="6"/><rect class="d-line" x="298" y="136" width="156" height="44" rx="6"/>
+  <text x="376" y="164" text-anchor="middle">DTLS</text>
+  <text class="d-muted" x="12" y="216">전송</text>
+  <rect class="d-box" x="118" y="188" width="156" height="44" rx="6"/><rect class="d-line" x="118" y="188" width="156" height="44" rx="6" stroke-width="3"/>
+  <text class="d-strong" x="196" y="216" text-anchor="middle">TCP</text>
+  <rect class="d-box" x="298" y="188" width="156" height="44" rx="6"/><rect class="d-line" x="298" y="188" width="156" height="44" rx="6" stroke-width="3"/>
+  <text class="d-strong" x="376" y="216" text-anchor="middle">UDP</text>
+  <text class="d-muted" x="12" y="268">네트워크</text>
+  <rect class="d-box" x="118" y="240" width="156" height="44" rx="6"/><rect class="d-line" x="118" y="240" width="156" height="44" rx="6"/>
+  <text x="196" y="268" text-anchor="middle">IP</text>
+  <rect class="d-box" x="298" y="240" width="156" height="44" rx="6"/><rect class="d-line" x="298" y="240" width="156" height="44" rx="6"/>
+  <text x="376" y="268" text-anchor="middle">IP</text>
+  <text class="d-muted" x="12" y="320">링크</text>
+  <rect class="d-box" x="118" y="292" width="156" height="44" rx="6"/><rect class="d-line" x="118" y="292" width="156" height="44" rx="6"/>
+  <text x="196" y="320" text-anchor="middle">Wi-Fi · LTE</text>
+  <rect class="d-box" x="298" y="292" width="156" height="44" rx="6"/><rect class="d-line" x="298" y="292" width="156" height="44" rx="6"/>
+  <text x="376" y="320" text-anchor="middle">Wi-Fi · LTE</text>
+  <text class="d-muted" x="196" y="362" text-anchor="middle">TCP: 늦어도 빠짐없이</text>
+  <text class="d-muted" x="376" y="362" text-anchor="middle">UDP: 빠지면 그대로</text>
+  <text class="d-muted" x="240" y="396" text-anchor="middle">브라우저는 MQTT와 TLS 사이에 WebSocket이 한 층 더</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 464" role="img" aria-labelledby="ly-title-n ly-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="ly-title-n">위치·상태와 카메라 영상이 지나가는 통신 층</title>
+  <desc id="ly-desc-n">왼쪽 위치·상태 경로는 위에서부터 MQTT, TLS, TCP, IP, Wi-Fi 또는 LTE 순서로 쌓인다. 오른쪽 카메라 영상 경로는 WebRTC의 SRTP, DTLS, UDP, IP, Wi-Fi 또는 LTE 순서로 쌓인다. MQTT와 TCP는 같은 줄에서 고르는 관계가 아니라 MQTT가 TCP 위에 얹히는 위아래 관계다. 같은 줄에서 고르는 것은 전송 층의 TCP와 UDP다. TCP는 늦어도 빠짐없이 순서대로 넘기고, UDP는 빠진 것을 다시 보내지 않는다. 브라우저는 MQTT와 TLS 사이에 WebSocket이 한 층 더 들어간다.</desc>
+
+  <text class="d-strong" x="160" y="28" text-anchor="middle">MQTT는 TCP 위에서 돈다</text>
+  <text class="d-strong" x="130" y="68" text-anchor="middle">위치·상태</text>
+  <text class="d-strong" x="256" y="68" text-anchor="middle">영상</text>
+  <text class="d-muted" x="4" y="112">응용</text>
+  <rect class="d-box" x="72" y="84" width="116" height="44" rx="6"/><rect class="d-line" x="72" y="84" width="116" height="44" rx="6"/>
+  <text x="130" y="112" text-anchor="middle">MQTT</text>
+  <rect class="d-box" x="198" y="84" width="116" height="44" rx="6"/><rect class="d-line" x="198" y="84" width="116" height="44" rx="6"/>
+  <text x="256" y="112" text-anchor="middle">WebRTC</text>
+  <text class="d-muted" x="4" y="164">보안</text>
+  <rect class="d-box" x="72" y="136" width="116" height="44" rx="6"/><rect class="d-line" x="72" y="136" width="116" height="44" rx="6"/>
+  <text x="130" y="164" text-anchor="middle">TLS</text>
+  <rect class="d-box" x="198" y="136" width="116" height="44" rx="6"/><rect class="d-line" x="198" y="136" width="116" height="44" rx="6"/>
+  <text x="256" y="164" text-anchor="middle">DTLS</text>
+  <text class="d-muted" x="4" y="216">전송</text>
+  <rect class="d-box" x="72" y="188" width="116" height="44" rx="6"/><rect class="d-line" x="72" y="188" width="116" height="44" rx="6" stroke-width="3"/>
+  <text class="d-strong" x="130" y="216" text-anchor="middle">TCP</text>
+  <rect class="d-box" x="198" y="188" width="116" height="44" rx="6"/><rect class="d-line" x="198" y="188" width="116" height="44" rx="6" stroke-width="3"/>
+  <text class="d-strong" x="256" y="216" text-anchor="middle">UDP</text>
+  <text class="d-muted" x="4" y="268">네트워크</text>
+  <rect class="d-box" x="72" y="240" width="116" height="44" rx="6"/><rect class="d-line" x="72" y="240" width="116" height="44" rx="6"/>
+  <text x="130" y="268" text-anchor="middle">IP</text>
+  <rect class="d-box" x="198" y="240" width="116" height="44" rx="6"/><rect class="d-line" x="198" y="240" width="116" height="44" rx="6"/>
+  <text x="256" y="268" text-anchor="middle">IP</text>
+  <text class="d-muted" x="4" y="320">링크</text>
+  <rect class="d-box" x="72" y="292" width="116" height="44" rx="6"/><rect class="d-line" x="72" y="292" width="116" height="44" rx="6"/>
+  <text x="130" y="320" text-anchor="middle">Wi-Fi·LTE</text>
+  <rect class="d-box" x="198" y="292" width="116" height="44" rx="6"/><rect class="d-line" x="198" y="292" width="116" height="44" rx="6"/>
+  <text x="256" y="320" text-anchor="middle">Wi-Fi·LTE</text>
+  <text class="d-muted" x="12" y="366">TCP: 늦어도 빠짐없이 순서대로</text>
+  <text class="d-muted" x="12" y="392">UDP: 빠진 것을 다시 보내지 않음</text>
+  <text class="d-muted" x="12" y="426">브라우저는 MQTT와 TLS 사이에</text>
+  <text class="d-muted" x="12" y="450">WebSocket이 한 층 더</text>
+</svg>

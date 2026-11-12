@@ -1,0 +1,51 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 380" role="img" aria-labelledby="qh-title qh-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="qh-title">MQTT QoS는 구간마다 따로 정해진다</title>
+  <desc id="qh-desc">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 응답하지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다.</desc>
+
+  <rect class="d-box" x="10" y="12" width="120" height="44" rx="6"/><rect class="d-line" x="10" y="12" width="120" height="44" rx="6"/>
+  <text class="d-strong" x="70" y="41" text-anchor="middle">장치</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M70 56 V292"/>
+  <rect class="d-box" x="180" y="12" width="120" height="44" rx="6"/><rect class="d-line" x="180" y="12" width="120" height="44" rx="6"/>
+  <text class="d-strong" x="240" y="41" text-anchor="middle">브로커</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M240 56 V292"/>
+  <rect class="d-box" x="350" y="12" width="120" height="44" rx="6"/><rect class="d-line" x="350" y="12" width="120" height="44" rx="6"/>
+  <text class="d-strong" x="410" y="41" text-anchor="middle">대시보드</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M410 56 V292"/>
+  <text class="d-muted" x="155" y="80" text-anchor="middle">구간 1</text>
+  <text class="d-muted" x="325" y="80" text-anchor="middle">구간 2</text>
+  <text class="d-mono" x="155" y="116" text-anchor="middle">PUBLISH QoS 1</text>
+  <path class="d-line" d="M70 128 H240 M240 128 l-10 -6 M240 128 l-10 6"/>
+  <text class="d-mono" x="155" y="170" text-anchor="middle">PUBACK</text>
+  <path class="d-line" d="M240 182 H70 M70 182 l10 -6 M70 182 l10 6"/>
+  <text class="d-mono" x="325" y="226" text-anchor="middle">PUBLISH QoS 0</text>
+  <path class="d-line" d="M240 238 H410 M410 238 l-10 -6 M410 238 l-10 6"/>
+  <text class="d-muted" x="325" y="266" text-anchor="middle">응답 없음</text>
+  <text class="d-muted" x="240" y="326" text-anchor="middle">✓ PUBACK = 브로커까지 왔다</text>
+  <text class="d-muted" x="240" y="354" text-anchor="middle">✗ 대시보드 도착은 보장하지 않음 (구독 QoS 0)</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 420" role="img" aria-labelledby="qh-title-n qh-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="qh-title-n">MQTT QoS는 구간마다 따로 정해진다</title>
+  <desc id="qh-desc-n">장치가 브로커로 PUBLISH를 QoS 1로 보내면 브로커가 PUBACK을 돌려준다. 이 PUBACK은 브로커까지 도착했다는 뜻이다. 브로커는 그 메시지를 대시보드에 따로 다시 보내는데, 대시보드가 QoS 0으로 구독했다면 두 값 중 낮은 QoS 0으로 보내고 대시보드는 응답하지 않는다. 그래서 장치가 받은 PUBACK은 대시보드 도착을 보장하지 않는다.</desc>
+
+  <rect class="d-box" x="4" y="12" width="96" height="44" rx="6"/><rect class="d-line" x="4" y="12" width="96" height="44" rx="6"/>
+  <text class="d-strong" x="52" y="41" text-anchor="middle">장치</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M52 56 V300"/>
+  <rect class="d-box" x="112" y="12" width="96" height="44" rx="6"/><rect class="d-line" x="112" y="12" width="96" height="44" rx="6"/>
+  <text class="d-strong" x="160" y="41" text-anchor="middle">브로커</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M160 56 V300"/>
+  <rect class="d-box" x="220" y="12" width="96" height="44" rx="6"/><rect class="d-line" x="220" y="12" width="96" height="44" rx="6"/>
+  <text class="d-strong" x="268" y="41" text-anchor="middle">대시보드</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M268 56 V300"/>
+  <text class="d-mono" x="106" y="96" text-anchor="middle">PUBLISH</text>
+  <text class="d-mono" x="106" y="116" text-anchor="middle">QoS 1</text>
+  <path class="d-line" d="M52 128 H160 M160 128 l-10 -6 M160 128 l-10 6"/>
+  <text class="d-mono" x="106" y="170" text-anchor="middle">PUBACK</text>
+  <path class="d-line" d="M160 182 H52 M52 182 l10 -6 M52 182 l10 6"/>
+  <text class="d-mono" x="214" y="214" text-anchor="middle">PUBLISH</text>
+  <text class="d-mono" x="214" y="234" text-anchor="middle">QoS 0</text>
+  <path class="d-line" d="M160 246 H268 M268 246 l-10 -6 M268 246 l-10 6"/>
+  <text class="d-muted" x="214" y="274" text-anchor="middle">응답 없음</text>
+  <text class="d-muted" x="12" y="336">✓ PUBACK = 브로커까지 왔다</text>
+  <text class="d-muted" x="12" y="366">✗ 대시보드 도착은 보장 안 함</text>
+  <text class="d-muted" x="12" y="396">(대시보드가 QoS 0으로 구독)</text>
+</svg>
