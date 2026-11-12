@@ -1,0 +1,89 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 348" role="img" aria-labelledby="ow-title ow-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ow-title">짧은 창은 밀린 지연을 시계차로 흡수하고, 60초 창은 그렇지 않다</title>
+  <desc id="ow-desc">가로는 시간, 세로는 메시지마다 받은 시각에서 ts를 뺀 값이다. 왼쪽 긴 구간에는 약 0.1초인 정상 표본이, 오른쪽 끝 약 5초에는 2.9초씩 늦게 온 표본이 있다. 최근 25개 창(약 5초)에는 늦은 표본만 들어 있어 최솟값 2.9초가 상한 2초에 걸리고, 시계차가 2초가 되어 2.9초 늦은 위치의 나이를 0.9초로 계산해 수신 중으로 보인다. 최근 60초 창에는 정상 표본이 남아 시계차가 약 0.1초이고, 나이를 2.8초로 계산해 위치 늦음으로 보인다.</desc>
+
+  <text class="d-muted d-small" x="12" y="24">받은 시각 − ts</text>
+  <text class="d-muted d-small" x="468" y="24" text-anchor="end">시간 →</text>
+  <path class="d-line" d="M40 200 H468"/>
+  <path class="d-line" d="M40 40 V200"/>
+  <circle class="d-dot" cx="54" cy="186" r="4"/>
+  <circle class="d-dot" cx="68" cy="186" r="4"/>
+  <circle class="d-dot" cx="82" cy="186" r="4"/>
+  <circle class="d-dot" cx="96" cy="186" r="4"/>
+  <circle class="d-dot" cx="110" cy="186" r="4"/>
+  <circle class="d-dot" cx="124" cy="186" r="4"/>
+  <circle class="d-dot" cx="138" cy="186" r="4"/>
+  <circle class="d-dot" cx="152" cy="186" r="4"/>
+  <circle class="d-dot" cx="166" cy="186" r="4"/>
+  <circle class="d-dot" cx="180" cy="186" r="4"/>
+  <circle class="d-dot" cx="194" cy="186" r="4"/>
+  <circle class="d-dot" cx="208" cy="186" r="4"/>
+  <circle class="d-dot" cx="222" cy="186" r="4"/>
+  <circle class="d-dot" cx="236" cy="186" r="4"/>
+  <circle class="d-dot" cx="250" cy="186" r="4"/>
+  <circle class="d-dot" cx="264" cy="186" r="4"/>
+  <circle class="d-dot" cx="278" cy="186" r="4"/>
+  <circle class="d-dot" cx="292" cy="186" r="4"/>
+  <circle class="d-dot" cx="306" cy="186" r="4"/>
+  <circle class="d-dot" cx="320" cy="186" r="4"/>
+  <circle class="d-accent" cx="344" cy="100" r="4"/>
+  <circle class="d-accent" cx="358" cy="100" r="4"/>
+  <circle class="d-accent" cx="372" cy="100" r="4"/>
+  <circle class="d-accent" cx="386" cy="100" r="4"/>
+  <circle class="d-accent" cx="400" cy="100" r="4"/>
+  <circle class="d-accent" cx="414" cy="100" r="4"/>
+  <circle class="d-accent" cx="428" cy="100" r="4"/>
+  <circle class="d-accent" cx="442" cy="100" r="4"/>
+  <circle class="d-accent" cx="456" cy="100" r="4"/>
+  <text class="d-muted d-small" x="54" y="170">정상 ≈ 0.1초</text>
+  <text class="d-muted d-small" x="456" y="84" text-anchor="end">2.9초씩 늦음</text>
+  <path class="d-line" d="M338 214 V220 H462 V214"/>
+  <text class="d-small" x="400" y="238" text-anchor="middle">최근 25개 ≈ 5초</text>
+  <path class="d-line" d="M48 254 V260 H462 V254"/>
+  <text class="d-small" x="255" y="278" text-anchor="middle">최근 60초</text>
+  <text class="d-muted" x="12" y="310">✗ 25개 창: 시계차 2초(상한) → 나이 0.9초 '수신 중'</text>
+  <text class="d-accent" x="12" y="336">✓ 60초 창: 시계차 0.1초 → 나이 2.8초 '위치 늦음'</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 384" role="img" aria-labelledby="ow-title-n ow-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="ow-title-n">짧은 창은 밀린 지연을 시계차로 흡수하고, 60초 창은 그렇지 않다</title>
+  <desc id="ow-desc-n">가로는 시간, 세로는 메시지마다 받은 시각에서 ts를 뺀 값이다. 왼쪽 긴 구간에는 약 0.1초인 정상 표본이, 오른쪽 끝 약 5초에는 2.9초씩 늦게 온 표본이 있다. 최근 25개 창(약 5초)에는 늦은 표본만 들어 있어 최솟값 2.9초가 상한 2초에 걸리고, 시계차가 2초가 되어 2.9초 늦은 위치의 나이를 0.9초로 계산해 수신 중으로 보인다. 최근 60초 창에는 정상 표본이 남아 시계차가 약 0.1초이고, 나이를 2.8초로 계산해 위치 늦음으로 보인다.</desc>
+
+  <text class="d-muted d-small" x="8" y="24">받은 시각 − ts</text>
+  <text class="d-muted d-small" x="312" y="24" text-anchor="end">시간 →</text>
+  <path class="d-line" d="M20 200 H312"/>
+  <path class="d-line" d="M20 40 V200"/>
+  <circle class="d-dot" cx="30" cy="186" r="4"/>
+  <circle class="d-dot" cx="42" cy="186" r="4"/>
+  <circle class="d-dot" cx="54" cy="186" r="4"/>
+  <circle class="d-dot" cx="66" cy="186" r="4"/>
+  <circle class="d-dot" cx="78" cy="186" r="4"/>
+  <circle class="d-dot" cx="90" cy="186" r="4"/>
+  <circle class="d-dot" cx="102" cy="186" r="4"/>
+  <circle class="d-dot" cx="114" cy="186" r="4"/>
+  <circle class="d-dot" cx="126" cy="186" r="4"/>
+  <circle class="d-dot" cx="138" cy="186" r="4"/>
+  <circle class="d-dot" cx="150" cy="186" r="4"/>
+  <circle class="d-dot" cx="162" cy="186" r="4"/>
+  <circle class="d-dot" cx="174" cy="186" r="4"/>
+  <circle class="d-dot" cx="186" cy="186" r="4"/>
+  <circle class="d-dot" cx="198" cy="186" r="4"/>
+  <circle class="d-accent" cx="210" cy="100" r="4"/>
+  <circle class="d-accent" cx="222" cy="100" r="4"/>
+  <circle class="d-accent" cx="234" cy="100" r="4"/>
+  <circle class="d-accent" cx="246" cy="100" r="4"/>
+  <circle class="d-accent" cx="258" cy="100" r="4"/>
+  <circle class="d-accent" cx="270" cy="100" r="4"/>
+  <circle class="d-accent" cx="282" cy="100" r="4"/>
+  <circle class="d-accent" cx="294" cy="100" r="4"/>
+  <circle class="d-accent" cx="306" cy="100" r="4"/>
+  <text class="d-muted d-small" x="30" y="170">정상 ≈ 0.1초</text>
+  <text class="d-muted d-small" x="306" y="84" text-anchor="end">2.9초씩 늦음</text>
+  <path class="d-line" d="M204 214 V220 H312 V214"/>
+  <text class="d-small" x="258" y="238" text-anchor="middle">최근 25개</text>
+  <path class="d-line" d="M24 254 V260 H312 V254"/>
+  <text class="d-small" x="168" y="278" text-anchor="middle">최근 60초</text>
+  <text class="d-muted" x="8" y="306">✗ 25개 창: 시계차 2초(상한)</text>
+  <text class="d-muted" x="24" y="328">→ 나이 0.9초, '수신 중'</text>
+  <text class="d-accent" x="8" y="352">✓ 60초 창: 시계차 0.1초</text>
+  <text class="d-accent" x="24" y="374">→ 나이 2.8초, '위치 늦음'</text>
+</svg>

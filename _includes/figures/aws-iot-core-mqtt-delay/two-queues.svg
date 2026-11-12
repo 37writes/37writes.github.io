@@ -1,0 +1,107 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 388" role="img" aria-labelledby="tq-title tq-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="tq-title">보내는 쪽 두 겹의 줄: 고치기 전과 최신 것만 보내기로 고친 뒤</title>
+  <desc id="tq-desc">고치기 전에는 장치가 만든 위치가 paho 나가는 큐(QoS 0이라 한도 없음)와 커널 송신 버퍼(약 130 KB까지 가득) 두 곳에 줄을 선다. 업링크가 막히면 줄이 길어지고, 길이 열려도 맨 앞의 옛 위치부터 나가서 77초 전 위치가 지금 것처럼 도착한다. 고친 뒤에는 토픽마다 넘길 칸이 하나뿐이고 송신 버퍼는 몇 KB 이하로 유지된다. 앞의 것이 아직 나가지 않았으면 새 위치는 넘기기 전에 버리고, 길이 열리면 곧바로 최신 위치가 도착한다.</desc>
+
+  <text class="d-strong" x="12" y="26">고치기 전</text>
+  <rect class="d-box" x="12" y="44" width="56" height="44" rx="6"/><rect class="d-line" x="12" y="44" width="56" height="44" rx="6"/>
+  <text x="40" y="71" text-anchor="middle">장치</text>
+  <path class="d-line" d="M68 66 H88"/>
+  <path class="d-line" d="M83 61 L88 66 L83 71"/>
+  <rect class="d-box" x="88" y="44" width="148" height="44" rx="6"/><rect class="d-line" x="88" y="44" width="148" height="44" rx="6"/>
+  <rect class="d-line" x="96" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="118" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="140" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="162" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="184" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="206" y="54" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="162" y="108" text-anchor="middle">paho 큐 · 한도 없음</text>
+  <path class="d-line" d="M236 66 H256"/>
+  <path class="d-line" d="M251 61 L256 66 L251 71"/>
+  <rect class="d-box" x="256" y="44" width="124" height="44" rx="6"/><rect class="d-line" x="256" y="44" width="124" height="44" rx="6"/>
+  <rect class="d-line" x="264" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="286" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="308" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="330" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="352" y="54" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="318" y="108" text-anchor="middle">송신 버퍼 가득</text>
+  <text class="d-muted d-small" x="318" y="124" text-anchor="middle">약 130 KB</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M380 66 H404"/>
+  <text class="d-strong d-accent" x="418" y="73" text-anchor="middle">✗</text>
+  <text x="434" y="71">막힘</text>
+  <text class="d-muted d-small" x="446" y="108" text-anchor="middle">업링크</text>
+  <text class="d-muted" x="12" y="156">길이 열려도 줄 맨 앞의 옛 위치부터 나간다</text>
+  <text class="d-strong d-accent" x="12" y="182">✗ 77초 전 위치가 '지금'으로 도착</text>
+  <path class="d-line" d="M12 202 H468"/>
+  <text class="d-strong" x="12" y="230">고친 뒤: 최신 것만</text>
+  <rect class="d-box" x="12" y="248" width="56" height="44" rx="6"/><rect class="d-line" x="12" y="248" width="56" height="44" rx="6"/>
+  <text x="40" y="275" text-anchor="middle">장치</text>
+  <path class="d-line" d="M68 270 H88"/>
+  <path class="d-line" d="M83 265 L88 270 L83 275"/>
+  <rect class="d-box" x="88" y="248" width="64" height="44" rx="6"/><rect class="d-line" x="88" y="248" width="64" height="44" rx="6"/>
+  <rect class="d-line" x="111" y="258" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="120" y="312" text-anchor="middle">칸 하나</text>
+  <path class="d-line" d="M152 270 H172"/>
+  <path class="d-line" d="M167 265 L172 270 L167 275"/>
+  <rect class="d-box" x="172" y="248" width="124" height="44" rx="6"/><rect class="d-line" x="172" y="248" width="124" height="44" rx="6"/>
+  <rect class="d-line" x="180" y="258" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="202" y="258" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="234" y="312" text-anchor="middle">송신 버퍼</text>
+  <text class="d-muted d-small" x="234" y="328" text-anchor="middle">몇 KB 이하</text>
+  <path class="d-line" d="M296 270 H320"/>
+  <path class="d-line" d="M315 265 L320 270 L315 275"/>
+  <text x="328" y="276">업링크 → 브로커</text>
+  <path class="d-line" d="M40 292 V340 H54"/>
+  <text class="d-muted" x="62" y="345">앞 것이 안 나갔으면 새 위치는 넘기기 전에 버림</text>
+  <text class="d-strong d-accent" x="12" y="376">✓ 길이 열리면 곧바로 최신 위치가 도착</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 388" role="img" aria-labelledby="tq-title-n tq-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="tq-title-n">보내는 쪽 두 겹의 줄: 고치기 전과 최신 것만 보내기로 고친 뒤</title>
+  <desc id="tq-desc-n">고치기 전에는 장치가 만든 위치가 paho 나가는 큐(QoS 0이라 한도 없음)와 커널 송신 버퍼(약 130 KB까지 가득) 두 곳에 줄을 선다. 업링크가 막히면 줄이 길어지고, 길이 열려도 맨 앞의 옛 위치부터 나가서 77초 전 위치가 지금 것처럼 도착한다. 고친 뒤에는 토픽마다 넘길 칸이 하나뿐이고 송신 버퍼는 몇 KB 이하로 유지된다. 앞의 것이 아직 나가지 않았으면 새 위치는 넘기기 전에 버리고, 길이 열리면 곧바로 최신 위치가 도착한다.</desc>
+
+  <text class="d-strong" x="8" y="26">고치기 전</text>
+  <rect class="d-box" x="8" y="44" width="48" height="44" rx="6"/><rect class="d-line" x="8" y="44" width="48" height="44" rx="6"/>
+  <text x="32" y="71" text-anchor="middle">장치</text>
+  <path class="d-line" d="M56 66 H70"/>
+  <path class="d-line" d="M65 61 L70 66 L65 71"/>
+  <rect class="d-box" x="70" y="44" width="96" height="44" rx="6"/><rect class="d-line" x="70" y="44" width="96" height="44" rx="6"/>
+  <rect class="d-line" x="76" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="98" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="120" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="142" y="54" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="118" y="108" text-anchor="middle">paho 큐</text>
+  <text class="d-muted d-small" x="118" y="124" text-anchor="middle">한도 없음</text>
+  <path class="d-line" d="M166 66 H180"/>
+  <path class="d-line" d="M175 61 L180 66 L175 71"/>
+  <rect class="d-box" x="180" y="44" width="84" height="44" rx="6"/><rect class="d-line" x="180" y="44" width="84" height="44" rx="6"/>
+  <rect class="d-line" x="186" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="208" y="54" width="18" height="24" rx="2"/>
+  <rect class="d-line" x="230" y="54" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="222" y="108" text-anchor="middle">송신 버퍼</text>
+  <text class="d-muted d-small" x="222" y="124" text-anchor="middle">약 130 KB</text>
+  <path class="d-line" stroke-dasharray="4 4" d="M264 66 H282"/>
+  <text class="d-strong d-accent" x="296" y="73" text-anchor="middle">✗</text>
+  <text class="d-muted d-small" x="296" y="108" text-anchor="middle">막힘</text>
+  <text class="d-muted" x="8" y="156">길이 열려도 옛 위치부터 나감</text>
+  <text class="d-strong d-accent" x="8" y="182">✗ 77초 전 위치가 '지금' 도착</text>
+  <path class="d-line" d="M8 202 H312"/>
+  <text class="d-strong" x="8" y="230">고친 뒤: 최신 것만</text>
+  <rect class="d-box" x="8" y="248" width="48" height="44" rx="6"/><rect class="d-line" x="8" y="248" width="48" height="44" rx="6"/>
+  <text x="32" y="275" text-anchor="middle">장치</text>
+  <path class="d-line" d="M56 270 H70"/>
+  <path class="d-line" d="M65 265 L70 270 L65 275"/>
+  <rect class="d-box" x="70" y="248" width="48" height="44" rx="6"/><rect class="d-line" x="70" y="248" width="48" height="44" rx="6"/>
+  <rect class="d-line" x="85" y="258" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="94" y="312" text-anchor="middle">칸 하나</text>
+  <path class="d-line" d="M118 270 H132"/>
+  <path class="d-line" d="M127 265 L132 270 L127 275"/>
+  <rect class="d-box" x="132" y="248" width="84" height="44" rx="6"/><rect class="d-line" x="132" y="248" width="84" height="44" rx="6"/>
+  <rect class="d-line" x="140" y="258" width="18" height="24" rx="2"/>
+  <text class="d-muted d-small" x="174" y="312" text-anchor="middle">송신 버퍼</text>
+  <text class="d-muted d-small" x="174" y="328" text-anchor="middle">몇 KB 이하</text>
+  <path class="d-line" d="M216 270 H232"/>
+  <path class="d-line" d="M227 265 L232 270 L227 275"/>
+  <text x="238" y="276">업링크</text>
+  <path class="d-line" d="M32 292 V340 H46"/>
+  <text class="d-muted" x="52" y="345">앞 것이 안 나갔으면 버림</text>
+  <text class="d-strong d-accent" x="8" y="376">✓ 곧바로 최신 위치가 도착</text>
+</svg>
