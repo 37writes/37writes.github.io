@@ -1,6 +1,6 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 588" role="img" aria-labelledby="docker-wsl2-layers-title docker-wsl2-layers-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="docker-wsl2-layers-title">Windows의 docker 요청이 WSL2의 Docker Engine에 도달하는 경로</title>
-  <desc id="docker-wsl2-layers-desc">요청 경로: Windows PC의 PowerShell에서 실행한 docker 명령은 named pipe로 Docker Desktop 백엔드에 요청을 보내고, 요청은 WSL2 VM 안 docker-desktop 배포판의 Docker Engine에 도달한다. 실행 관계: 요청과 별개로 Docker Engine은 컨테이너 open-webui를 실행하고 관리한다. WSL2 VM의 배포판들은 Linux 커널 하나를 함께 쓴다. Ubuntu-22.04 배포판은 Stopped 상태이며 요청 경로에 들어 있지 않다. 맨 아래에는 VM을 실행하는 바탕인 하이퍼바이저가 있다.</desc>
+  <desc id="docker-wsl2-layers-desc">요청 경로: Windows PC의 PowerShell에서 실행한 docker 명령은 named pipe로 Docker Desktop 백엔드에 요청을 보내고, 요청은 WSL2 VM 안 docker-desktop 배포판의 Docker Engine에 도달한다. 마지막 화살표는 Docker Engine이 Open WebUI 컨테이너를 실행하고 관리하는 관계를 나타낸다. WSL2 VM의 배포판들은 Linux 커널 하나를 함께 쓴다. Ubuntu-22.04 배포판은 Stopped 상태이며 요청 경로에 들어 있지 않다. 맨 아래에는 VM을 실행하는 바탕인 하이퍼바이저가 있다.</desc>
 
   <rect class="d-line" x="6" y="6" width="348" height="576" rx="12"/>
   <text class="d-strong" x="22" y="34">Windows PC</text>

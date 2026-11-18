@@ -172,14 +172,21 @@ docker info | Select-String -Pattern '^ (Server Version|Storage Driver|Kernel Ve
 처음 설치한다면 순서는 단순합니다.
 
 1. BIOS/UEFI에서 하드웨어 가상화가 켜져 있는지 확인합니다.
-2. **관리자** PowerShell에서 WSL을 설치하고 PC를 다시 시작합니다. 아래 둘 중 하나만 실행합니다.
+2. **관리자** PowerShell에서 WSL을 설치하고 PC를 다시 시작합니다. WSL이 없는 PC 기준이고, 아래 둘 중 하나만 실행합니다.
+
+   WSL과 기본 배포판 Ubuntu를 함께 설치:
 
    ```powershell
-   wsl --install                    # WSL과 기본 배포판 Ubuntu 설치
-   wsl --install --no-distribution  # Ubuntu 없이 WSL만 설치
+   wsl --install
    ```
 
-   둘 다 WSL이 아직 없는 PC 기준입니다. 이미 있으면 `wsl --install -d <배포판 이름>`으로 배포판만 추가합니다.
+   Ubuntu 없이 WSL만 설치:
+
+   ```powershell
+   wsl --install --no-distribution
+   ```
+
+   WSL이 이미 있으면 Docker Desktop 설치로 넘어갑니다. Ubuntu 같은 배포판이 필요할 때만 `wsl --list --online`으로 이름을 확인해 `wsl --install -d <배포판 이름>`으로 추가합니다.
 3. Docker Desktop을 설치하고 실행합니다.
 
    ```powershell
