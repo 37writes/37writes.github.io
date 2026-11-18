@@ -52,7 +52,7 @@ volumes:
 
 ## Compose는 긴 `docker run`을 파일로 옮긴 것
 
-같은 컨테이너를 명령 하나로 띄우면 이렇게 됩니다. PowerShell 기준이고 줄 끝의 백틱은 줄 잇기입니다.
+같은 구성을 명령 하나로 쓰면 이렇게 됩니다. **Compose와 비교하려는 예시이니 실행하지 마세요.** 이름 `open-webui`와 3000 포트가 Compose 구성과 겹칩니다. PowerShell 기준이고, 줄 끝의 백틱은 줄 잇기이며 그 뒤에 공백이 있으면 안 됩니다.
 
 ```powershell
 docker run -d `
@@ -80,7 +80,7 @@ docker run -d `
 
 파일로 옮기면 긴 명령을 기억하지 않아도 되고, 설정을 고친 뒤 같은 명령 `docker compose up -d`로 반영할 수 있습니다.
 
-다만 완전히 같지는 않습니다. `docker run -v webui-data:...`는 볼륨을 `webui-data`라는 이름 그대로 쓰지만, Compose는 앞에 프로젝트 이름을 붙입니다. 그래서 `docker run`으로 쓰던 컨테이너를 Compose로 옮기면 새 빈 볼륨이 연결되어 데이터가 사라진 것처럼 보일 수 있습니다. 이름 규칙은 뒤에서 자세히 봅니다.
+다만 완전히 같지는 않습니다. `docker run`은 볼륨을 `webui-data` 이름 그대로 쓰고 기본 bridge 네트워크에 붙지만, Compose는 볼륨 이름 앞에 프로젝트 이름을 붙이고 프로젝트용 네트워크를 만듭니다. 그래서 `docker run`으로 쓰던 컨테이너를 그대로 옮기면 새 빈 볼륨이 연결되어 데이터가 사라진 것처럼 보일 수 있습니다. 옮길 때는 기존 볼륨을 먼저 백업하고 `docker compose config`로 연결될 볼륨 이름을 확인합니다.
 
 ## 위에서 아래로 읽기
 
@@ -101,7 +101,7 @@ services:
 
 `ghcr.io`는 이미지를 내려받을 저장소, `open-webui/open-webui`는 이미지 이름, `main`은 **태그**입니다. 태그는 버전 표식이지만 고정된 값이라는 보장은 없습니다. Open WebUI 문서에 따르면 `main`은 개발이 진행되면 다시 빌드되는 이동식 태그이고, 운영 환경에는 `:v1.2.3` 형태의 버전 태그로 고정하기를 권합니다.
 
-알아 둘 점이 하나 있습니다. Compose의 기본 동작은 **이미지가 로컬에 없을 때만** 내려받는 것입니다. 그래서 `main` 태그를 써도 `docker compose up -d`만으로 새 버전이 받아지지는 않습니다. 업데이트 절차는 6편에서 다룹니다.
+알아 둘 점이 하나 있습니다. Compose의 기본 정책은 **이미지가 로컬에 없을 때만** 내려받는 것입니다. 그래서 이 예제의 `:main`은 로컬에 이미지가 있으면 재사용하고, `docker compose up -d`만으로 새 버전이 받아지지 않습니다. 다만 `:latest` 태그는 예외로, 기본 정책에서도 항상 받습니다. 업데이트 절차는 6편에서 다룹니다.
 
 ### `container_name`
 
@@ -124,12 +124,12 @@ services:
 
 <figure class="diagram">
 {% include figures/docker-compose-yml-line-by-line/port-mapping.svg %}
-<figcaption>127.0.0.1을 적으면 이 PC 안에서만 접속할 수 있고, 빼면 모든 주소에 공개됩니다</figcaption>
+<figcaption>Docker 28 이상에서 127.0.0.1은 이 PC 전용이고, 주소를 빼면 기본 설정에서 모든 주소에 공개됩니다. 포트가 겹치면 가운데 3000을 바꿉니다</figcaption>
 </figure>
 
 - `8080`은 컨테이너 안에서 Open WebUI가 듣는 포트입니다. 이미지가 정한 값이므로 보통 그대로 둡니다.
 - `3000`은 Windows 쪽에서 쓸 포트입니다. 다른 프로그램이 3000을 쓰고 있으면 **이 숫자만** 바꿉니다. `"127.0.0.1:3100:8080"`이면 주소가 `http://localhost:3100`이 됩니다.
-- `127.0.0.1`은 이 PC 자신을 뜻합니다. 이 주소로만 받으므로 다른 PC에서는 들어올 수 없습니다.
+- `127.0.0.1`은 이 PC 자신을 뜻합니다. Docker 문서에 따르면 이렇게 게시한 포트는 Docker 호스트에서만 접근할 수 있고, 이 글의 29.9.3도 이 범위입니다. 28.0.0 미만에서는 같은 L2 네트워크의 다른 장비가 닿을 수 있다는 경고가 있습니다.
 
 값을 큰따옴표로 감싸는 것도 이유가 있습니다. Compose 문서는 YAML이 콜론 붙은 숫자를 60진수로 해석하는 문제를 피하도록 `HOST:CONTAINER` 값을 항상 문자열로 쓰라고 안내합니다.
 
@@ -141,9 +141,9 @@ services:
       - DEFAULT_MODELS=gemma4:12b-it-qat
 ```
 
-컨테이너 안 프로그램에 넘기는 환경 변수입니다. `OLLAMA_BASE_URL`은 Open WebUI가 찾아갈 Ollama 주소이고, `DEFAULT_MODELS`는 새 채팅에서 미리 선택할 모델입니다. 모델 이름은 `ollama list`에 나오는 이름과 같아야 합니다.
+컨테이너 안 프로그램에 넘기는 환경 변수입니다. `OLLAMA_BASE_URL`은 Open WebUI가 찾아갈 Ollama 주소이고, `DEFAULT_MODELS`는 새 채팅에서 미리 선택할 모델입니다. 환경 변수를 적는다고 모델이 설치되지는 않으므로, Windows에서 `ollama list`로 그 이름이 있는지 확인합니다.
 
-여기서 자주 헷갈리는 점이 있습니다. Open WebUI 문서는 `DEFAULT_MODELS`를 `ConfigVar`로 표시합니다. 이런 값은 첫 실행 뒤 내부에 저장되고, 다음 시작부터는 환경 변수보다 저장된 값을 씁니다. 그래서 파일의 값만 바꿔서는 화면이 그대로일 수 있고, 관리자 화면에서 바꿔야 합니다.
+여기서 자주 헷갈리는 점이 있습니다. Open WebUI 문서는 `DEFAULT_MODELS`를 `ConfigVar`로 표시합니다. 이런 값은 내부에 저장되고, 이미 저장된 값이 있으면 기본 설정에서는 환경 변수보다 그 값이 우선합니다. 그래서 파일의 값만 바꿔서는 화면이 그대로일 수 있고, 관리자 화면에서 바꿔야 합니다.
 
 ### `extra_hosts`
 
@@ -176,7 +176,7 @@ services:
 | 값 | 동작 |
 |---|---|
 | `no` | 다시 켜지 않습니다 (기본값) |
-| `on-failure` | 오류로 끝났을 때만 다시 켭니다 |
+| `on-failure` | 종료 코드가 0이 아닐 때만 다시 켭니다 |
 | `always` | 멈추면 다시 켭니다. 직접 멈춘 경우에도 Docker가 재시작되면 다시 켜집니다 |
 | `unless-stopped` | `always`와 비슷하지만, 직접 멈춘 컨테이너는 Docker가 재시작돼도 꺼진 채로 둡니다 |
 
@@ -197,16 +197,16 @@ service "open-webui" refers to undefined volume webui-data: invalid compose proj
 
 ## 프로젝트 이름이 자원 이름을 정합니다
 
-파일 어디에도 `server`라는 단어가 없는데, 이 구성을 `server` 폴더에서 띄우면 볼륨은 `server_webui-data`, 네트워크는 `server_default`가 됩니다. Compose가 **compose 파일이 있는 폴더 이름을 프로젝트 이름으로** 쓰기 때문입니다.
+파일 어디에도 `server`라는 단어가 없는데, 이 구성을 `server` 폴더에서 띄우면 볼륨은 `server_webui-data`, 네트워크는 `server_default`가 됩니다. 프로젝트 이름을 따로 지정하지 않으면 Compose가 **compose 파일이 있는 폴더 이름을** 프로젝트 이름으로 쓰기 때문입니다.
 
 <figure class="diagram">
 {% include figures/docker-compose-yml-line-by-line/compose-resources.svg %}
-<figcaption>볼륨과 네트워크 이름에는 폴더에서 온 프로젝트 이름이 붙고, container_name은 적은 그대로 쓰입니다</figcaption>
+<figcaption>프로젝트 이름을 따로 지정하지 않은 예입니다. 볼륨과 네트워크 이름에는 폴더에서 온 이름이 붙고, container_name은 적은 그대로 쓰입니다</figcaption>
 </figure>
 
-네트워크는 파일에 적지 않았지만 Compose가 프로젝트마다 기본으로 하나 만들어 서비스를 연결합니다.
+이 예제처럼 네트워크를 따로 적지 않으면 Compose가 기본 네트워크를 하나 만들어 서비스를 연결합니다.
 
-폴더 이름은 그대로 쓰이지 않을 수도 있습니다. 프로젝트 이름에는 영어 소문자, 숫자, `-`, `_`만 쓸 수 있어서, `My Server.v2` 폴더에서 확인해 보니 프로젝트 이름이 `myserverv2`로 바뀌었습니다.
+폴더 이름은 그대로 쓰이지 않을 수도 있습니다. 프로젝트 이름에는 영어 소문자, 숫자, `-`, `_`만 쓸 수 있고 첫 글자는 소문자나 숫자여야 합니다. `My Server.v2` 폴더에서 확인해 보니 프로젝트 이름이 `myserverv2`로 바뀌었습니다.
 
 ### 폴더 이름을 바꾸면 생기는 일
 
@@ -218,9 +218,9 @@ service "open-webui" refers to undefined volume webui-data: invalid compose proj
 | 원래 프로젝트를 `down`한 뒤 새 폴더에서 `up -d` | 새 빈 볼륨이 연결되어 표시 파일이 **보이지 않음** |
 | 원래 폴더로 돌아와 `up -d` | 원래 볼륨이 다시 연결되어 표시 파일이 **그대로 있음** |
 
-즉 폴더 이름을 바꿔도 예전 볼륨이 지워지지는 않습니다. 다른 볼륨을 보고 있을 뿐입니다. Open WebUI에서 이런 일이 생기면 계정과 대화가 사라진 듯 보이고, 처음 설치한 화면이 다시 나옵니다. 반대로 폴더를 다른 드라이브로 옮겨도 **폴더 이름이 같으면** 프로젝트 이름과 볼륨이 유지되어 계정과 데이터가 그대로 남습니다.
+즉 폴더 이름을 바꿔도 예전 볼륨이 지워지지는 않습니다. 다른 볼륨을 보고 있을 뿐입니다. Open WebUI에서 이런 일이 생기면 계정과 대화가 사라진 듯 보이고, 처음 설치한 화면이 다시 나옵니다. 반대로 **같은 Docker 엔진에서 프로젝트 이름과 볼륨 설정이 그대로라면** 폴더를 다른 드라이브로 옮겨도 같은 볼륨이 연결되어 계정과 데이터가 남습니다.
 
-폴더 이름에 묶이고 싶지 않다면 파일 맨 위에 이름을 적을 수 있습니다.
+폴더 이름에 묶이고 싶지 않다면 파일 맨 위에 이름을 적을 수 있습니다. 기존 데이터를 이어 쓰려면 먼저 `docker compose ls -a`와 `docker volume ls`로 기존 프로젝트 이름을 확인해 똑같이 적습니다.
 
 ```yaml
 name: server
@@ -229,15 +229,24 @@ services:
   # 이하 동일
 ```
 
-이름은 `-p` 옵션, `COMPOSE_PROJECT_NAME` 환경 변수, 파일의 `name:`, 폴더 이름 순서로 먼저 적용됩니다.
+다른 폴더에서 같은 `name:`을 적어 실행해 보니 표시 파일이 있는 기존 볼륨이 연결됐습니다. 이름은 `-p` 옵션, `COMPOSE_PROJECT_NAME` 환경 변수, 파일의 `name:`, 프로젝트 폴더 이름, Compose 파일을 지정하지 않았을 때의 현재 폴더 이름 순서로 적용됩니다.
 
 ## 따라 하기: 운영 중인 구성을 건드리지 않는 실습
 
 이미 Open WebUI를 쓰고 있다면 그 폴더에서 실험하지 마세요. 폴더, 컨테이너 이름, 포트가 다른 실습 프로젝트를 따로 만들면 기존 컨테이너와 볼륨에 영향을 주지 않습니다.
 
+Docker Desktop을 켠 PowerShell에서 Compose가 동작하는지 보고, 새 폴더를 만듭니다.
+
 ```powershell
-New-Item -ItemType Directory -Force "$HOME\compose-practice"
+docker compose version
+New-Item -ItemType Directory "$HOME\compose-practice"
 cd "$HOME\compose-practice"
+Get-ChildItem -Force
+```
+
+버전이 나와야 하고, 마지막 명령에는 아무것도 나오지 않아야 합니다. 폴더가 이미 있다는 오류가 나거나 파일이 보이면 그 폴더를 쓰지 말고 다른 이름으로 만듭니다. 이때 아래의 `compose-practice`는 새 폴더 이름으로 읽습니다.
+
+```powershell
 notepad docker-compose.yml
 ```
 
@@ -248,6 +257,8 @@ notepad docker-compose.yml
     ports:
       - "127.0.0.1:3100:8080"
 ```
+
+저장한 뒤 `Get-ChildItem -Name`에 `docker-compose.yml`이 보여야 합니다. `docker-compose.yml.txt`라면 이름을 고칩니다. 3100도 쓰이고 있으면 가운데 숫자와 아래의 확인 주소를 함께 바꿉니다.
 
 ### 1. 실행 전에 `docker compose config`
 
@@ -277,7 +288,7 @@ volumes:
     name: compose-practice_webui-data
 ```
 
-첫 줄의 `name`이 `compose-practice`인지 확인합니다. 이 값이 기존 프로젝트 이름과 같다면 폴더를 잘못 찾은 것이니 다음 단계로 가지 않습니다.
+`name`이 `compose-practice`, `published`가 `3100`, 볼륨 이름이 `compose-practice_webui-data`인지 대조합니다. 하나라도 다르거나 기존 프로젝트와 겹치면 다음 단계로 가지 않습니다.
 
 ### 2. `docker compose up -d`
 
@@ -300,7 +311,7 @@ Container open-webui-practice Started
 
 일어나는 일을 순서대로 적으면 이렇습니다.
 
-1. **이미지 확인**: 로컬에 없으면 내려받습니다. 이 이미지는 6.46GB입니다. 실습 중 다른 작은 이미지를 받다가 네트워크 오류가 났을 때는 네트워크와 볼륨을 만들기 전에 멈췄습니다. 회선이 불안정해 받기에 실패하면 같은 명령을 다시 실행합니다.
+1. **이미지 확인**: 로컬에 없으면 내려받습니다. 이 PC에서 표시된 이미지 크기는 6.46GB였습니다. 다른 작은 이미지를 받다가 네트워크 오류가 난 한 번의 실습에서는 네트워크와 볼륨을 만들기 전에 멈췄습니다. 회선이 불안정해 받기에 실패하면 같은 명령을 다시 실행합니다.
 2. **네트워크와 볼륨 준비**: 없으면 만듭니다. 위 출력처럼 둘은 함께 진행되므로 어느 쪽이 먼저라고 볼 필요는 없습니다.
 3. **컨테이너 생성**: 설정대로 컨테이너를 만들고 네트워크와 볼륨을 연결합니다.
 4. **컨테이너 시작**: `Started`는 프로세스를 시작했다는 뜻입니다. **앱이 접속을 받을 준비가 끝났다는 뜻은 아닙니다.**
@@ -318,7 +329,7 @@ NAME                  IMAGE                                COMMAND           SER
 open-webui-practice   ghcr.io/open-webui/open-webui:main   "bash start.sh"   open-webui   1 second ago   Up Less than a second (health: starting)   127.0.0.1:3100->8080/tcp
 ```
 
-확인할 것은 두 가지입니다. `STATUS`가 최종적으로 `Up ... (healthy)`가 되는지, `PORTS`가 `127.0.0.1:3100->8080/tcp`인지입니다.
+확인할 것은 두 가지입니다. `STATUS`가 최종적으로 `Up ... (healthy)`가 되는지, `PORTS`가 `127.0.0.1:3100->8080/tcp`인지입니다. 목록이 비어 있으면 `docker compose ps -a`로 멈춘 컨테이너까지 봅니다.
 
 ### 4. `docker compose logs`
 
@@ -360,8 +371,8 @@ curl.exe http://localhost:3100/health
 | 표시 | 뜻 |
 |---|---|
 | `health: starting` | 아직 판정 전입니다 |
-| `healthy` | 마지막 검사가 통과했습니다 |
-| `unhealthy` | 검사가 연속으로 정해진 횟수만큼 실패했습니다 |
+| `healthy` | 검사를 통과한 상태입니다. 연속 실패가 기준에 이르기 전까지 유지되고, 통과하면 실패 횟수가 초기화됩니다 |
+| `unhealthy` | 검사가 연속으로 기준 횟수만큼 실패했습니다 |
 
 새 볼륨으로 처음 띄운 실습에서는 흥미로운 일이 있었습니다.
 
@@ -371,38 +382,50 @@ curl.exe http://localhost:3100/health
 | 약 90초 | `unhealthy` |
 | 4분 | `healthy` |
 
-고장이 아니었습니다. 로그에는 그동안 Hugging Face에서 파일을 내려받는 기록이 이어졌고, 재시작 횟수도 0이었습니다. 이 이미지의 검사에는 간격과 재시도 값이 따로 없어서 Docker 기본값인 30초 간격, 3회 실패가 적용됩니다. 그러니 시작 후 90초에 세 번째 실패가 쌓여 `unhealthy`가 된 것이고, 준비를 마친 뒤 첫 검사가 통과하자 바로 `healthy`로 돌아왔습니다. 걸리는 시간은 회선과 환경에 따라 다릅니다.
+고장이 아니었습니다. 로그에는 그동안 Hugging Face에서 파일을 내려받는 기록이 이어졌고, 재시작 횟수도 0이었습니다. 이 이미지의 검사에는 간격과 재시도 값이 따로 없어서 Docker 기본값이 적용됩니다. 첫 검사는 시작 30초 뒤, 다음 검사는 직전 검사가 끝나고 30초 뒤에 돌고, 3회 연속 실패하면 `unhealthy`입니다. 이 실습에서는 그렇게 실패가 쌓여 약 90초에 `unhealthy`가 됐고, 준비를 마친 뒤 검사가 통과하자 `healthy`로 돌아왔습니다. 걸리는 시간은 회선과 환경에 따라 다릅니다. `unhealthy`만으로 컨테이너가 재시작되지는 않습니다.
 
 그래서 첫 시작에 `unhealthy`가 보이면 바로 지우지 말고 로그부터 봅니다. 내려받기나 초기화가 진행 중이면 기다리고, 같은 오류가 반복되면 그 오류를 살핍니다.
 
 ## 파일을 고친 뒤와 실습 정리
 
-파일을 고치면 다시 `docker compose up -d`를 실행합니다. 포트를 바꿔 실행했더니 Compose가 컨테이너를 `Recreate`했고, 볼륨의 파일은 그대로 남았습니다. 아무것도 바꾸지 않고 실행하면 `Running`만 나오고 다시 만들지 않습니다.
+파일을 고치면 다시 `docker compose up -d`를 실행합니다. 서비스 설정이나 이미지가 달라지면 컨테이너를 다시 만들 수 있습니다. 포트를 바꿔 실행했을 때는 `Recreate`가 나왔고, 같은 볼륨을 쓰므로 볼륨의 파일은 그대로였습니다. 아무것도 바꾸지 않았을 때는 `Running`만 나왔습니다.
 
-실습이 끝나면 **`compose-practice` 폴더인지 확인한 뒤** 지웁니다.
+실습이 끝나면 데이터를 남기는 정리부터 합니다.
 
 ```powershell
-docker compose config | Select-Object -First 1   # name: compose-practice 확인
-docker compose down -v
+docker compose down
 ```
 
 | 명령 | 지우는 것 | 남는 것 |
 |---|---|---|
-| `docker compose down` | 컨테이너, 기본 네트워크 | 이름 있는 볼륨, 이미지 |
-| `docker compose down -v` | 위 항목 + 파일에 선언한 볼륨 | 이미지 |
+| `docker compose down` | 컨테이너, 기본 네트워크 | 이름 있는 볼륨, 익명 볼륨, 이미지 |
+| `docker compose down -v` | 위 항목 + 파일에 선언한 볼륨 + 연결된 익명 볼륨 | `external` 볼륨, 이미지 |
 
 > `-v`는 볼륨의 데이터를 지웁니다. 실제로 쓰는 Open WebUI 폴더에서 실행하면 계정과 대화가 함께 사라집니다.
 {: .prompt-danger }
 
+실습 데이터까지 버릴 때만 다음을 진행합니다. 먼저 프로젝트와 볼륨을 확인합니다.
+
+```powershell
+docker compose config
+docker volume ls --filter "label=com.docker.compose.project=compose-practice"
+```
+
+`name: compose-practice`와 볼륨 `compose-practice_webui-data`가 맞을 때만 다음 명령을 따로 실행합니다.
+
+```powershell
+docker compose down -v
+```
+
 ## 다른 PC에 열 때 달라지는 것
 
-지금 구성은 `127.0.0.1`에만 묶여 있어서 이 PC에서만 접속됩니다. 다른 PC에서 쓰려고 주소를 빼서 `"3000:8080"`으로 바꾸면 Docker는 이 포트를 모든 네트워크 주소에 공개합니다. 줄 하나의 차이지만 위험 범위는 크게 달라집니다. 이 부분은 공식 문서를 기준으로 정리했고, 직접 포트를 열어 시험하지는 않았습니다.
+지금 구성은 `127.0.0.1`에만 묶여 있어서 이 PC에서만 접속됩니다. 다른 PC에서 쓰려고 주소를 빼서 `"3000:8080"`으로 바꾸면 기본 설정의 Docker는 이 포트를 모든 네트워크 주소에 공개합니다. 실제 접속 여부는 네트워크 경로와 방화벽에 달렸지만, 줄 하나로 위험 범위가 크게 달라집니다. 이 부분은 공식 문서를 기준으로 정리했고, 직접 포트를 열어 시험하지는 않았습니다.
 
 먼저 다음을 확인합니다.
 
 - **관리자 계정을 먼저 만듭니다.** Open WebUI는 처음 만든 계정이 관리자가 됩니다. 계정 없이 포트부터 열면 다른 사람이 먼저 관리자가 될 수 있습니다.
 - **가입 설정을 확인합니다.** 관리자 생성 뒤 가입은 꺼지지만, 설정에서 다시 켤 수 있습니다. 필요한 사람에게만 계정을 줍니다.
-- **방화벽 범위를 좁힙니다.** Docker Desktop에서는 호스트 포트를 백엔드 프로세스가 받으므로, Windows 방화벽에서는 `com.docker.backend.exe`를 기준으로 들어오는 연결을 제어합니다. 허용할 때는 필요한 네트워크와 주소만 고릅니다.
+- **방화벽 범위를 좁힙니다.** Docker Desktop에서는 호스트 포트를 백엔드 프로세스가 받으므로, Windows 방화벽에서는 `com.docker.backend.exe`를 기준으로 들어오는 연결을 제어합니다. 허용 규칙에는 TCP 3000, 필요한 원격 주소, 네트워크 프로필만 넣습니다.
 - **필요한 주소에만 묶습니다.** 모든 주소 대신 `"<이 PC의 IP>:3000:8080"`처럼 특정 주소를 쓸 수 있습니다.
 - **HTTP라는 점을 기억합니다.** 이 구성은 암호화되지 않은 HTTP입니다. 믿을 수 없는 네트워크에서는 비밀번호와 대화가 그대로 지나갑니다. VPN이나 HTTPS 프록시를 앞에 둡니다. HTTPS가 무엇을 지켜 주는지는 [TLS 정리: 핸드셰이크, 인증서, 그리고 IoT 장치가 쓰는 mTLS]({% post_url 2026-11-12-tls-basics %})에서 볼 수 있습니다.
 
@@ -412,14 +435,14 @@ docker compose down -v
 
 | 줄 | 기억할 것 |
 |---|---|
-| `image` | `main`은 움직이는 태그이고, 이미지가 있으면 `up`이 새로 받지 않습니다 |
+| `image` | `main`은 움직이는 태그이고, 이미지가 있으면 기본 정책의 `up`이 새로 받지 않습니다 (`latest`는 예외) |
 | `container_name` | 편하지만 같은 이름과 충돌합니다 |
 | `ports` | `받을 주소:PC 포트:컨테이너 포트`. 포트를 바꿀 때는 가운데 숫자를 바꿉니다 |
-| `environment` | 일부 Open WebUI 값은 첫 실행 뒤 내부 저장값이 우선합니다 |
+| `environment` | 일부 Open WebUI 값은 저장값이 있으면 그 값이 우선합니다 |
 | `extra_hosts` | 컨테이너 안에서 호스트를 부를 이름을 만듭니다 |
 | `volumes` | 서비스 안에서 연결하고, 최상위에서 선언합니다 |
 | `restart` | `unless-stopped`는 직접 끈 컨테이너를 존중합니다 |
-| 프로젝트 이름 | 폴더 이름에서 오고, 볼륨과 네트워크 이름 앞에 붙습니다 |
+| 프로젝트 이름 | 따로 지정하지 않으면 폴더 이름에서 오고, 볼륨과 네트워크 이름 앞에 붙습니다 |
 
 확인 순서는 `config`로 해석 결과를 보고, `up -d`로 띄운 뒤, `ps`에서 `healthy`와 포트를 보고, 문제가 있으면 `logs`를 읽는 것입니다.
 
