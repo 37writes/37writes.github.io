@@ -1,0 +1,33 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 420" role="img" aria-labelledby="docker-flow-title docker-flow-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="docker-flow-title">Docker 문제 해결 순서: 상태, 로그, 내부 접속, 연결, 자원</title>
+  <desc id="docker-flow-desc">위에서 아래로 다섯 단계를 차례로 확인한다. 1 상태는 컨테이너가 떠 있고 healthy인지, 2 로그는 앱이 남긴 오류가 있는지, 3 내부 접속은 컨테이너 안에서 앱이 응답하는지, 4 연결은 브라우저와 Ollama까지 닿는지, 5 자원은 메모리와 디스크와 GPU가 모자라지 않은지 본다.</desc>
+
+  <rect class="d-box" x="1" y="1" width="358" height="66" rx="8"/>
+  <text class="d-strong" x="16" y="28">1 상태</text>
+  <text class="d-mono" x="344" y="28" text-anchor="end">compose ps</text>
+  <text class="d-muted" x="16" y="52">컨테이너가 떠 있고 healthy인가?</text>
+  <path class="d-line" d="M180 67 V88 M175 82 L180 88 L185 82"/>
+
+  <rect class="d-box" x="1" y="89" width="358" height="66" rx="8"/>
+  <text class="d-strong" x="16" y="116">2 로그</text>
+  <text class="d-mono" x="344" y="116" text-anchor="end">logs</text>
+  <text class="d-muted" x="16" y="140">앱이 남긴 오류가 있는가?</text>
+  <path class="d-line" d="M180 155 V176 M175 170 L180 176 L185 170"/>
+
+  <rect class="d-box" x="1" y="177" width="358" height="66" rx="8"/>
+  <text class="d-strong" x="16" y="204">3 내부 접속</text>
+  <text class="d-mono" x="344" y="204" text-anchor="end">exec</text>
+  <text class="d-muted" x="16" y="228">컨테이너 안에서 앱이 응답하는가?</text>
+  <path class="d-line" d="M180 243 V264 M175 258 L180 264 L185 258"/>
+
+  <rect class="d-box" x="1" y="265" width="358" height="66" rx="8"/>
+  <text class="d-strong" x="16" y="292">4 연결</text>
+  <text class="d-mono" x="344" y="292" text-anchor="end">curl</text>
+  <text class="d-muted" x="16" y="316">브라우저·Ollama까지 닿는가?</text>
+  <path class="d-line" d="M180 331 V352 M175 346 L180 352 L185 346"/>
+
+  <rect class="d-box" x="1" y="353" width="358" height="66" rx="8"/>
+  <text class="d-strong" x="16" y="380">5 자원</text>
+  <text class="d-mono" x="344" y="380" text-anchor="end">stats · df</text>
+  <text class="d-muted" x="16" y="404">메모리·디스크·GPU가 모자라지 않은가?</text>
+</svg>

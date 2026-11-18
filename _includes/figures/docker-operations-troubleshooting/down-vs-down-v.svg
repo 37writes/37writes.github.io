@@ -1,0 +1,70 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 236" role="img" aria-labelledby="docker-down-title docker-down-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="docker-down-title">docker compose down과 down -v가 지우는 범위 비교</title>
+  <desc id="docker-down-desc">두 명령 모두 컨테이너와 네트워크를 지우고 이미지는 남긴다. 차이는 볼륨이다. down은 볼륨을 남겨 다시 up 하면 데이터가 이어지고, down -v는 볼륨까지 지워 다시 up 해도 빈 볼륨으로 시작한다.</desc>
+
+  <text class="d-mono" x="1" y="20">docker compose down</text>
+  <rect class="d-line" x="1" y="36" width="226" height="36" rx="6"/>
+  <text x="13" y="59">컨테이너</text>
+  <text class="d-muted" x="215" y="59" text-anchor="end">✗ 삭제</text>
+  <rect class="d-line" x="1" y="78" width="226" height="36" rx="6"/>
+  <text x="13" y="101">네트워크</text>
+  <text class="d-muted" x="215" y="101" text-anchor="end">✗ 삭제</text>
+  <rect class="d-box" x="1" y="120" width="226" height="36" rx="6"/>
+  <text x="13" y="143">이미지</text>
+  <text x="215" y="143" text-anchor="end">✓ 남음</text>
+  <rect class="d-box" x="1" y="162" width="226" height="36" rx="6"/>
+  <text x="13" y="185">볼륨 (데이터)</text>
+  <text x="215" y="185" text-anchor="end">✓ 남음</text>
+  <text class="d-muted" x="1" y="224">다시 up 하면 데이터가 이어짐</text>
+
+  <text class="d-mono" x="253" y="20">docker compose down -v</text>
+  <rect class="d-line" x="253" y="36" width="226" height="36" rx="6"/>
+  <text x="265" y="59">컨테이너</text>
+  <text class="d-muted" x="467" y="59" text-anchor="end">✗ 삭제</text>
+  <rect class="d-line" x="253" y="78" width="226" height="36" rx="6"/>
+  <text x="265" y="101">네트워크</text>
+  <text class="d-muted" x="467" y="101" text-anchor="end">✗ 삭제</text>
+  <rect class="d-box" x="253" y="120" width="226" height="36" rx="6"/>
+  <text x="265" y="143">이미지</text>
+  <text x="467" y="143" text-anchor="end">✓ 남음</text>
+  <rect class="d-line" x="253" y="162" width="226" height="36" rx="6"/>
+  <text class="d-accent" x="265" y="185">볼륨 (데이터)</text>
+  <text class="d-accent" x="467" y="185" text-anchor="end">✗ 삭제</text>
+  <text class="d-muted d-accent" x="253" y="224">다시 up 해도 빈 볼륨으로 시작</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 462" role="img" aria-labelledby="docker-down-title-n docker-down-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="docker-down-title-n">docker compose down과 down -v가 지우는 범위 비교</title>
+  <desc id="docker-down-desc-n">두 명령 모두 컨테이너와 네트워크를 지우고 이미지는 남긴다. 차이는 볼륨이다. down은 볼륨을 남겨 다시 up 하면 데이터가 이어지고, down -v는 볼륨까지 지워 다시 up 해도 빈 볼륨으로 시작한다.</desc>
+
+  <text class="d-mono" x="1" y="20">docker compose down</text>
+  <rect class="d-line" x="1" y="34" width="318" height="34" rx="6"/>
+  <text x="13" y="56">컨테이너</text>
+  <text class="d-muted" x="307" y="56" text-anchor="end">✗ 삭제</text>
+  <rect class="d-line" x="1" y="74" width="318" height="34" rx="6"/>
+  <text x="13" y="96">네트워크</text>
+  <text class="d-muted" x="307" y="96" text-anchor="end">✗ 삭제</text>
+  <rect class="d-box" x="1" y="114" width="318" height="34" rx="6"/>
+  <text x="13" y="136">이미지</text>
+  <text x="307" y="136" text-anchor="end">✓ 남음</text>
+  <rect class="d-box" x="1" y="154" width="318" height="34" rx="6"/>
+  <text x="13" y="176">볼륨 (데이터)</text>
+  <text x="307" y="176" text-anchor="end">✓ 남음</text>
+  <text class="d-muted" x="1" y="212">다시 up 하면 데이터가 이어짐</text>
+
+  <path class="d-line" d="M1 232 H319"/>
+
+  <text class="d-mono" x="1" y="260">docker compose down -v</text>
+  <rect class="d-line" x="1" y="274" width="318" height="34" rx="6"/>
+  <text x="13" y="296">컨테이너</text>
+  <text class="d-muted" x="307" y="296" text-anchor="end">✗ 삭제</text>
+  <rect class="d-line" x="1" y="314" width="318" height="34" rx="6"/>
+  <text x="13" y="336">네트워크</text>
+  <text class="d-muted" x="307" y="336" text-anchor="end">✗ 삭제</text>
+  <rect class="d-box" x="1" y="354" width="318" height="34" rx="6"/>
+  <text x="13" y="376">이미지</text>
+  <text x="307" y="376" text-anchor="end">✓ 남음</text>
+  <rect class="d-line" x="1" y="394" width="318" height="34" rx="6"/>
+  <text class="d-accent" x="13" y="416">볼륨 (데이터)</text>
+  <text class="d-accent" x="307" y="416" text-anchor="end">✗ 삭제</text>
+  <text class="d-muted d-accent" x="1" y="452">다시 up 해도 빈 볼륨으로 시작</text>
+</svg>
