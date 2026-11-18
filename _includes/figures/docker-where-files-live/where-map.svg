@@ -1,0 +1,62 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 492" role="img" aria-labelledby="wm-title wm-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-title">Windows 폴더, vhdx, Linux 경로, 컨테이너 경로의 대응</title>
+  <desc id="wm-desc">Windows 탐색기에서는 D 드라이브의 docker_data.vhdx 파일 하나만 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 같은 볼륨을 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
+
+  <text class="d-strong" x="240" y="26" text-anchor="middle">탐색기에는 vhdx 파일만 보인다</text>
+
+  <rect class="d-line" x="12" y="44" width="456" height="232" rx="8"/>
+  <text x="28" y="70" font-weight="700">Windows 폴더</text>
+  <text class="d-mono" x="28" y="92">D:\docker\…\disk\docker_data.vhdx</text>
+
+  <rect class="d-box" x="28" y="106" width="424" height="156" rx="6"/><rect class="d-line" x="28" y="106" width="424" height="156" rx="6"/>
+  <text x="44" y="130" font-weight="700">vhdx 안의 Linux 디스크</text>
+  <text class="d-muted" x="44" y="156">이미지 층</text>
+  <text class="d-mono" x="44" y="176">/var/lib/desktop-containerd</text>
+  <text class="d-muted" x="44" y="204">볼륨</text>
+  <text class="d-mono" x="44" y="224">/var/lib/docker/volumes/</text>
+  <text class="d-mono" x="44" y="244">server_webui-data/_data</text>
+
+  <path class="d-line" d="M240 262 V318"/>
+  <text class="d-muted" x="252" y="303">같은 파일을 본다</text>
+
+  <rect class="d-box" x="108" y="318" width="264" height="60" rx="6"/><rect class="d-line" x="108" y="318" width="264" height="60" rx="6"/>
+  <text x="240" y="342" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
+  <text class="d-mono" x="240" y="364" text-anchor="middle">/app/backend/data</text>
+
+  <rect class="d-line" x="12" y="396" width="456" height="84" rx="8" stroke-dasharray="4 4"/>
+  <text x="28" y="420" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
+  <text class="d-mono" x="28" y="444">D:\Dev\server\docker-compose.yml</text>
+  <text class="d-mono" x="28" y="466">D:\ollama\models</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 548" role="img" aria-labelledby="wm-title-n wm-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-title-n">Windows 폴더, vhdx, Linux 경로, 컨테이너 경로의 대응</title>
+  <desc id="wm-desc-n">Windows 탐색기에서는 D 드라이브의 docker_data.vhdx 파일 하나만 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 같은 볼륨을 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
+
+  <text class="d-strong" x="160" y="26" text-anchor="middle">탐색기에는 vhdx 파일만 보인다</text>
+
+  <rect class="d-line" x="4" y="44" width="312" height="254" rx="8"/>
+  <text x="16" y="68" font-weight="700">Windows 폴더</text>
+  <text class="d-mono" x="16" y="90">D:\docker\…\disk\</text>
+  <text class="d-mono" x="16" y="110">docker_data.vhdx</text>
+
+  <rect class="d-box" x="12" y="124" width="296" height="160" rx="6"/><rect class="d-line" x="12" y="124" width="296" height="160" rx="6"/>
+  <text x="24" y="148" font-weight="700">vhdx 안의 Linux 디스크</text>
+  <text class="d-muted" x="24" y="174">이미지 층</text>
+  <text class="d-mono" x="24" y="194">/var/lib/desktop-containerd</text>
+  <text class="d-muted" x="24" y="222">볼륨</text>
+  <text class="d-mono" x="24" y="242">/var/lib/docker/volumes/</text>
+  <text class="d-mono" x="24" y="262">server_webui-data/_data</text>
+
+  <path class="d-line" d="M160 284 V342"/>
+  <text class="d-muted" x="172" y="326">같은 파일을 본다</text>
+
+  <rect class="d-box" x="32" y="342" width="256" height="60" rx="6"/><rect class="d-line" x="32" y="342" width="256" height="60" rx="6"/>
+  <text x="160" y="366" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
+  <text class="d-mono" x="160" y="388" text-anchor="middle">/app/backend/data</text>
+
+  <rect class="d-line" x="4" y="420" width="312" height="116" rx="8" stroke-dasharray="4 4"/>
+  <text x="16" y="444" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
+  <text class="d-mono" x="16" y="468">D:\Dev\server\</text>
+  <text class="d-mono" x="16" y="488">docker-compose.yml</text>
+  <text class="d-mono" x="16" y="518">D:\ollama\models</text>
+</svg>

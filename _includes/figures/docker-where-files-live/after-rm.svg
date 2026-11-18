@@ -1,0 +1,24 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 340" role="img" aria-labelledby="ar-title ar-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="ar-title">컨테이너를 지운 뒤 남는 것과 사라지는 것</title>
+  <desc id="ar-desc">컨테이너 안에서 보이는 파일은 쓰기 계층, 이미지 층, 볼륨에서 온다. docker rm으로 컨테이너를 지우면 쓰기 계층은 사라지고 이미지 층과 이름 있는 볼륨은 남는다. 볼륨은 docker compose down -v나 docker volume rm처럼 볼륨을 지우라고 지시했을 때 사라진다.</desc>
+
+  <text class="d-strong" x="180" y="26" text-anchor="middle">docker rm 뒤에 남는 것</text>
+
+  <rect class="d-box" x="12" y="48" width="336" height="64" rx="6"/><rect class="d-line" x="12" y="48" width="336" height="64" rx="6" stroke-dasharray="4 4"/>
+  <text x="28" y="74" font-weight="700">쓰기 계층</text>
+  <text class="d-muted" x="28" y="96">컨테이너마다 하나</text>
+  <text class="d-accent" x="332" y="85" text-anchor="end" font-weight="700">✗ 사라짐</text>
+
+  <rect class="d-box" x="12" y="122" width="336" height="64" rx="6"/><rect class="d-line" x="12" y="122" width="336" height="64" rx="6"/>
+  <text x="28" y="148" font-weight="700">이미지 층</text>
+  <text class="d-muted" x="28" y="170">읽기 전용</text>
+  <text x="332" y="159" text-anchor="end" font-weight="700">✓ 남음</text>
+
+  <rect class="d-box" x="12" y="196" width="336" height="64" rx="6"/><rect class="d-line" x="12" y="196" width="336" height="64" rx="6" stroke-width="3"/>
+  <text x="28" y="222" font-weight="700">이름 있는 볼륨</text>
+  <text class="d-mono" x="28" y="244">/app/backend/data</text>
+  <text x="332" y="233" text-anchor="end" font-weight="700">✓ 남음</text>
+
+  <text class="d-muted" x="12" y="292">볼륨까지 지우는 것은 따로 있다</text>
+  <text class="d-mono" x="12" y="316">down -v, docker volume rm</text>
+</svg>
