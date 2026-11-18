@@ -1,0 +1,33 @@
+<svg class="diagram-svg diagram-tall" viewBox="0 0 360 388" role="img" aria-labelledby="dil-title dil-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="dil-title">Windows PC 안에서 가상환경, WSL2, 컨테이너가 놓인 자리</title>
+  <desc id="dil-desc">가장 바깥은 Windows이고 그 위에서 Ollama와 Python 가상환경이 돈다. Python 가상환경은 패키지만 나눈다. Windows 안의 WSL2 가상 머신은 자기 Linux 커널을 가진다. open-webui와 alpine 컨테이너는 파일과 프로세스는 따로 갖지만 그 Linux 커널 하나를 함께 쓴다.</desc>
+
+  <text class="d-strong" x="180" y="24" text-anchor="middle">'가상'이 나누는 범위가 다르다</text>
+
+  <rect class="d-line" x="6" y="42" width="348" height="338" rx="6"/>
+  <text x="22" y="68" font-weight="700">Windows</text>
+
+  <rect class="d-box" x="22" y="82" width="150" height="62" rx="6"/><rect class="d-line" x="22" y="82" width="150" height="62" rx="6"/>
+  <text x="97" y="107" text-anchor="middle">Ollama</text>
+  <text class="d-muted" x="97" y="130" text-anchor="middle">Windows 프로그램</text>
+
+  <rect class="d-box" x="188" y="82" width="150" height="62" rx="6"/><rect class="d-line" x="188" y="82" width="150" height="62" rx="6"/>
+  <text x="263" y="107" text-anchor="middle">Python 가상환경</text>
+  <text class="d-muted" x="263" y="130" text-anchor="middle">패키지만 나눔</text>
+
+  <rect class="d-line" x="22" y="160" width="316" height="206" rx="6"/>
+  <text x="38" y="186" font-weight="700">WSL2 가상 머신</text>
+  <text class="d-muted" x="38" y="208">커널까지 따로 가짐</text>
+
+  <rect class="d-box" x="38" y="222" width="134" height="62" rx="6"/><rect class="d-line" x="38" y="222" width="134" height="62" rx="6"/>
+  <text class="d-mono" x="105" y="247" text-anchor="middle">open-webui</text>
+  <text class="d-muted" x="105" y="270" text-anchor="middle">Debian 13</text>
+
+  <rect class="d-box" x="188" y="222" width="134" height="62" rx="6"/><rect class="d-line" x="188" y="222" width="134" height="62" rx="6"/>
+  <text class="d-mono" x="255" y="247" text-anchor="middle">alpine</text>
+  <text class="d-muted" x="255" y="270" text-anchor="middle">Alpine 3.20</text>
+
+  <path class="d-line" d="M105 284 V306 M255 284 V306"/>
+  <rect class="d-box" x="38" y="306" width="284" height="44" rx="6"/><rect class="d-line" x="38" y="306" width="284" height="44" rx="6" stroke-width="3"/>
+  <text x="180" y="334" text-anchor="middle" font-weight="700">함께 쓰는 Linux 커널</text>
+</svg>
