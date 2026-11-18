@@ -1,22 +1,22 @@
 <svg class="diagram-svg diagram-tall" viewBox="0 0 360 446" role="img" aria-labelledby="dic-title dic-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="dic-title">레지스트리, 이미지, 컨테이너의 관계</title>
-  <desc id="dic-desc">레지스트리에서 docker pull로 이미지를 내 PC에 받는다. 읽기 전용인 이미지 하나로 docker run을 두 번 실행하면 컨테이너 A와 B가 생기고, 컨테이너마다 자기 쓰기 레이어를 가진다. A에서 만든 note.txt는 B에 보이지 않는다. docker rm은 컨테이너와 그 쓰기 레이어만 지우고 이미지는 남긴다.</desc>
+  <title id="dic-title">실습 이미지와 컨테이너의 관계</title>
+  <desc id="dic-desc">실습 예시에서는 Docker Hub 레지스트리 docker.io에서 docker pull로 alpine:3.20 이미지를 이 실습의 Docker 엔진에 받는다. 읽기 전용인 이미지 하나로 docker run을 각각 실행하면 컨테이너 A와 B가 생기고, 컨테이너마다 자기 쓰기 레이어를 가진다. A에서 만든 note.txt는 B에 보이지 않는다. docker rm은 컨테이너와 그 쓰기 레이어를 지우고 이미지는 남긴다.</desc>
 
   <text class="d-strong" x="180" y="24" text-anchor="middle">이미지 하나, 컨테이너 여러 개</text>
 
   <rect class="d-box" x="50" y="44" width="260" height="62" rx="6"/><rect class="d-line" x="50" y="44" width="260" height="62" rx="6"/>
   <text x="180" y="69" text-anchor="middle" font-weight="700">레지스트리</text>
-  <text class="d-mono" x="180" y="93" text-anchor="middle">docker.io · ghcr.io</text>
+  <text class="d-mono" x="180" y="93" text-anchor="middle">Docker Hub · docker.io</text>
 
   <path class="d-line" d="M180 106 V150 M174 142 L180 150 L186 142"/>
   <text class="d-mono" x="192" y="133">docker pull</text>
 
   <rect class="d-box" x="50" y="152" width="260" height="62" rx="6"/><rect class="d-line" x="50" y="152" width="260" height="62" rx="6" stroke-width="3"/>
   <text class="d-mono" x="180" y="177" text-anchor="middle">alpine:3.20</text>
-  <text class="d-muted" x="180" y="201" text-anchor="middle">이미지: 읽기 전용 틀</text>
+  <text class="d-muted" x="180" y="201" text-anchor="middle">실습 예시 · 읽기 전용 이미지</text>
 
   <path class="d-line" d="M180 214 V250 M93 250 H267 M93 250 V288 M267 250 V288 M87 280 L93 288 L99 280 M261 280 L267 288 L273 280"/>
-  <text class="d-mono" x="192" y="239">docker run</text>
+  <text x="192" y="239">각각 <tspan class="d-mono">docker run</tspan></text>
 
   <rect class="d-box" x="12" y="290" width="162" height="88" rx="6"/><rect class="d-line" x="12" y="290" width="162" height="88" rx="6"/>
   <text x="93" y="315" text-anchor="middle" font-weight="700">컨테이너 A</text>
@@ -28,6 +28,6 @@
   <text class="d-muted" x="267" y="339" text-anchor="middle">쓰기 레이어</text>
   <text class="d-muted" x="267" y="362" text-anchor="middle">note.txt 없음</text>
 
-  <text x="12" y="408">✗ <tspan class="d-mono">docker rm</tspan>: 컨테이너만 삭제</text>
+  <text x="12" y="408">✗ <tspan class="d-mono">docker rm</tspan>: 컨테이너·쓰기 레이어 삭제</text>
   <text x="12" y="434">✓ 이미지는 그대로 남음</text>
 </svg>
