@@ -1,0 +1,57 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 322" role="img" aria-labelledby="compose-res-title compose-res-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="compose-res-title">폴더 이름이 server일 때 compose 항목이 만드는 Docker 자원</title>
+  <desc id="compose-res-desc">프로젝트 이름은 폴더 이름 server에서 온다. container_name에 적은 open-webui는 그대로 컨테이너 이름이 된다. 최상위 volumes의 webui-data는 앞에 프로젝트 이름이 붙어 볼륨 server_webui-data가 된다. 파일에 적지 않아도 기본 네트워크 server_default가 만들어진다.</desc>
+  <text class="d-strong" x="240" y="26" text-anchor="middle">폴더 이름 server = 프로젝트 이름</text>
+  <text class="d-muted" x="110" y="58" text-anchor="middle">compose 파일</text>
+  <text class="d-muted" x="370" y="58" text-anchor="middle">만들어지는 자원</text>
+
+  <rect class="d-box" x="12" y="70" width="196" height="70" rx="4"/>
+  <text class="d-mono" x="110" y="100" text-anchor="middle">container_name:</text>
+  <text class="d-mono" x="110" y="122" text-anchor="middle">open-webui</text>
+  <path class="d-line" d="M216 105H264M264 105l-7-5M264 105l-7 5"/>
+  <rect class="d-box" x="272" y="70" width="196" height="70" rx="4"/>
+  <text class="d-muted" x="370" y="98" text-anchor="middle">컨테이너</text>
+  <text class="d-mono" x="370" y="122" text-anchor="middle">open-webui</text>
+
+  <rect class="d-box" x="12" y="154" width="196" height="70" rx="4"/>
+  <text class="d-mono" x="110" y="184" text-anchor="middle">volumes:</text>
+  <text class="d-mono" x="110" y="206" text-anchor="middle">webui-data:</text>
+  <path class="d-line" d="M216 189H264M264 189l-7-5M264 189l-7 5"/>
+  <rect class="d-box" x="272" y="154" width="196" height="70" rx="4"/>
+  <text class="d-muted" x="370" y="182" text-anchor="middle">볼륨</text>
+  <text class="d-mono" x="370" y="206" text-anchor="middle"><tspan font-weight="700">server_</tspan>webui-data</text>
+
+  <rect class="d-line" x="12" y="238" width="196" height="70" rx="4" stroke-dasharray="5 4"/>
+  <text class="d-muted" x="110" y="268" text-anchor="middle">적지 않아도</text>
+  <text class="d-muted" x="110" y="290" text-anchor="middle">기본으로 생김</text>
+  <path class="d-line" d="M216 273H264M264 273l-7-5M264 273l-7 5"/>
+  <rect class="d-box" x="272" y="238" width="196" height="70" rx="4"/>
+  <text class="d-muted" x="370" y="266" text-anchor="middle">네트워크</text>
+  <text class="d-mono" x="370" y="290" text-anchor="middle"><tspan font-weight="700">server_</tspan>default</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 516" role="img" aria-labelledby="compose-res-n-title compose-res-n-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="compose-res-n-title">폴더 이름이 server일 때 compose 항목이 만드는 Docker 자원</title>
+  <desc id="compose-res-n-desc">프로젝트 이름은 폴더 이름 server에서 온다. container_name에 적은 open-webui는 그대로 컨테이너 이름이 된다. 최상위 volumes의 webui-data는 앞에 프로젝트 이름이 붙어 볼륨 server_webui-data가 된다. 파일에 적지 않아도 기본 네트워크 server_default가 만들어진다.</desc>
+  <text class="d-strong" x="180" y="26" text-anchor="middle">폴더 이름 server = 프로젝트 이름</text>
+
+  <rect class="d-box" x="12" y="44" width="336" height="44" rx="4"/>
+  <text class="d-mono" x="180" y="71" text-anchor="middle">container_name: open-webui</text>
+  <path class="d-line" d="M180 92V116M180 116l-5-7M180 116l5-7"/>
+  <rect class="d-box" x="12" y="120" width="336" height="66" rx="4"/>
+  <text class="d-muted" x="180" y="146" text-anchor="middle">컨테이너</text>
+  <text class="d-mono" x="180" y="170" text-anchor="middle">open-webui</text>
+
+  <rect class="d-box" x="12" y="204" width="336" height="44" rx="4"/>
+  <text class="d-mono" x="180" y="231" text-anchor="middle">volumes: webui-data:</text>
+  <path class="d-line" d="M180 252V276M180 276l-5-7M180 276l5-7"/>
+  <rect class="d-box" x="12" y="280" width="336" height="66" rx="4"/>
+  <text class="d-muted" x="180" y="306" text-anchor="middle">볼륨</text>
+  <text class="d-mono" x="180" y="330" text-anchor="middle"><tspan font-weight="700">server_</tspan>webui-data</text>
+
+  <rect class="d-line" x="12" y="364" width="336" height="44" rx="4" stroke-dasharray="5 4"/>
+  <text class="d-muted" x="180" y="391" text-anchor="middle">적지 않아도 기본으로 생김</text>
+  <path class="d-line" d="M180 412V436M180 436l-5-7M180 436l5-7"/>
+  <rect class="d-box" x="12" y="440" width="336" height="66" rx="4"/>
+  <text class="d-muted" x="180" y="466" text-anchor="middle">네트워크</text>
+  <text class="d-mono" x="180" y="490" text-anchor="middle"><tspan font-weight="700">server_</tspan>default</text>
+</svg>

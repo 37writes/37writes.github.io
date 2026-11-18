@@ -1,0 +1,70 @@
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 334" role="img" aria-labelledby="port-map-title port-map-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="port-map-title">ports 값의 세 부분과 받을 주소를 적을 때와 뺄 때의 차이</title>
+  <desc id="port-map-desc">127.0.0.1:3000:8080은 받을 주소, 이 PC의 포트, 컨테이너 포트 세 부분이다. 127.0.0.1을 적으면 이 PC에서만 접속할 수 있다. 주소를 빼고 3000:8080으로 쓰면 모든 주소에 공개되어 다른 PC에서도 닿을 수 있으므로 방화벽과 인증을 확인해야 한다.</desc>
+  <rect class="d-box" x="12" y="12" width="172" height="44" rx="4"/>
+  <text class="d-mono" x="98" y="39" text-anchor="middle">127.0.0.1</text>
+  <text class="d-muted" x="98" y="78" text-anchor="middle">받을 주소</text>
+  <text class="d-mono" x="190" y="39" text-anchor="middle">:</text>
+  <rect class="d-box" x="196" y="12" width="130" height="44" rx="4"/>
+  <text class="d-mono" x="261" y="39" text-anchor="middle">3000</text>
+  <text class="d-muted" x="261" y="78" text-anchor="middle">이 PC의 포트</text>
+  <text class="d-mono" x="332" y="39" text-anchor="middle">:</text>
+  <rect class="d-box" x="338" y="12" width="130" height="44" rx="4"/>
+  <text class="d-mono" x="403" y="39" text-anchor="middle">8080</text>
+  <text class="d-muted" x="403" y="78" text-anchor="middle">컨테이너 포트</text>
+
+  <rect class="d-line" x="12" y="100" width="222" height="222" rx="6"/>
+  <text class="d-mono" x="123" y="130" text-anchor="middle">127.0.0.1:3000:8080</text>
+  <text class="d-strong" x="123" y="164" text-anchor="middle">✓ 이 PC에서만</text>
+  <rect class="d-box" x="24" y="180" width="198" height="56" rx="4"/>
+  <text class="d-muted" x="123" y="203" text-anchor="middle">이 PC의 브라우저</text>
+  <text x="123" y="226" text-anchor="middle">✓ 접속됨</text>
+  <rect class="d-box" x="24" y="246" width="198" height="56" rx="4"/>
+  <text class="d-muted" x="123" y="269" text-anchor="middle">다른 PC</text>
+  <text x="123" y="292" text-anchor="middle">✗ 닿지 않음</text>
+
+  <rect class="d-line" x="246" y="100" width="222" height="222" rx="6"/>
+  <text class="d-mono" x="357" y="130" text-anchor="middle">3000:8080</text>
+  <text class="d-strong d-accent" x="357" y="164" text-anchor="middle">! 모든 주소에 공개</text>
+  <rect class="d-box" x="258" y="180" width="198" height="56" rx="4"/>
+  <text class="d-muted" x="357" y="203" text-anchor="middle">이 PC의 브라우저</text>
+  <text x="357" y="226" text-anchor="middle">✓ 접속됨</text>
+  <rect class="d-box" x="258" y="246" width="198" height="56" rx="4"/>
+  <text class="d-muted" x="357" y="269" text-anchor="middle">다른 PC</text>
+  <text class="d-accent" x="357" y="292" text-anchor="middle">! 방화벽 설정에 달림</text>
+</svg>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 360 590" role="img" aria-labelledby="port-map-n-title port-map-n-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="port-map-n-title">ports 값의 세 부분과 받을 주소를 적을 때와 뺄 때의 차이</title>
+  <desc id="port-map-n-desc">127.0.0.1:3000:8080은 받을 주소, 이 PC의 포트, 컨테이너 포트 세 부분이다. 127.0.0.1을 적으면 이 PC에서만 접속할 수 있다. 주소를 빼고 3000:8080으로 쓰면 모든 주소에 공개되어 다른 PC에서도 닿을 수 있으므로 방화벽과 인증을 확인해야 한다.</desc>
+  <rect class="d-box" x="12" y="12" width="124" height="44" rx="4"/>
+  <text class="d-mono" x="74" y="39" text-anchor="middle">127.0.0.1</text>
+  <text class="d-muted" x="74" y="78" text-anchor="middle">받을 주소</text>
+  <rect class="d-box" x="146" y="12" width="88" height="44" rx="4"/>
+  <text class="d-mono" x="190" y="39" text-anchor="middle">3000</text>
+  <text class="d-muted" x="190" y="78" text-anchor="middle">PC 포트</text>
+  <rect class="d-box" x="244" y="12" width="104" height="44" rx="4"/>
+  <text class="d-mono" x="296" y="39" text-anchor="middle">8080</text>
+  <text class="d-muted" x="296" y="78" text-anchor="middle">컨테이너</text>
+  <text class="d-mono" x="141" y="39" text-anchor="middle">:</text>
+  <text class="d-mono" x="239" y="39" text-anchor="middle">:</text>
+
+  <rect class="d-line" x="12" y="100" width="336" height="222" rx="6"/>
+  <text class="d-mono" x="180" y="130" text-anchor="middle">127.0.0.1:3000:8080</text>
+  <text class="d-strong" x="180" y="164" text-anchor="middle">✓ 이 PC에서만</text>
+  <rect class="d-box" x="24" y="180" width="312" height="56" rx="4"/>
+  <text class="d-muted" x="180" y="203" text-anchor="middle">이 PC의 브라우저</text>
+  <text x="180" y="226" text-anchor="middle">✓ 접속됨</text>
+  <rect class="d-box" x="24" y="246" width="312" height="56" rx="4"/>
+  <text class="d-muted" x="180" y="269" text-anchor="middle">다른 PC</text>
+  <text x="180" y="292" text-anchor="middle">✗ 닿지 않음</text>
+
+  <rect class="d-line" x="12" y="344" width="336" height="222" rx="6"/>
+  <text class="d-mono" x="180" y="374" text-anchor="middle">3000:8080</text>
+  <text class="d-strong d-accent" x="180" y="408" text-anchor="middle">! 모든 주소에 공개</text>
+  <rect class="d-box" x="24" y="424" width="312" height="56" rx="4"/>
+  <text class="d-muted" x="180" y="447" text-anchor="middle">이 PC의 브라우저</text>
+  <text x="180" y="470" text-anchor="middle">✓ 접속됨</text>
+  <rect class="d-box" x="24" y="490" width="312" height="56" rx="4"/>
+  <text class="d-muted" x="180" y="513" text-anchor="middle">다른 PC</text>
+  <text class="d-accent" x="180" y="536" text-anchor="middle">! 방화벽 설정에 달림</text>
+</svg>
