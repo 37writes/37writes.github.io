@@ -1,0 +1,278 @@
+---
+title: "컨테이너의 localhost는 왜 Windows가 아닐까: Open WebUI와 Ollama 연결 원리"
+date: 2026-11-18 19:20:00 +0900
+categories: [개발 도구, Docker]
+tags: [docker, windows, docker-desktop, networking, ollama, open-webui]
+description: "Windows에서는 되는 localhost:11434가 Docker 컨테이너 안에서는 왜 실패할까요? 컨테이너의 네트워크, host.docker.internal, OLLAMA_BASE_URL, OLLAMA_HOST를 Open WebUI와 Ollama 예제로 풀고 단계별 진단법까지 정리합니다."
+---
+
+> **시리즈: Windows에서 Docker 처음 배우기**
+> 1. Docker란 무엇인가: 이미지와 컨테이너
+> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop
+> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치
+> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기
+> 5. **컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal** ← 지금 글
+> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기
+
+Windows에 Ollama를 설치하고 PowerShell에서 주소를 열면 바로 응답이 옵니다.
+
+```powershell
+curl.exe http://localhost:11434/api/version
+```
+
+```text
+{"version":"0.40.16"}
+```
+
+그런데 같은 주소를 Open WebUI 컨테이너 안에서 부르면 실패합니다.
+
+```powershell
+docker exec open-webui curl -s -m 5 http://localhost:11434/api/version
+$LASTEXITCODE
+```
+
+```text
+7
+```
+
+`7`은 curl의 종료 코드로, 상대에게 연결하지 못했다는 뜻입니다. 주소를 한 글자도 바꾸지 않았는데 결과가 다른 이유는 **`localhost`가 "지금 이 명령을 실행하는 쪽 자신"을 가리키기 때문**입니다. 이 글은 그 차이에서 시작해 Open WebUI가 Windows의 Ollama에 닿는 경로를 따라가고, 연결이 안 될 때 어디부터 확인할지를 정리합니다.
+
+이 글의 예제는 시리즈 내내 쓰는 구성입니다. Ollama는 Windows 프로그램으로 돌고, Open WebUI만 Docker 컨테이너로 돕니다. 확인한 환경은 Docker Desktop(Docker 29.9.3, Compose 5.7.0), WSL 3.0.5, Ollama 0.40.16입니다.
+
+## 요청은 두 방향으로 오갑니다
+
+헷갈리는 이유는 이 구성에 요청이 두 개 있고, 방향이 서로 반대이기 때문입니다.
+
+<figure class="diagram">
+{% include figures/docker-container-to-host-ollama/two-request-paths.svg %}
+<figcaption>브라우저는 Windows에서 컨테이너로, Open WebUI는 컨테이너에서 Windows로 요청합니다. 그래서 두 요청에 쓰는 주소가 다릅니다</figcaption>
+</figure>
+
+1. **브라우저 → Open WebUI**: Windows의 브라우저가 `http://localhost:3000`을 엽니다. Docker가 이 요청을 컨테이너의 8080 포트로 넘깁니다.
+2. **Open WebUI → Ollama**: 컨테이너 안의 Open WebUI 서버가 `http://host.docker.internal:11434`로 요청합니다. 이 요청은 Windows의 Ollama에 도착합니다.
+
+Ollama를 부르는 쪽은 브라우저가 아니라 **Open WebUI의 백엔드**입니다. Open WebUI 문서도 Ollama 연결을 서버 쪽 요청으로 분류하고, 이때의 `localhost`는 Open WebUI가 돌고 있는 기계나 컨테이너라고 설명합니다. 브라우저가 Windows에 있다고 해서 Ollama 주소에 `localhost`를 쓸 수 없는 이유입니다.
+
+두 요청에 필요한 설정은 compose 파일에 모두 들어 있습니다.
+
+```yaml
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "127.0.0.1:3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - DEFAULT_MODELS=gemma4:12b-it-qat
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - webui-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  webui-data:
+```
+
+`ports`는 1번 요청을, `OLLAMA_BASE_URL`과 `extra_hosts`는 2번 요청을 담당합니다.
+
+## 컨테이너에는 자기만의 네트워크가 있습니다
+
+컨테이너는 Linux의 **네임스페이스**라는 격리 기능 위에서 돕니다. 네임스페이스는 프로세스에게 "자기 몫의 시스템 자원"만 보이게 하는 장치이고, 그중 네트워크 네임스페이스 덕분에 컨테이너마다 자기 네트워크 스택을 갖습니다. Docker 문서의 표현으로는 컨테이너가 보는 것은 IP 주소가 붙은 네트워크 인터페이스, 게이트웨이, 라우팅 표, DNS 같은 것들입니다.
+
+그래서 컨테이너 안의 `localhost`(`127.0.0.1`)는 Windows가 아니라 **컨테이너 자신**입니다. 직접 비교하면 분명합니다.
+
+| 어디서 실행 | 주소 | 결과 | 의미 |
+|---|---|---|---|
+| Windows | `localhost:11434/api/version` | `{"version":"0.40.16"}` | Windows에서 Ollama가 듣고 있음 |
+| 컨테이너 | `localhost:8080/health` | HTTP 200 | 컨테이너 자신의 Open WebUI가 응답 |
+| 컨테이너 | `localhost:11434/api/version` | curl 종료 코드 7 | 컨테이너 안에는 Ollama가 없음 |
+| 컨테이너 | `host.docker.internal:11434/api/version` | `{"version":"0.40.16"}` | 컨테이너 밖 Windows의 Ollama에 도달 |
+
+### bridge 네트워크와 컨테이너 IP
+
+컨테이너의 네트워크가 어디에 붙어 있는지도 확인해 봅니다. PowerShell이 `$k`, `$v`를 자기 변수로 풀지 않도록 앞에 백틱을 붙였습니다.
+
+{% raw %}
+```powershell
+docker inspect open-webui --format "{{range `$k, `$v := .NetworkSettings.Networks}}{{`$k}} {{`$v.IPAddress}} {{`$v.Gateway}}{{end}}"
+```
+{% endraw %}
+
+네트워크 이름, 컨테이너 IP, 게이트웨이 순서로 나옵니다.
+
+```text
+server_default 172.18.0.2 172.18.0.1
+```
+
+- `server_default`: Compose가 만든 네트워크입니다. Compose는 `<프로젝트 이름>_default` 네트워크를 만들어 서비스를 붙이고, 프로젝트 이름은 기본적으로 compose 파일이 있는 폴더 이름에서 옵니다.
+- `172.18.0.2`: 이 네트워크 안에서 컨테이너가 받은 IP입니다.
+- `172.18.0.1`: 컨테이너가 밖으로 나갈 때 거치는 게이트웨이입니다.
+
+이 네트워크의 종류가 **bridge**입니다. 소프트웨어로 만든 스위치에 컨테이너를 꽂는다고 생각하면 됩니다. 같은 bridge의 컨테이너끼리는 통신하고 서비스 이름으로 서로를 찾을 수 있습니다. 다만 Ollama는 이 네트워크에 없는 Windows 프로그램이므로, 서비스 이름으로는 찾을 수 없습니다. 컨테이너 IP는 다시 만들면 바뀔 수 있어서 설정에 적어 둘 값도 아닙니다.
+
+## 1번 요청: localhost:3000이 컨테이너 8080에 닿기까지
+
+`"127.0.0.1:3000:8080"`은 왼쪽부터 **Windows에서 받을 주소, Windows 포트, 컨테이너 포트**입니다.
+
+Docker Desktop 문서에 따르면 포트를 공개하면 Docker Desktop의 백엔드가 그 연결을 받아 Linux VM으로 전달하고, VM 안에서 컨테이너의 IP와 포트로 보냅니다. 앱 입장에서는 Windows의 일반 로컬 서비스처럼 접속할 수 있습니다.
+
+앞의 `127.0.0.1`은 보안상 의미가 있습니다. 이 주소를 적으면 Docker가 돌아가는 PC에서만 접속할 수 있습니다. 주소를 생략해 `"3000:8080"`으로 쓰면 모든 주소에 공개되고, Docker 문서도 이 기본 동작이 외부에 포트를 열 수 있다고 경고합니다. 다른 PC에 공개할 생각이 없다면 앞에 `127.0.0.1`을 붙여 두는 편이 안전합니다.
+
+## 2번 요청: host.docker.internal이 Windows에 닿기까지
+
+### OLLAMA_BASE_URL: 어디로 보낼지
+
+```yaml
+environment:
+  - OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+`OLLAMA_BASE_URL`은 Open WebUI가 사용할 Ollama 주소입니다. Open WebUI 문서에 따르면 Docker 이미지의 기본값도 이 주소입니다. 그래도 compose 파일에 적어 두면 파일만 읽어도 어디로 연결하는지 알 수 있습니다. 실행 중인 컨테이너에 실제로 들어간 값은 이렇게 확인합니다.
+
+```powershell
+docker exec open-webui printenv OLLAMA_BASE_URL
+```
+
+```text
+http://host.docker.internal:11434
+```
+
+### extra_hosts와 host-gateway: 그 이름을 어떤 IP로 볼지
+
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+
+`extra_hosts`는 컨테이너의 `/etc/hosts`에 이름과 IP를 추가합니다. `/etc/hosts`는 DNS에 묻기 전에 먼저 보는 "이름 → IP" 메모입니다. `host-gateway`는 Docker가 호스트의 내부 IP로 바꿔 넣는 특별한 값입니다.
+
+```powershell
+docker exec open-webui cat /etc/hosts
+```
+
+```text
+127.0.0.1       localhost
+192.168.65.254  host.docker.internal
+```
+
+실제 출력에는 IPv6와 컨테이너 자신의 줄도 있지만 여기서는 뺐습니다. 확인할 것은 `host.docker.internal` 줄이 있는지입니다. `192.168.65.254`는 공유기가 Windows에 준 주소가 아니라 Docker Desktop이 알려 주는 호스트의 내부 IP입니다. Docker 문서는 호스트의 IP가 바뀔 수 있다는 점을 들어 이 이름을 쓰라고 안내하므로, 설정에도 IP 대신 이름을 적습니다.
+
+사실 Docker Desktop에서는 이 줄이 없어도 이름이 풀립니다. `extra_hosts` 없이 띄운 임시 컨테이너에서도 `host.docker.internal`은 같은 `192.168.65.254`로 풀렸고 Ollama 응답도 받았습니다. 문서에도 Docker Desktop이 이 이름을 자동으로 처리한다고 나옵니다. 그럼에도 compose에 남겨 두면 이 컨테이너가 호스트에 접속한다는 의도가 드러나고, Open WebUI의 공식 실행 예제와도 같은 형태가 됩니다.
+
+## Ollama는 127.0.0.1에서만 듣는데 왜 연결될까
+
+여기서 이상한 점이 하나 있습니다. Windows에서 Ollama의 LISTEN 상태를 보면 `127.0.0.1`에만 묶여 있습니다.
+
+```powershell
+netstat -ano | findstr :11434 | findstr LISTENING
+```
+
+```text
+TCP    127.0.0.1:11434        0.0.0.0:0              LISTENING       <PID>
+```
+
+Ollama의 기본값이 `127.0.0.1:11434`이므로 정상입니다. 이 주소는 같은 PC 안에서 오는 연결만 받습니다. 그런데 컨테이너는 별도 네트워크에 있는데도 연결에 성공했습니다.
+
+Docker Desktop 문서는 컨테이너의 바깥 방향 트래픽을 이렇게 설명합니다. 트래픽은 VM에서 호스트로 전달되고, **호스트의 Docker Desktop 백엔드 프로세스가 받아 일반 앱과 같은 방식으로 TCP/IP 연결을 새로 만듭니다.** 그래서 컨테이너의 외부 연결은 Windows에서 `com.docker.backend`가 만든 연결로 보입니다.
+
+이 PC에서도 같은 모습이 관측됐습니다. 임시 컨테이너에서 `host.docker.internal:11434` 연결을 잠시 열어 둔 채 Windows의 연결 목록을 보니, 새로 생긴 연결은 이것이었습니다.
+
+| 연결을 만든 프로세스 | 출발 주소 | 도착 주소 |
+|---|---|---|
+| `com.docker.backend` | `127.0.0.1:<임시 포트>` | `127.0.0.1:11434` |
+
+즉 Ollama 입장에서 상대는 컨테이너 IP가 아니라 **같은 PC의 `127.0.0.1`에서 들어온 프로그램**이었습니다. `127.0.0.1`에서만 듣는 Ollama가 받아 준 이유로 충분합니다.
+
+다만 범위는 여기까지입니다. 문서에서 "호스트의 `127.0.0.1` 서비스에 항상 이렇게 연결된다"는 보장은 찾지 못했고, Docker Desktop이 내부에서 목적지를 어떻게 바꾸는지도 이 글에서는 단정하지 않습니다. 이 PC는 WSL의 `networkingMode=mirrored` 설정을 쓰고 있으며, 기본값인 NAT 모드에서 같은 결과가 나오는지는 확인하지 못했습니다. 그러니 이 내용은 원리로 외우기보다, 아래 진단 순서로 자기 PC에서 직접 확인하는 것이 좋습니다.
+
+## OLLAMA_HOST=0.0.0.0은 언제 필요할까
+
+Ollama 연결 문제를 찾아보면 `OLLAMA_HOST=0.0.0.0`을 설정하라는 답을 자주 만납니다. Open WebUI의 문제 해결 문서에도 나오는 방법입니다. 이 값은 Ollama가 PC의 모든 네트워크 주소에서 듣게 합니다.
+
+이 글의 구성에서는 필요하지 않았습니다. `OLLAMA_HOST` 환경 변수가 없고 Ollama가 `127.0.0.1`에서만 듣는 상태로 위 연결이 모두 성공했기 때문입니다. 연결이 안 된다고 먼저 이 값부터 바꾸지 말고, 다음 절의 진단으로 원인을 좁혀 보세요.
+
+`0.0.0.0`이 위험할 수 있는 이유는 Ollama의 API 성격 때문입니다. Ollama 문서는 `localhost:11434`의 로컬 API에 인증이 필요 없다고 설명합니다. 이 API를 모든 주소로 열면, 방화벽이 막지 않는 한 같은 네트워크의 다른 PC도 모델 목록을 보거나 모델 실행을 요청할 수 있는 상태가 됩니다. 다른 PC에 공개할 때는 방화벽으로 접근 범위를 제한하고, 인증을 맡을 앞단을 함께 검토해야 합니다.
+
+## 연결이 안 될 때: 안쪽부터 네 단계
+
+Ollama에서 시작해 Open WebUI 화면 쪽으로 나아갑니다. 앞 단계가 실패하면 그 단계부터 고칩니다. 모두 읽기 전용 명령이라 실행 중인 컨테이너와 데이터를 바꾸지 않습니다.
+
+### 1단계: Ollama가 듣고 있는가
+
+```powershell
+netstat -ano | findstr :11434 | findstr LISTENING
+```
+
+정상이면 `127.0.0.1:11434`와 `LISTENING`이 보입니다. 아무것도 안 나오면 Ollama가 실행 중이 아니거나 다른 포트를 쓰는 것입니다.
+
+### 2단계: Windows에서 API가 응답하는가
+
+```powershell
+curl.exe http://localhost:11434/api/version
+```
+
+정상이면 `{"version":"..."}`이 나옵니다. Windows PowerShell 5.1의 `curl`은 다른 명령의 별칭이므로 `curl.exe`로 씁니다.
+
+### 3단계: 컨테이너에서 Windows까지 닿는가
+
+컨테이너가 떠 있고 이름이 등록됐는지 본 다음, 실제로 요청합니다.
+
+```powershell
+docker ps --filter name=open-webui
+docker exec open-webui cat /etc/hosts
+docker exec open-webui curl -s -m 5 http://host.docker.internal:11434/api/version
+$LASTEXITCODE
+```
+
+정상이면 상태에 `healthy`, 포트에 `127.0.0.1:3000->8080/tcp`가 보이고, hosts에 `host.docker.internal` 줄이 있으며, 버전 JSON과 종료 코드 `0`이 나옵니다.
+
+### 4단계: Open WebUI가 모델을 보는가
+
+```powershell
+docker exec open-webui curl -s -m 5 http://host.docker.internal:11434/api/tags
+```
+
+정상이면 응답의 `models`에 `ollama list`와 같은 모델이 들어 있습니다. 그다음 `http://localhost:3000`을 열어 모델 선택 목록에 같은 이름이 보이는지 확인합니다.
+
+### 증상별 원인표
+
+| 증상 | 가능성이 큰 원인 | 할 일 |
+|---|---|---|
+| 1단계에 아무것도 없음 | Ollama가 꺼져 있거나 포트가 다름 | Ollama 실행, 포트 확인 |
+| 컨테이너에서 `localhost:11434`가 종료 코드 7 | 정상 동작. 컨테이너 자신을 부른 것 | `host.docker.internal` 사용 |
+| `OLLAMA_BASE_URL`이 `localhost`로 되어 있음 | 주소 설정 오류 | compose 수정 후 `docker compose up -d` |
+| 종료 코드 6 | 이름을 찾지 못함. 오타이거나 hosts 항목 없음 | 주소 철자, `extra_hosts`, `/etc/hosts` 확인 |
+| `host.docker.internal:11434`가 종료 코드 7 | 호스트의 그 포트에 연결할 수 없음. Ollama 꺼짐, 포트 불일치 | 1·2단계로 돌아가기 |
+| 3·4단계는 정상인데 화면에 모델이 없음 | 화면에서 저장한 연결 주소가 환경 변수보다 우선 | 관리자 Settings > Connections의 Ollama 주소 확인 |
+| `localhost:3000`이 안 열림 | 컨테이너가 꺼졌거나 아직 시작 중, 포트 공개 오류 | `docker ps`의 상태와 포트 확인 |
+| 다른 PC에서 3000이 안 열림 | `127.0.0.1`로 공개했으므로 의도된 동작 | 공개가 정말 필요한지부터 검토 |
+
+몇 가지만 덧붙입니다.
+
+- 종료 코드 6은 이름을 찾지 못한 경우이고, 7은 이름은 찾았거나 주소는 있지만 연결하지 못한 경우입니다. 없는 이름 `ollama`로는 6이, Ollama가 듣지 않는 `host.docker.internal:11435`로는 7이 나왔습니다.
+- compose의 환경 변수를 고쳤다면 `docker compose up -d`로 반영합니다. Compose는 설정이 바뀐 컨테이너를 멈추고 다시 만들며, 볼륨은 유지합니다.
+- Open WebUI는 화면에서 저장한 연결 설정을 데이터베이스에 보관하고, 이 값이 환경 변수보다 우선할 수 있습니다. 환경 변수를 고쳤는데 그대로라면 이 화면을 확인합니다.
+- 이 PC에서는 `localhost:3000`이 정상으로 열리는데도 Windows의 `netstat`에 3000 포트 LISTEN이 보이지 않았습니다. 임시 컨테이너로 다른 포트를 공개해도 같았습니다. 그러니 3000번은 `netstat`만으로 판단하지 말고 `docker ps`와 실제 접속 결과로 확인하세요.
+
+## 정리
+
+- `localhost`는 그 명령을 실행한 쪽 자신입니다. Windows에서는 Windows, 컨테이너에서는 컨테이너입니다.
+- 브라우저 → `localhost:3000` → 컨테이너 8080과, Open WebUI → `host.docker.internal:11434` → Windows Ollama는 방향이 다른 별개의 요청입니다.
+- `OLLAMA_BASE_URL`은 목적지를, `extra_hosts`는 그 이름의 IP를, `ports`는 반대 방향 입구를 정합니다.
+- 이 구성에서는 Ollama가 `127.0.0.1`에서만 들어도 연결됐고, Windows에서는 `com.docker.backend`가 만든 로컬 연결로 보였습니다. `OLLAMA_HOST=0.0.0.0`은 필요하지 않았습니다.
+- 문제가 생기면 Ollama LISTEN → Windows API → 컨테이너 안 hosts와 curl → Open WebUI 모델 목록 순으로 확인합니다.
+
+## 참고 문서
+
+- [Docker Desktop networking: How it works](https://docs.docker.com/desktop/features/networking/)
+- [Docker Desktop networking how-tos](https://docs.docker.com/desktop/features/networking/networking-how-tos/)
+- [docker container run: --add-host와 host-gateway](https://docs.docker.com/reference/cli/docker/container/run/)
+- [Compose file reference: extra_hosts](https://docs.docker.com/reference/compose-file/services/)
+- [Networking in Compose](https://docs.docker.com/compose/how-tos/networking/)
+- [Docker port publishing](https://docs.docker.com/engine/network/port-publishing/)
+- [Ollama FAQ](https://docs.ollama.com/faq), [Ollama API authentication](https://docs.ollama.com/api/authentication)
+- [Open WebUI environment variables](https://docs.openwebui.com/reference/env-configuration/), [Open WebUI connection errors](https://docs.openwebui.com/troubleshooting/connection-error/)
+
+다음 편에서는 로그 확인, 이미지 업데이트, 데이터를 지키는 방법까지 Docker 운영과 문제 해결을 다룹니다.
