@@ -7,11 +7,11 @@ description: "Windows의 Docker Desktop에서 Open WebUI를 운영할 때 필요
 ---
 
 > **시리즈: Windows에서 Docker 처음 배우기**
-> 1. Docker란 무엇인가: 이미지와 컨테이너 (예정)
-> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop (예정)
-> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
-> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
-> 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
+> 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
+> 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
+> 3. [무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치]({% post_url 2026-11-18-docker-where-files-live %})
+> 4. [docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
+> 5. [컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal]({% post_url 2026-11-18-docker-container-to-host-ollama %})
 > 6. **Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기** ← 지금 글
 
 컨테이너를 한 번 띄우는 것과 계속 쓰는 것은 다른 일입니다. 화면이 안 열리면 어디부터 볼지, 정리 명령이 대화 기록까지 지우지는 않는지, 업데이트가 잘못되면 어떻게 돌아올지, 답변이 왜 늦는지를 알아야 합니다.

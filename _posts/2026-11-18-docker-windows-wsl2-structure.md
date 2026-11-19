@@ -9,10 +9,10 @@ description: "Windows에서 Linux 컨테이너가 도는 구조를 WSL2, docker-
 > **시리즈: Windows에서 Docker 처음 배우기**
 > 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
 > 2. **Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop** ← 지금 글
-> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
-> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
-> 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
-> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기 (예정)
+> 3. [무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치]({% post_url 2026-11-18-docker-where-files-live %})
+> 4. [docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
+> 5. [컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal]({% post_url 2026-11-18-docker-container-to-host-ollama %})
+> 6. [Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 Windows PC에 WSL과 Docker Desktop을 설치하고 Open WebUI 컨테이너를 띄웠습니다. 브라우저에서 `http://localhost:3000`이 열리니 잘 돌아가는 것은 분명한데, 상태를 확인하다 이상한 장면을 만났습니다.
 
@@ -268,7 +268,7 @@ Docker Desktop은 WSL2 엔진의 데이터를 기본적으로 `%LOCALAPPDATA%\Do
 - 이 글에서 다루는 WSL2 방식에서는 `desktop-linux`와 로컬 `npipe`, `docker version`의 `Server`, `docker info`의 Linux/WSL2 커널을 함께 보면 구조를 확인할 수 있습니다.
 - 부팅 설정을 바꿨다면 시스템 종료가 아니라 **다시 시작**을 합니다.
 
-다음 편에서는 이 구조에서 이미지·컨테이너·볼륨이 실제로 어느 폴더에 생기는지 따라가 봅니다.
+다음 편에서는 이 구조에서 이미지·컨테이너·볼륨이 실제로 어느 폴더에 생기는지 따라가 봅니다. [3편 읽기]({% post_url 2026-11-18-docker-where-files-live %})
 
 ## 참고 문서
 

@@ -9,10 +9,10 @@ description: "Windows에서 Open WebUI를 띄워 놓고도 무엇이 어디서 �
 > **시리즈: Windows에서 Docker 처음 배우기**
 > 1. **Docker란 무엇인가: 이미지와 컨테이너** ← 지금 글
 > 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
-> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
-> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
-> 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
-> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기 (예정)
+> 3. [무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치]({% post_url 2026-11-18-docker-where-files-live %})
+> 4. [docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
+> 5. [컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal]({% post_url 2026-11-18-docker-container-to-host-ollama %})
+> 6. [Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 Windows PC에 WSL, Docker Desktop, Ollama, Open WebUI를 안내대로 설치했습니다. 브라우저에서 `http://localhost:3000`을 열면 채팅 화면이 뜨고 답도 돌아옵니다. 그런데 막상 "Open WebUI는 지금 어디서 돌고 있나요?"라는 질문을 받으면 답하기 어렵습니다. Windows 프로그램일까요, WSL 안일까요? 컨테이너를 지우면 대화 기록도 사라질까요? 설치 중에 본 "가상환경", "가상 머신", "컨테이너"는 같은 말일까요?
 

@@ -7,12 +7,12 @@ description: "Windows에서는 되는 localhost:11434가 Docker 컨테이너 안
 ---
 
 > **시리즈: Windows에서 Docker 처음 배우기**
-> 1. Docker란 무엇인가: 이미지와 컨테이너 (예정)
-> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop (예정)
-> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
-> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
+> 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
+> 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
+> 3. [무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치]({% post_url 2026-11-18-docker-where-files-live %})
+> 4. [docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
 > 5. **컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal** ← 지금 글
-> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기 (예정)
+> 6. [Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 이 글은 Windows에서 Ollama와 Docker Desktop이 실행 중이고 Open WebUI 컨테이너가 떠 있다고 전제합니다. PowerShell에서 Ollama 주소를 부르면 바로 응답이 옵니다.
 
@@ -286,7 +286,7 @@ docker exec open-webui printenv OLLAMA_BASE_URLS
 - 이 구성에서는 Ollama가 `127.0.0.1`에서만 들어도 연결됐고, Windows에서는 `com.docker.backend`가 만든 로컬 연결로 보였습니다. `OLLAMA_HOST=0.0.0.0`은 필요하지 않았습니다.
 - 문제가 생기면 Ollama LISTEN → Windows API → 컨테이너 안 curl → Open WebUI 모델 목록 순으로 확인합니다.
 
-다음 편에서는 로그 확인, 이미지 업데이트, 데이터를 지키는 방법까지 Docker 운영과 문제 해결을 다룹니다.
+다음 편에서는 로그 확인, 이미지 업데이트, 데이터를 지키는 방법까지 Docker 운영과 문제 해결을 다룹니다. [6편 읽기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 ## 참고 문서
 

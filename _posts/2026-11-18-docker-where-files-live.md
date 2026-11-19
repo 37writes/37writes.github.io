@@ -7,12 +7,12 @@ description: "Windows의 Docker Desktop에서 compose 파일, 설정, 로그, vh
 ---
 
 > **시리즈: Windows에서 Docker 처음 배우기**
-> 1. Docker란 무엇인가: 이미지와 컨테이너 (예정)
-> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop (예정)
+> 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
+> 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
 > 3. **무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치** ← 지금 글
-> 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
-> 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
-> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기 (예정)
+> 4. [docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
+> 5. [컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal]({% post_url 2026-11-18-docker-container-to-host-ollama %})
+> 6. [Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 Open WebUI를 Docker로 띄우고 나면 이상한 점이 하나 생깁니다. 내려받은 이미지는 6GB가 넘고 채팅 기록도 쌓이는데, compose 파일이 있는 폴더를 열어 보면 파일이 `docker-compose.yml` 하나뿐입니다. `docker volume inspect`가 알려 주는 `/var/lib/docker/volumes/...` 경로는 탐색기에 붙여 넣어도 열리지 않습니다.
 
@@ -313,7 +313,7 @@ Docker Desktop을 제거하는 것도 조심해야 합니다. 공식 문서는 �
 - 컨테이너를 지우면 쓰기 계층은 사라지지만 이름 있는 볼륨은 남습니다. `docker compose down -v`는 볼륨까지 지웁니다.
 - 저장 위치는 Docker Desktop 설정에서 바꾸고, vhdx 파일을 직접 옮기거나 지우지 않습니다.
 
-다음 편에서는 이 구성을 만든 `docker-compose.yml`을 한 줄씩 읽어 봅니다.
+다음 편에서는 이 구성을 만든 `docker-compose.yml`을 한 줄씩 읽어 봅니다. [4편 읽기]({% post_url 2026-11-18-docker-compose-yml-line-by-line %})
 
 ## 참고 자료
 

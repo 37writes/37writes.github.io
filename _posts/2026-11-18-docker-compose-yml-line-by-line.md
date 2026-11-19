@@ -7,12 +7,12 @@ description: "Open WebUI의 docker-compose.yml을 위에서 아래로 읽으며 
 ---
 
 > **시리즈: Windows에서 Docker 처음 배우기**
-> 1. Docker란 무엇인가: 이미지와 컨테이너 (예정)
-> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop (예정)
-> 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
+> 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
+> 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
+> 3. [무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치]({% post_url 2026-11-18-docker-where-files-live %})
 > 4. **docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기** ← 지금 글
-> 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
-> 6. Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기 (예정)
+> 5. [컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal]({% post_url 2026-11-18-docker-container-to-host-ollama %})
+> 6. [Docker 운영과 문제 해결: 로그, 업데이트, 데이터 지키기]({% post_url 2026-11-18-docker-operations-troubleshooting %})
 
 안내서대로 `docker-compose.yml`을 만들고 `docker compose up -d`를 실행하면 Open WebUI가 뜹니다. 브라우저에서 `http://localhost:3000`을 열면 화면도 나옵니다. 그런데 파일을 고쳐야 할 때가 오면 막힙니다. 포트의 숫자 중 어느 쪽을 바꿔야 하는지, 폴더를 옮겨도 데이터가 남는지, `unhealthy`가 떴을 때 고장인지 알 수 없기 때문입니다.
 
@@ -450,4 +450,4 @@ docker compose -f .\docker-compose.yml -p compose-practice down -v
 
 확인 순서는 `config`로 해석 결과를 보고, `up -d`로 띄운 뒤, `ps`에서 `healthy`와 포트를 보고, 문제가 있으면 `logs`를 읽는 것입니다.
 
-다음 편에서는 이 파일의 `host.docker.internal`을 파고듭니다. 컨테이너 안의 `localhost`로는 닿지 않는 Windows의 Ollama에 어떻게 연결되는지 확인합니다.
+다음 편에서는 이 파일의 `host.docker.internal`을 파고듭니다. 컨테이너 안의 `localhost`로는 닿지 않는 Windows의 Ollama에 어떻게 연결되는지 확인합니다. [5편 읽기]({% post_url 2026-11-18-docker-container-to-host-ollama %})
