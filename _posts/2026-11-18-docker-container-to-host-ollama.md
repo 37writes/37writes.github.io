@@ -192,11 +192,11 @@ Docker Desktop 문서는 컨테이너의 바깥 방향 트래픽을 이렇게 �
 
 ## OLLAMA_HOST=0.0.0.0은 언제 필요할까
 
-Ollama 연결 문제를 찾아보면 `OLLAMA_HOST=0.0.0.0`을 설정하라는 답을 자주 만납니다. Open WebUI의 문제 해결 문서에도 나오는 방법입니다. 이 값은 Ollama가 PC의 모든 IPv4 인터페이스에서 듣게 합니다.
+Ollama 연결 문제를 찾아보면 `OLLAMA_HOST=0.0.0.0`을 설정하라는 답을 자주 만납니다. Open WebUI의 문제 해결 문서에도 나오는 방법입니다. `0.0.0.0`은 특정 주소 하나가 아니라 모든 IPv4 인터페이스를 뜻하는 IPv4 와일드카드입니다.
 
 이 글의 구성에서는 필요하지 않았습니다. `OLLAMA_HOST` 환경 변수가 없고 Ollama가 `127.0.0.1`에서만 듣는 상태로 위 연결이 모두 성공했기 때문입니다. 연결이 안 된다고 먼저 이 값부터 바꾸지 말고, 다음 절의 진단으로 원인을 좁혀 보세요.
 
-`0.0.0.0`이 위험할 수 있는 이유는 Ollama의 API 성격 때문입니다. Ollama 문서는 `localhost:11434`의 로컬 API에 인증이 필요 없다고 설명합니다. 이 API를 모든 IPv4 인터페이스에 열면, 방화벽이 막지 않는 한 같은 네트워크의 다른 PC도 모델 목록을 보거나 모델 실행을 요청할 수 있는 상태가 됩니다. 다른 PC에 공개할 때는 방화벽으로 접근 범위를 제한하고, 인증을 맡을 앞단을 함께 검토해야 합니다.
+`0.0.0.0`이 위험할 수 있는 이유는 Ollama의 API 성격 때문입니다. Ollama 문서는 `localhost:11434`의 로컬 API에 인증이 필요 없다고 설명합니다. 이 API를 외부 인터페이스에 열면, 방화벽이 막지 않는 한 같은 네트워크의 다른 PC도 모델 목록을 보거나 모델 실행을 요청할 수 있는 상태가 됩니다. 설정값만 보고 공개 범위를 판단하지 말고, 앞의 `netstat` 명령으로 실제 수신 주소를 확인하세요. 다른 PC에 공개할 때는 방화벽에서 IPv4와 IPv6의 접근 범위를 함께 확인해 제한하고, 인증을 맡을 앞단도 검토해야 합니다.
 
 ## 연결이 안 될 때: 안쪽부터 네 단계
 
@@ -234,7 +234,7 @@ $LASTEXITCODE
 
 종료 코드부터 나눕니다. 6은 이름을 찾지 못한 것, 7은 연결하지 못한 것, 28은 `-m`으로 준 시간 안에 끝나지 않은 것입니다. 그다음 이 순서로 봅니다.
 
-1. **주소·포트와 적용된 설정**: 명령의 주소와 Ollama 포트가 맞는지, `printenv OLLAMA_BASE_URL` 값이 맞는지 봅니다.
+1. **호스트명과 포트**: curl에 적은 `host.docker.internal`의 철자와 포트를 보고, 그 포트가 1단계 `netstat`에 나온 Ollama 포트와 같은지 확인합니다. 이 curl은 주소를 직접 적었으므로 `OLLAMA_BASE_URL`을 읽지 않습니다. 환경 변수는 직접 호출이 성공한 뒤 4단계에서 봅니다.
 2. **Docker Desktop 네트워크**: 설정의 Network에서 Docker subnet이 지금 쓰는 네트워크 대역과 겹치지 않는지 봅니다.
 3. **Windows 방화벽과 보안 프로그램**: 컨테이너의 바깥 연결은 `com.docker.backend`에서 나가는 것으로 보이므로, 이 프로세스가 막혔는지 확인합니다. 방화벽을 통째로 끄지는 않습니다.
 4. **그래도 실패하면**: 앞의 `OLLAMA_HOST` 절에서 위험을 읽고, 필요한 범위로만 바인딩 변경을 검토합니다.
@@ -247,6 +247,15 @@ docker exec open-webui curl -sS -m 5 http://host.docker.internal:11434/api/tags
 
 정상이면 응답의 `models`에 설치한 모델이 들어 있습니다. 비어 있으면 Windows에서 `ollama list`로 설치 여부를 봅니다. 그다음 `http://localhost:3000`을 열어 모델 선택 목록에 같은 이름이 보이는지 확인합니다.
 
+직접 호출은 성공하는데 Open WebUI 화면에 문제가 있으면, 그때 컨테이너에 전달된 주소 설정을 봅니다.
+
+```powershell
+docker exec open-webui printenv OLLAMA_BASE_URL
+docker exec open-webui printenv OLLAMA_BASE_URLS
+```
+
+이 글의 구성에서는 첫 줄에 `http://host.docker.internal:11434`가 나오고, 설정하지 않은 `OLLAMA_BASE_URLS`는 아무것도 출력하지 않습니다.
+
 ### 증상별 원인표
 
 | 증상 | 가능성이 큰 원인 | 할 일 |
@@ -257,14 +266,14 @@ docker exec open-webui curl -sS -m 5 http://host.docker.internal:11434/api/tags
 | 종료 코드 6 | 이름을 찾지 못함. 주소 오타 가능성 | 주소 철자 확인, 위 3단계 실패 순서 |
 | `host.docker.internal:11434`가 종료 코드 7 | 그 주소·포트에 연결하지 못함 | 1·2단계 실패면 그쪽부터, 통과면 위 3단계 실패 순서 |
 | 종료 코드 28 | 제한 시간 안에 끝나지 않음 | 위 3단계 실패 순서 |
-| 3·4단계는 정상인데 화면에 모델이 없음 | 저장된 연결 주소, `OLLAMA_BASE_URLS`, 꺼진 연결, 모델 필터 | 관리자 Settings > Connections의 Ollama 연결과 Manage의 Model IDs (Filter) 확인, `printenv OLLAMA_BASE_URLS` |
+| 3·4단계는 정상인데 화면에 모델이 없음 | 저장된 연결 주소, `OLLAMA_BASE_URLS`, 꺼진 연결, 모델 필터 | 관리자 Settings > Connections의 Ollama 연결과 Manage의 Model IDs (Filter) 확인, `docker exec open-webui printenv OLLAMA_BASE_URLS` |
 | `localhost:3000`이 안 열림 | 컨테이너가 꺼졌거나 아직 시작 중, 포트 공개 오류 | `docker ps`의 상태와 포트 확인 |
 | 다른 PC에서 3000이 안 열림 | `127.0.0.1`로 공개했으므로 의도된 동작 | 공개가 정말 필요한지부터 검토 |
 
 몇 가지만 덧붙입니다.
 
 - 임시 컨테이너에서 없는 이름 `ollama`는 약 4초 뒤 6, 아무것도 듣지 않는 `host.docker.internal:11435`는 7, 접속만 받고 응답하지 않는 서버는 28이 나왔습니다. 없는 이름도 `-m 3`처럼 제한을 짧게 주면 이름 해석 중에 28로 끝났습니다.
-- compose의 환경 변수를 고쳤다면 **기존 compose 폴더에서 같은 프로젝트 이름으로** `docker compose up -d`를 실행합니다. 설정이 바뀐 컨테이너는 다시 만들어지므로 잠깐 접속이 끊길 수 있고, 볼륨은 유지됩니다. 프로젝트 이름이 달라지면 새 빈 볼륨이 붙습니다.
+- compose의 환경 변수를 고쳤다면 **기존 compose 폴더에서 같은 프로젝트 이름으로** `docker compose up -d`를 실행합니다. 설정이 바뀐 컨테이너는 다시 만들어지므로 잠깐 접속이 끊길 수 있고, 볼륨은 유지됩니다. 프로젝트 이름이 달라지면 기존 프로젝트의 볼륨이 연결되지 않을 수 있고, 기존 컨테이너와 이름이 충돌할 수 있습니다.
 - 문제 해결에 `docker compose down -v`는 쓰지 않습니다. `-v`는 볼륨까지 지워 계정과 대화 데이터가 사라질 수 있습니다.
 - Open WebUI는 화면에서 저장한 연결 설정을 데이터베이스에 보관하고, 이 값이 환경 변수보다 우선할 수 있습니다. `OLLAMA_BASE_URLS`도 `OLLAMA_BASE_URL`보다 우선합니다. `printenv` 값이 맞는데 동작이 다르면 이 둘을 확인합니다.
 - 이 PC에서는 `localhost:3000`이 정상으로 열리는데도 Windows의 `netstat`에 3000 포트 LISTEN이 보이지 않았습니다. 임시 컨테이너로 다른 포트를 공개해도 같았습니다. 그러니 3000번은 `netstat`만으로 판단하지 말고 `docker ps`와 실제 접속 결과로 확인하세요.
