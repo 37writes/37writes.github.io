@@ -52,7 +52,7 @@ volumes:
 
 ## Compose는 긴 `docker run`을 파일로 옮긴 것
 
-같은 구성을 명령 하나로 쓰면 이렇게 됩니다. **Compose와 비교하려는 예시이니 실행하지 마세요.** 이름 `open-webui`와 3000 포트가 Compose 구성과 겹칩니다. PowerShell 기준이고, 줄 끝의 백틱은 줄 잇기이며 그 뒤에 공백이 있으면 안 됩니다.
+같은 구성을 명령 하나로 쓰면 이렇게 됩니다. **Compose와 비교하려는 예시이니 실행하지 마세요.** 실제 실습은 아래 '따라 하기' 절부터입니다. 이름 `open-webui`와 3000 포트가 Compose 구성과 겹칩니다. PowerShell 기준이고, 줄 끝의 백틱은 줄 잇기이며 그 뒤에 공백이 있으면 안 됩니다.
 
 ```powershell
 docker run -d `
@@ -229,7 +229,7 @@ services:
   # 이하 동일
 ```
 
-다른 폴더에서 같은 `name:`을 적어 실행해 보니 표시 파일이 있는 기존 볼륨이 연결됐습니다. 이름은 `-p` 옵션, `COMPOSE_PROJECT_NAME` 환경 변수, 파일의 `name:`, 프로젝트 폴더 이름, Compose 파일을 지정하지 않았을 때의 현재 폴더 이름 순서로 적용됩니다.
+다른 폴더에서 같은 `name:`을 적어 실행해 보니 표시 파일이 있는 기존 볼륨이 연결됐습니다. 이름은 `-p` 옵션, `COMPOSE_PROJECT_NAME` 환경 변수, 파일의 `name:`, 프로젝트 폴더 이름(여러 파일을 지정하면 첫 번째 Compose 파일의 폴더), Compose 파일을 지정하지 않았을 때의 현재 폴더 이름 순서로 적용됩니다.
 
 ## 따라 하기: 운영 중인 구성을 건드리지 않는 실습
 
@@ -258,7 +258,7 @@ notepad docker-compose.yml
       - "127.0.0.1:3100:8080"
 ```
 
-저장한 뒤 `Get-ChildItem -Name`에 `docker-compose.yml`이 보여야 합니다. `docker-compose.yml.txt`라면 이름을 고칩니다. 3100도 쓰이고 있으면 가운데 숫자와 아래의 확인 주소를 함께 바꿉니다.
+저장한 뒤 `Get-ChildItem -Name`에 `docker-compose.yml`이 보여야 합니다. `docker-compose.yml.txt`라면 이름을 고칩니다. 3100은 예시입니다. 3100도 쓰이고 있으면 가운데 숫자를 다른 포트로 바꾸고, 아래 출력과 주소의 3100은 고른 포트로 읽습니다.
 
 ### 1. 실행 전에 `docker compose config`
 
@@ -288,7 +288,7 @@ volumes:
     name: compose-practice_webui-data
 ```
 
-`name`이 `compose-practice`, `published`가 `3100`, 볼륨 이름이 `compose-practice_webui-data`인지 대조합니다. 하나라도 다르거나 기존 프로젝트와 겹치면 다음 단계로 가지 않습니다.
+`name`이 `compose-practice`, `published`가 앞에서 고른 호스트 포트, 볼륨 이름이 `compose-practice_webui-data`인지 대조합니다. 하나라도 다르거나 기존 프로젝트와 겹치면 다음 단계로 가지 않습니다.
 
 ### 2. `docker compose up -d`
 
@@ -329,7 +329,7 @@ NAME                  IMAGE                                COMMAND           SER
 open-webui-practice   ghcr.io/open-webui/open-webui:main   "bash start.sh"   open-webui   1 second ago   Up Less than a second (health: starting)   127.0.0.1:3100->8080/tcp
 ```
 
-확인할 것은 두 가지입니다. `STATUS`가 최종적으로 `Up ... (healthy)`가 되는지, `PORTS`가 `127.0.0.1:3100->8080/tcp`인지입니다. 목록이 비어 있으면 `docker compose ps -a`로 멈춘 컨테이너까지 봅니다.
+확인할 것은 두 가지입니다. `STATUS`가 최종적으로 `Up ... (healthy)`가 되는지, `PORTS`가 앞에서 고른 호스트 포트로 `127.0.0.1:<포트>->8080/tcp`인지입니다. 목록이 비어 있으면 `docker compose ps -a`로 멈춘 컨테이너까지 봅니다.
 
 ### 4. `docker compose logs`
 
@@ -390,11 +390,7 @@ curl.exe http://localhost:3100/health
 
 파일을 고치면 다시 `docker compose up -d`를 실행합니다. 서비스 설정이나 이미지가 달라지면 컨테이너를 다시 만들 수 있습니다. 포트를 바꿔 실행했을 때는 `Recreate`가 나왔고, 같은 볼륨을 쓰므로 볼륨의 파일은 그대로였습니다. 아무것도 바꾸지 않았을 때는 `Running`만 나왔습니다.
 
-실습이 끝나면 데이터를 남기는 정리부터 합니다.
-
-```powershell
-docker compose down
-```
+실습이 끝나면 데이터를 남길지 버릴지 먼저 정하고, 아래 둘 중 **하나만** 실행합니다. `down`으로 컨테이너를 먼저 지우면 거기 연결됐던 익명 볼륨은 나중에 `down -v`를 해도 지워지지 않으므로, 버릴 생각이면 처음부터 삭제 쪽을 고릅니다. 이 예제의 볼륨은 이름 있는 볼륨입니다.
 
 | 명령 | 지우는 것 | 남는 것 |
 |---|---|---|
@@ -404,17 +400,25 @@ docker compose down
 > `-v`는 볼륨의 데이터를 지웁니다. 실제로 쓰는 Open WebUI 폴더에서 실행하면 계정과 대화가 함께 사라집니다.
 {: .prompt-danger }
 
-실습 데이터까지 버릴 때만 다음을 진행합니다. 먼저 프로젝트와 볼륨을 확인합니다.
+**데이터를 남길 때**는 실습 폴더에서 이것만 실행합니다.
 
 ```powershell
-docker compose config
+docker compose -f .\docker-compose.yml -p compose-practice down
+```
+
+**실습 데이터까지 버릴 때**는 위 명령 대신 아래를 진행합니다. 확인과 삭제에 같은 `-f`, `-p` 값을 씁니다.
+
+```powershell
+Get-Location
+Resolve-Path .\docker-compose.yml
+docker compose -f .\docker-compose.yml -p compose-practice config --volumes
 docker volume ls --filter "label=com.docker.compose.project=compose-practice"
 ```
 
-`name: compose-practice`와 볼륨 `compose-practice_webui-data`가 맞을 때만 다음 명령을 따로 실행합니다.
+현재 폴더와 파일 경로가 실습 폴더이고, 삭제 대상 볼륨이 `webui-data` 하나, 볼륨 목록에 `compose-practice_webui-data`만 보일 때만 다음 명령을 따로 실행합니다.
 
 ```powershell
-docker compose down -v
+docker compose -f .\docker-compose.yml -p compose-practice down -v
 ```
 
 ## 다른 PC에 열 때 달라지는 것
