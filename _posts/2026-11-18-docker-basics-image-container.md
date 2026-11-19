@@ -116,26 +116,33 @@ ubuntu       22.04     120MB
 
 - `*`가 `desktop-linux`에 붙어 있으면 로컬 Docker Desktop의 Linux 엔진입니다. 다른 곳에 붙어 있으면 어떤 엔진인지 확인하기 전에는 진행하지 않습니다.
 - 둘째 결과 끝에 `linux`가 보입니다. `windows`이면 Docker Desktop이 Linux 컨테이너 모드인지 확인하고, 서버 오류가 나면 Docker Desktop이 켜져 있는지 봅니다.
-- 이름 목록은 비어 있어야 합니다. `docker-demo-a`나 `docker-demo-b`가 이미 있으면 그 컨테이너는 건드리지 말고, `docker-demo-7-a`처럼 접미사를 바꿔 이후 명령에 모두 적용합니다.
+- 이름 목록은 비어 있어야 합니다. `name=` 필터는 이름의 일부만 같아도 잡습니다. 무엇이든 나오면 그 컨테이너는 건드리지 말고 겹치지 않는 새 공통 접두어를 정합니다. 예를 들어 `dockerlab7-a`, `dockerlab7-b`로 정했다면 이후 `docker run`, `docker diff`, `docker rm`의 이름과 `name=` 필터 값을 모두 바꾸고, 바꾼 필터(`name=dockerlab7`)로 이름이 비어 있는지 다시 확인합니다.
 - 마지막 표에 **없는** 이미지를 기억해 둡니다. 위 예시에서는 `alpine:3.20`이 없고 `ubuntu:22.04`는 원래 있습니다. 정리할 때 이 기록을 씁니다.
 
 ### 2. 이미지 받기
 
-{% raw %}
+1번 표에 `alpine:3.20`이 없을 때만 받습니다. 이미 있으면 다시 받지 말고 그대로 씁니다. 다시 받으면 같은 태그가 다른 이미지를 가리키게 될 수 있습니다.
+
 ```powershell
 docker pull alpine:3.20
+```
+
+이미지가 있는지는 어느 경우든 확인합니다.
+
+{% raw %}
+```powershell
 docker images alpine:3.20 --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
 ```
 {% endraw %}
 
-**확인할 것:** 레지스트리에서 받은 이미지가 내 Docker에 생겼는지 봅니다.
+**확인할 것:** `alpine:3.20`이 내 Docker에 있는지 봅니다.
 
 ```text
 REPOSITORY   TAG       SIZE
 alpine       3.20      12.2MB
 ```
 
-**정상 결과:** `alpine`, `3.20` 줄이 하나 보입니다. `docker pull`의 마지막 줄에는 `docker.io/library/alpine:3.20`이 찍힙니다. 앞에서 본 생략된 기본값이 실제로 채워진 것입니다. 크기는 환경에 따라 다를 수 있습니다. `docker pull`이 실패했다면 다음 단계로 가지 말고 네트워크를 확인한 뒤 다시 받습니다.
+**정상 결과:** `alpine`, `3.20` 줄이 하나 보입니다. 새로 받았다면 `docker pull`의 마지막 줄에 `docker.io/library/alpine:3.20`이 찍힙니다. 앞에서 본 생략된 기본값이 실제로 채워진 것입니다. 크기는 환경에 따라 다를 수 있습니다. `docker pull`이 실패했다면 다음 단계로 가지 말고 네트워크를 확인한 뒤 다시 받습니다.
 
 ### 3. 같은 이미지로 컨테이너 두 개 실행
 
@@ -197,7 +204,7 @@ A /tmp/note.txt
 Error response from daemon: conflict: unable to delete alpine:3.20 (must be forced) - container <컨테이너 ID> is using its referenced image <이미지 ID>
 ```
 
-멈춘 컨테이너도 이미지를 참조하고 있어서 거절됐습니다. 강제로 지우는 대신, 이번 실습에서 만든 컨테이너부터 지웁니다.
+멈춘 컨테이너도 이미지를 참조하고 있어서 거절됐습니다. 강제로 지우는 대신, 이번 실습에서 만든 컨테이너부터 지웁니다. 3번에서 A의 `hello`와 B의 파일 없음 오류를 보고 두 컨테이너를 이번에 만들었다고 확인한 경우에만 아래 명령을 실행합니다.
 
 {% raw %}
 ```powershell
@@ -238,7 +245,7 @@ docker images --filter "reference=alpine:3.20" --format "table {{.Repository}}\t
 ```powershell
 docker images ghcr.io/open-webui/open-webui:main --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
 docker ps --filter "name=^open-webui$" --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
-docker inspect open-webui --format "{{range .Mounts}}{{.Type}} {{.Destination}}{{println}}{{end}}"
+docker container inspect open-webui --format "{{range .Mounts}}{{.Type}} {{.Destination}}{{println}}{{end}}"
 ```
 {% endraw %}
 
@@ -322,7 +329,7 @@ PRETTY_NAME="Ubuntu 22.04.5 LTS"
 |---|---|
 | 컨테이너를 멈추면 지워진다 | 멈춤과 삭제는 다릅니다. `docker ps -a`에 남아 있으면 쓰기 레이어도 남아 있습니다 |
 | 컨테이너를 지우면 이미지도 지워진다 | 이미지는 남습니다. 이미지나 그 태그는 `docker rmi`로 따로 지웁니다 |
-| 컨테이너 안에서 바꾼 내용이 이미지에 저장된다 | 볼륨에 연결하지 않은 경로의 변경은 쓰기 레이어에 저장되고, 같은 이미지로 만든 다른 컨테이너에는 보이지 않습니다 |
+| 컨테이너 안에서 바꾼 내용이 이미지에 저장된다 | 볼륨이나 호스트 폴더 등 별도 저장 공간을 연결하지 않은 경로의 변경은 각 컨테이너의 쓰기 레이어에 저장됩니다 |
 | 태그가 같으면 항상 같은 이미지다 | `main`, `latest` 같은 태그는 다른 이미지를 가리키게 될 수 있습니다 |
 | 컨테이너는 작은 VM이다 | VM은 자기 커널을 가지지만, 컨테이너는 커널을 함께 씁니다 |
 
