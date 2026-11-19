@@ -7,7 +7,7 @@ description: "Windows에서 Linux 컨테이너가 도는 구조를 WSL2, docker-
 ---
 
 > **시리즈: Windows에서 Docker 처음 배우기**
-> 1. Docker란 무엇인가: 이미지와 컨테이너 (예정)
+> 1. [Docker란 무엇인가: 이미지와 컨테이너]({% post_url 2026-11-18-docker-basics-image-container %})
 > 2. **Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop** ← 지금 글
 > 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
 > 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)

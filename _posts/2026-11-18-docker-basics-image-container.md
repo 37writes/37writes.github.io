@@ -8,7 +8,7 @@ description: "Windows에서 Open WebUI를 띄워 놓고도 무엇이 어디서 �
 
 > **시리즈: Windows에서 Docker 처음 배우기**
 > 1. **Docker란 무엇인가: 이미지와 컨테이너** ← 지금 글
-> 2. Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop (예정)
+> 2. [Windows에서 Docker가 돌아가는 구조: WSL2와 Docker Desktop]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
 > 3. 무엇이 어느 폴더에 생기나: 이미지·컨테이너·볼륨의 실제 위치 (예정)
 > 4. docker-compose.yml 한 줄씩 읽기: Open WebUI 띄우기 (예정)
 > 5. 컨테이너에서 Windows의 Ollama 연결하기: localhost와 host.docker.internal (예정)
@@ -344,7 +344,7 @@ PRETTY_NAME="Ubuntu 22.04.5 LTS"
 | 지우면 무엇이 사라지나 | `docker rm`은 컨테이너와 쓰기 레이어, `docker rmi`는 이미지 또는 그 태그 |
 | VM과의 핵심 차이는 | 컨테이너는 자기 커널 없이 커널을 함께 씀 |
 
-다음 편에서는 Windows에서 어떻게 Linux 컨테이너가 돌아가는지, WSL2와 Docker Desktop의 구조를 살펴봅니다.
+다음 편에서는 Windows에서 어떻게 Linux 컨테이너가 돌아가는지, WSL2와 Docker Desktop의 구조를 살펴봅니다. [2편 읽기]({% post_url 2026-11-18-docker-windows-wsl2-structure %})
 
 ## 참고 문서
 
