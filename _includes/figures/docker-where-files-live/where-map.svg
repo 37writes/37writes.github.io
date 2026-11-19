@@ -1,62 +1,66 @@
-<svg class="diagram-svg diagram-wide" viewBox="0 0 480 492" role="img" aria-labelledby="wm-title wm-desc" xmlns="http://www.w3.org/2000/svg">
-  <title id="wm-title">Windows 폴더, vhdx, Linux 경로, 컨테이너 경로의 대응</title>
-  <desc id="wm-desc">Windows 탐색기에서는 D 드라이브의 docker_data.vhdx 파일 하나만 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 같은 볼륨을 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
+<svg class="diagram-svg diagram-wide" viewBox="0 0 480 500" role="img" aria-labelledby="wm-title wm-desc" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-title">이 WSL 2 예에서 Docker 데이터가 가상 디스크 파일로 보이는 구조</title>
+  <desc id="wm-desc">이 Windows Docker Desktop WSL 2 예에서 Docker 데이터는 탐색기에 D 드라이브의 docker_data.vhdx라는 가상 디스크 파일로 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 이 볼륨을 연결해 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
 
-  <text class="d-strong" x="240" y="26" text-anchor="middle">탐색기에는 vhdx 파일만 보인다</text>
+  <text class="d-strong" x="240" y="26" text-anchor="middle">Docker 데이터는 가상 디스크 파일로 보인다</text>
 
-  <rect class="d-line" x="12" y="44" width="456" height="232" rx="8"/>
+  <rect class="d-line" x="12" y="44" width="456" height="240" rx="8"/>
   <text x="28" y="70" font-weight="700">Windows 폴더</text>
   <text class="d-mono" x="28" y="92">D:\docker\…\disk\docker_data.vhdx</text>
 
-  <rect class="d-box" x="28" y="106" width="424" height="156" rx="6"/><rect class="d-line" x="28" y="106" width="424" height="156" rx="6"/>
+  <rect class="d-box" x="28" y="106" width="424" height="164" rx="6"/><rect class="d-line" x="28" y="106" width="424" height="164" rx="6"/>
   <text x="44" y="130" font-weight="700">vhdx 안의 Linux 디스크</text>
-  <text class="d-muted" x="44" y="156">이미지 층</text>
-  <text class="d-mono" x="44" y="176">/var/lib/desktop-containerd</text>
-  <text class="d-muted" x="44" y="204">볼륨</text>
-  <text class="d-mono" x="44" y="224">/var/lib/docker/volumes/</text>
-  <text class="d-mono" x="44" y="244">server_webui-data/_data</text>
+  <text class="d-muted" x="44" y="154">이미지 층 (내부 경로는 버전마다 다름)</text>
 
-  <path class="d-line" d="M240 262 V318"/>
-  <text class="d-muted" x="252" y="303">같은 파일을 본다</text>
+  <rect class="d-line" x="44" y="170" width="392" height="84" rx="6"/>
+  <text x="60" y="194" font-weight="700">볼륨</text>
+  <text class="d-mono" x="60" y="216">/var/lib/docker/volumes/</text>
+  <text class="d-mono" x="60" y="238">server_webui-data/_data</text>
 
-  <rect class="d-box" x="108" y="318" width="264" height="60" rx="6"/><rect class="d-line" x="108" y="318" width="264" height="60" rx="6"/>
-  <text x="240" y="342" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
-  <text class="d-mono" x="240" y="364" text-anchor="middle">/app/backend/data</text>
+  <path class="d-line" d="M240 254 V326"/>
+  <text class="d-muted" x="252" y="308">볼륨 연결</text>
 
-  <rect class="d-line" x="12" y="396" width="456" height="84" rx="8" stroke-dasharray="4 4"/>
-  <text x="28" y="420" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
-  <text class="d-mono" x="28" y="444">D:\Dev\server\docker-compose.yml</text>
-  <text class="d-mono" x="28" y="466">D:\ollama\models</text>
+  <rect class="d-box" x="108" y="326" width="264" height="60" rx="6"/><rect class="d-line" x="108" y="326" width="264" height="60" rx="6"/>
+  <text x="240" y="350" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
+  <text class="d-mono" x="240" y="372" text-anchor="middle">/app/backend/data</text>
+
+  <rect class="d-line" x="12" y="404" width="456" height="84" rx="8" stroke-dasharray="4 4"/>
+  <text x="28" y="428" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
+  <text class="d-mono" x="28" y="452">D:\Dev\server\docker-compose.yml</text>
+  <text class="d-mono" x="28" y="474">D:\ollama\models</text>
 </svg>
-<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 548" role="img" aria-labelledby="wm-title-n wm-desc-n" xmlns="http://www.w3.org/2000/svg">
-  <title id="wm-title-n">Windows 폴더, vhdx, Linux 경로, 컨테이너 경로의 대응</title>
-  <desc id="wm-desc-n">Windows 탐색기에서는 D 드라이브의 docker_data.vhdx 파일 하나만 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 같은 볼륨을 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
+<svg class="diagram-svg diagram-narrow" viewBox="0 0 320 586" role="img" aria-labelledby="wm-title-n wm-desc-n" xmlns="http://www.w3.org/2000/svg">
+  <title id="wm-title-n">이 WSL 2 예에서 Docker 데이터가 가상 디스크 파일로 보이는 구조</title>
+  <desc id="wm-desc-n">이 Windows Docker Desktop WSL 2 예에서 Docker 데이터는 탐색기에 D 드라이브의 docker_data.vhdx라는 가상 디스크 파일로 보인다. 그 파일 안의 Linux 디스크에 이미지 층과 볼륨이 있고, 볼륨 경로는 /var/lib/docker/volumes/server_webui-data/_data이다. 컨테이너 open-webui는 이 볼륨을 연결해 /app/backend/data로 본다. compose 파일과 Ollama 모델은 vhdx 밖에 있는 Windows 파일이다.</desc>
 
-  <text class="d-strong" x="160" y="26" text-anchor="middle">탐색기에는 vhdx 파일만 보인다</text>
+  <text class="d-strong" x="160" y="24" text-anchor="middle">Docker 데이터는</text>
+  <text class="d-strong" x="160" y="46" text-anchor="middle">가상 디스크 파일로 보인다</text>
 
-  <rect class="d-line" x="4" y="44" width="312" height="254" rx="8"/>
-  <text x="16" y="68" font-weight="700">Windows 폴더</text>
-  <text class="d-mono" x="16" y="90">D:\docker\…\disk\</text>
-  <text class="d-mono" x="16" y="110">docker_data.vhdx</text>
+  <rect class="d-line" x="4" y="62" width="312" height="276" rx="8"/>
+  <text x="16" y="86" font-weight="700">Windows 폴더</text>
+  <text class="d-mono" x="16" y="108">D:\docker\…\disk\</text>
+  <text class="d-mono" x="16" y="128">docker_data.vhdx</text>
 
-  <rect class="d-box" x="12" y="124" width="296" height="160" rx="6"/><rect class="d-line" x="12" y="124" width="296" height="160" rx="6"/>
-  <text x="24" y="148" font-weight="700">vhdx 안의 Linux 디스크</text>
-  <text class="d-muted" x="24" y="174">이미지 층</text>
-  <text class="d-mono" x="24" y="194">/var/lib/desktop-containerd</text>
-  <text class="d-muted" x="24" y="222">볼륨</text>
-  <text class="d-mono" x="24" y="242">/var/lib/docker/volumes/</text>
-  <text class="d-mono" x="24" y="262">server_webui-data/_data</text>
+  <rect class="d-box" x="12" y="142" width="296" height="182" rx="6"/><rect class="d-line" x="12" y="142" width="296" height="182" rx="6"/>
+  <text x="24" y="166" font-weight="700">vhdx 안의 Linux 디스크</text>
+  <text class="d-muted" x="24" y="190">이미지 층</text>
+  <text class="d-muted" x="24" y="210">(내부 경로는 버전마다 다름)</text>
 
-  <path class="d-line" d="M160 284 V342"/>
-  <text class="d-muted" x="172" y="326">같은 파일을 본다</text>
+  <rect class="d-line" x="24" y="224" width="272" height="86" rx="6"/>
+  <text x="36" y="248" font-weight="700">볼륨</text>
+  <text class="d-mono" x="36" y="270">/var/lib/docker/volumes/</text>
+  <text class="d-mono" x="36" y="292">server_webui-data/_data</text>
 
-  <rect class="d-box" x="32" y="342" width="256" height="60" rx="6"/><rect class="d-line" x="32" y="342" width="256" height="60" rx="6"/>
-  <text x="160" y="366" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
-  <text class="d-mono" x="160" y="388" text-anchor="middle">/app/backend/data</text>
+  <path class="d-line" d="M160 310 V380"/>
+  <text class="d-muted" x="172" y="362">볼륨 연결</text>
 
-  <rect class="d-line" x="4" y="420" width="312" height="116" rx="8" stroke-dasharray="4 4"/>
-  <text x="16" y="444" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
-  <text class="d-mono" x="16" y="468">D:\Dev\server\</text>
-  <text class="d-mono" x="16" y="488">docker-compose.yml</text>
-  <text class="d-mono" x="16" y="518">D:\ollama\models</text>
+  <rect class="d-box" x="32" y="380" width="256" height="60" rx="6"/><rect class="d-line" x="32" y="380" width="256" height="60" rx="6"/>
+  <text x="160" y="404" text-anchor="middle" font-weight="700">컨테이너 open-webui</text>
+  <text class="d-mono" x="160" y="426" text-anchor="middle">/app/backend/data</text>
+
+  <rect class="d-line" x="4" y="458" width="312" height="116" rx="8" stroke-dasharray="4 4"/>
+  <text x="16" y="482" font-weight="700">vhdx 밖, Windows 파일 그대로</text>
+  <text class="d-mono" x="16" y="506">D:\Dev\server\</text>
+  <text class="d-mono" x="16" y="526">docker-compose.yml</text>
+  <text class="d-mono" x="16" y="556">D:\ollama\models</text>
 </svg>
